@@ -133,7 +133,7 @@ export default function SettlementSystemsPage() {
         </div>
         <div className="stat-card">
           <div style={{ fontSize: "1.5rem", marginBottom: "0.25rem" }}>💱</div>
-          <div className="metric-value" style={{ fontSize: "1.5rem" }}>{new Set(settlementSystems.flatMap(s => s.currencies || [])).size || '10+'}</div>
+          <div className="metric-value" style={{ fontSize: "1.5rem" }}>{new Set(settlementSystems.flatMap(s => s.currency || [])).size || '10+'}</div>
           <div className="text-xs text-[var(--text-muted)]">Moedas</div>
         </div>
         <div className="stat-card">
