@@ -2,13 +2,14 @@
 
 import { useState, FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const [submitted, setSubmitted] = useState(false);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
   function validate(): boolean {
     const errs: { email?: string; password?: string } = {};
@@ -28,8 +29,27 @@ export default function LoginPage() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (validate()) {
-      setSubmitted(true);
+    if (!validate()) return;
+
+    // Check if user exists in localStorage
+    const stored = localStorage.getItem("pks-user");
+    if (!stored) {
+      setErrors({ general: "Email nao encontrado. Cadastre-se primeiro." });
+      return;
+    }
+
+    try {
+      const user = JSON.parse(stored);
+      if (user.email !== email.trim().toLowerCase()) {
+        setErrors({ general: "Email nao encontrado. Cadastre-se primeiro." });
+        return;
+      }
+
+      // Login success
+      localStorage.setItem("pks-logged-in", "true");
+      router.push("/");
+    } catch {
+      setErrors({ general: "Erro ao verificar conta. Tente novamente." });
     }
   }
 
@@ -43,6 +63,7 @@ export default function LoginPage() {
     color: "var(--foreground)",
     outline: "none",
     transition: "border-color 0.2s",
+    boxSizing: "border-box",
   };
 
   const labelStyle: React.CSSProperties = {
@@ -70,7 +91,6 @@ export default function LoginPage() {
       }}
     >
       <div
-        className="animate-fade-in"
         style={{
           width: "100%",
           maxWidth: "400px",
@@ -121,170 +141,113 @@ export default function LoginPage() {
             padding: "2rem",
           }}
         >
-          {submitted ? (
-            <div style={{ textAlign: "center", padding: "1rem 0" }}>
-              <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>🔧</div>
-              <p
-                style={{
-                  fontSize: "1rem",
-                  color: "var(--foreground)",
-                  fontWeight: 600,
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Sistema de autenticacao em construcao
-              </p>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                Em breve voce podera fazer login.
-              </p>
-              <button
-                onClick={() => setSubmitted(false)}
-                style={{
-                  marginTop: "1.25rem",
-                  padding: "0.5rem 1.5rem",
-                  borderRadius: "10px",
-                  border: "1px solid var(--border)",
-                  background: "var(--surface-hover)",
-                  color: "var(--foreground)",
-                  fontSize: "0.85rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                }}
-              >
-                Voltar
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              {/* Email */}
-              <div style={{ marginBottom: "1.25rem" }}>
-                <label style={labelStyle}>Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  style={inputStyle}
-                />
-                {errors.email && <p style={errorTextStyle}>{errors.email}</p>}
-              </div>
-
-              {/* Password */}
-              <div style={{ marginBottom: "0.75rem" }}>
-                <label style={labelStyle}>Senha</label>
-                <div style={{ position: "relative" }}>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    style={{ ...inputStyle, paddingRight: "2.75rem" }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: "absolute",
-                      right: "0.65rem",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      fontSize: "1.1rem",
-                      lineHeight: 1,
-                      color: "var(--text-muted)",
-                    }}
-                    aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
-                  >
-                    {showPassword ? "🙈" : "👁"}
-                  </button>
-                </div>
-                {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
-              </div>
-
-              {/* Forgot password */}
-              <div style={{ textAlign: "right", marginBottom: "1.5rem" }}>
-                <Link
-                  href="/auth/forgot-password"
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "var(--primary)",
-                    textDecoration: "none",
-                    fontWeight: 500,
-                  }}
-                >
-                  Esqueci minha senha
-                </Link>
-              </div>
-
-              {/* Submit */}
-              <button
-                type="submit"
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  borderRadius: "12px",
-                  border: "none",
-                  background: "var(--gradient-primary)",
-                  color: "#fff",
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "opacity 0.2s",
-                  boxShadow: "0 4px 14px rgba(99,102,241,0.25)",
-                }}
-              >
-                Entrar
-              </button>
-
-              {/* Divider */}
+          <form onSubmit={handleSubmit}>
+            {/* General error */}
+            {errors.general && (
               <div
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1rem",
-                  margin: "1.5rem 0",
+                  padding: "0.75rem 1rem",
+                  borderRadius: "10px",
+                  background: "rgba(239,68,68,0.1)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                  marginBottom: "1.25rem",
                 }}
               >
-                <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
-                <span
+                <p
                   style={{
-                    fontSize: "0.8rem",
-                    color: "var(--text-muted)",
+                    fontSize: "0.85rem",
+                    color: "var(--error, #EF4444)",
                     fontWeight: 500,
                   }}
                 >
-                  ou
-                </span>
-                <div style={{ flex: 1, height: "1px", background: "var(--border)" }} />
+                  {errors.general}
+                </p>
               </div>
+            )}
 
-              {/* Social buttons */}
-              <div style={{ display: "flex", gap: "0.75rem" }}>
-                {["Google", "GitHub"].map((provider) => (
-                  <button
-                    key={provider}
-                    type="button"
-                    style={{
-                      flex: 1,
-                      padding: "0.65rem",
-                      borderRadius: "10px",
-                      border: "1px solid var(--border)",
-                      background: "var(--surface-hover)",
-                      color: "var(--foreground)",
-                      fontSize: "0.9rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "border-color 0.2s",
-                    }}
-                  >
-                    {provider}
-                  </button>
-                ))}
+            {/* Email */}
+            <div style={{ marginBottom: "1.25rem" }}>
+              <label style={labelStyle}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                style={inputStyle}
+              />
+              {errors.email && <p style={errorTextStyle}>{errors.email}</p>}
+            </div>
+
+            {/* Password */}
+            <div style={{ marginBottom: "0.75rem" }}>
+              <label style={labelStyle}>Senha</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Sua senha"
+                  style={{ ...inputStyle, paddingRight: "2.75rem" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "0.65rem",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "1.1rem",
+                    lineHeight: 1,
+                    color: "var(--text-muted)",
+                    padding: "0",
+                  }}
+                  aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                >
+                  {showPassword ? "🙈" : "👁"}
+                </button>
               </div>
-            </form>
-          )}
+              {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
+            </div>
+
+            {/* Forgot password */}
+            <div style={{ textAlign: "right", marginBottom: "1.5rem" }}>
+              <Link
+                href="/auth/forgot-password"
+                style={{
+                  fontSize: "0.8rem",
+                  color: "var(--primary)",
+                  textDecoration: "none",
+                  fontWeight: 500,
+                }}
+              >
+                Esqueci minha senha
+              </Link>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                borderRadius: "12px",
+                border: "none",
+                background: "var(--gradient-primary)",
+                color: "#fff",
+                fontSize: "1rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "opacity 0.2s",
+                boxShadow: "0 4px 14px rgba(99,102,241,0.25)",
+              }}
+            >
+              Entrar
+            </button>
+          </form>
         </div>
 
         {/* Sign up link */}
@@ -298,7 +261,7 @@ export default function LoginPage() {
         >
           Nao tem conta?{" "}
           <Link
-            href="#"
+            href="/auth/register"
             style={{
               color: "var(--primary)",
               textDecoration: "none",

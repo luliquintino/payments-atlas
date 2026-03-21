@@ -1,0 +1,55 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { Suspense } from "react";
+import { Sidebar } from "@/components/layout/Sidebar";
+import Breadcrumb from "@/components/layout/Breadcrumb";
+import RelatedSection from "@/components/ui/RelatedSection";
+import TrailNavigation from "@/components/layout/TrailNavigation";
+import SearchOverlay from "@/components/ui/SearchOverlay";
+import GameProvider from "@/components/layout/GameProvider";
+
+const PUBLIC_ROUTES = ["/landing", "/auth"];
+
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+}
+
+export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isPublic = isPublicRoute(pathname);
+
+  if (isPublic) {
+    return (
+      <main style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
+        {children}
+      </main>
+    );
+  }
+
+  return (
+    <>
+      <Sidebar />
+      <SearchOverlay />
+      <main
+        className="flex-1 overflow-auto"
+        style={{ marginLeft: "var(--sidebar-width)" }}
+      >
+        <GameProvider>
+          <div className="px-8 py-6 max-w-[1400px] mx-auto">
+            <Suspense>
+              <Breadcrumb />
+            </Suspense>
+            {children}
+            <Suspense>
+              <TrailNavigation />
+            </Suspense>
+            <Suspense>
+              <RelatedSection />
+            </Suspense>
+          </div>
+        </GameProvider>
+      </main>
+    </>
+  );
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useGameProgress } from "@/hooks/useGameProgress";
 import { useTrailProgress } from "@/hooks/useTrailProgress";
@@ -8,9 +8,30 @@ import { LEARNING_TRAILS } from "@/data/learning-trails";
 import { BADGES } from "@/data/badges";
 import { getLevelProgress } from "@/data/levels";
 
+interface PksUser {
+  name: string;
+  email: string;
+  company: string;
+  role: string;
+  createdAt: string;
+}
+
 export default function Home() {
   const { xp, badges, streak, quizScores, pagesVisited, level, levelProgress } = useGameProgress();
   const { progress, setActiveTrail, getTrailProgress } = useTrailProgress();
+
+  const [pksUser, setPksUser] = useState<PksUser | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("pks-user");
+      if (stored) {
+        setPksUser(JSON.parse(stored));
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, []);
 
   const completedTrails = LEARNING_TRAILS.filter((t) =>
     t.pages.every((p) => pagesVisited.includes(p.path))
@@ -69,13 +90,38 @@ export default function Home() {
               marginBottom: "0.25rem",
             }}
           >
-            {isFirstVisit ? "Bem-vindo!" : "Bom dia!"} 👋
+            {isFirstVisit
+              ? "Bem-vindo!"
+              : pksUser
+                ? `Bom dia, ${pksUser.name.split(" ")[0]}!`
+                : "Bom dia!"}{" "}
+            👋
           </h1>
           <p style={{ fontSize: "0.95rem", color: "var(--text-muted)" }}>
             {isFirstVisit
               ? "Pronto para começar sua jornada em pagamentos?"
               : "Continue de onde parou"}
           </p>
+          {pksUser && (
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                marginTop: "0.5rem",
+                padding: "0.3rem 0.75rem",
+                borderRadius: "8px",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                fontSize: "0.8rem",
+                color: "var(--text-muted)",
+              }}
+            >
+              <span style={{ fontWeight: 600, color: "var(--foreground)" }}>{pksUser.role}</span>
+              <span style={{ opacity: 0.4 }}>|</span>
+              <span>{pksUser.company}</span>
+            </div>
+          )}
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
