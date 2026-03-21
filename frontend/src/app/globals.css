@@ -1,54 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --primary: #1e3a5f;
-  --primary-light: #2563eb;
-  --primary-lighter: #3b82f6;
-  --primary-dark: #0f172a;
-  --accent: #93c5fd;
-  --accent-light: #dbeafe;
-  --success: #16a34a;
-  --warning: #d97706;
-  --error: #dc2626;
-  --surface: #ffffff;
-  --surface-hover: #f1f5f9;
-  --surface-active: #e2e8f0;
-  --border: #e2e8f0;
-  --border-hover: #93c5fd;
-  --text-muted: #64748b;
-  --sidebar-width: 272px;
-  --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
-  --card-shadow-hover: 0 10px 25px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(59, 130, 246, 0.06);
-  --glow: 0 0 20px rgba(59, 130, 246, 0.15);
-  --accent-amber: #f59e0b;
-  --accent-emerald: #10b981;
-  --accent-violet: #8b5cf6;
-  --accent-rose: #f43f5e;
-  --accent-sky: #0ea5e9;
-  --accent-teal: #14b8a6;
-  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-  --gradient-subtle: linear-gradient(135deg, rgba(30, 58, 95, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
-  --card-shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.12), 0 8px 16px rgba(59, 130, 246, 0.08);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-    --surface: #1e293b;
-    --surface-hover: #334155;
-    --surface-active: #475569;
-    --border: #334155;
-    --border-hover: #3b82f6;
-    --text-muted: #94a3b8;
-    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
-    --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.3), 0 4px 10px rgba(0, 0, 0, 0.2);
-    --card-shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.35), 0 8px 16px rgba(0, 0, 0, 0.25);
-    --glow: 0 0 20px rgba(59, 130, 246, 0.2);
-    --gradient-subtle: linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, rgba(30, 58, 95, 0.03) 100%);
-  }
+  --background: #FAFBFC;
+  --foreground: #111827;
+  --primary: #6366F1;
+  --primary-light: #818CF8;
+  --primary-lighter: #A5B4FC;
+  --primary-dark: #4F46E5;
+  --primary-bg: #EEF2FF;
+  --accent: #818CF8;
+  --accent-light: #E0E7FF;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --surface: #FFFFFF;
+  --surface-hover: #F3F4F6;
+  --surface-active: #E5E7EB;
+  --border: #E5E7EB;
+  --border-hover: #6366F1;
+  --text-muted: #6B7280;
+  --text-light: #9CA3AF;
+  --sidebar-width: 240px;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --card-shadow-hover: 0 8px 25px rgba(0, 0, 0, 0.08);
+  --card-shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.1);
+  --glow: 0 0 20px rgba(99, 102, 241, 0.15);
+  --accent-amber: #F59E0B;
+  --accent-emerald: #10B981;
+  --accent-violet: #8B5CF6;
+  --accent-rose: #F43F5E;
+  --accent-sky: #0EA5E9;
+  --accent-teal: #14B8A6;
+  --xp-gold: #F59E0B;
+  --streak-orange: #F97316;
+  --danger: #EF4444;
+  --gradient-primary: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+  --gradient-subtle: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(129, 140, 248, 0.03) 100%);
 }
 
 * {
@@ -199,13 +186,6 @@ body {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-@media (prefers-color-scheme: dark) {
-  .glass {
-    background: rgba(30, 41, 59, 0.7);
-    border: 1px solid rgba(59, 130, 246, 0.1);
-  }
 }
 
 /* ---- Interactive elements ---- */
@@ -767,3 +747,215 @@ body {
     padding-right: 0.75rem;
   }
 }
+
+/* ── Accordion ─────────────────────────────────────── */
+.accordion-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--foreground);
+  transition: all 0.2s;
+}
+.accordion-trigger:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+}
+.accordion-trigger[data-open="true"] {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+.accordion-content {
+  border: 1px solid var(--border);
+  border-top: none;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  padding: 1.25rem;
+  background: var(--surface);
+}
+
+/* ── Trail Bar ─────────────────────────────────────── */
+.trail-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--primary-bg);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 12px;
+  font-size: 0.8125rem;
+  color: var(--foreground);
+}
+.trail-bar-progress {
+  flex: 1;
+  height: 6px;
+  background: rgba(99, 102, 241, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.trail-bar-progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ── Quiz Card ─────────────────────────────────────── */
+.quiz-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.quiz-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--gradient-subtle);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  transition: all 0.15s;
+}
+.quiz-option:hover {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+}
+.quiz-option[data-selected="true"] {
+  border-color: var(--primary);
+  background: var(--primary-bg);
+}
+.quiz-option[data-correct="true"] {
+  border-color: var(--success);
+  background: rgba(16, 185, 129, 0.08);
+}
+.quiz-option[data-incorrect="true"] {
+  border-color: var(--danger);
+  background: rgba(239, 68, 68, 0.08);
+}
+
+/* ── Completion Card ───────────────────────────────── */
+.completion-card {
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%);
+  border: 2px solid var(--success);
+  border-radius: 16px;
+}
+
+/* ── XP Badge ──────────────────────────────────────── */
+.xp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--xp-gold);
+  font-weight: 700;
+  font-size: 0.75rem;
+  border-radius: 999px;
+}
+
+/* ── Streak Badge ──────────────────────────────────── */
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background: rgba(249, 115, 22, 0.12);
+  color: var(--streak-orange);
+  font-weight: 700;
+  font-size: 0.75rem;
+  border-radius: 999px;
+}
+
+/* ── Level Progress ────────────────────────────────── */
+.level-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-hover);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.level-bar-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+/* ── Badge Grid ────────────────────────────────────── */
+.badge-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+}
+.badge-cell[data-unlocked="true"] {
+  background: var(--surface);
+  border-color: var(--xp-gold);
+}
+.badge-cell[data-unlocked="false"] {
+  background: var(--surface-hover);
+  opacity: 0.5;
+  filter: grayscale(1);
+}
+
+/* ── Learning Objectives ───────────────────────────── */
+.learning-objectives {
+  padding: 1rem 1.25rem;
+  background: var(--primary-bg);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 12px 12px 0;
+}
+.learning-objectives li {
+  list-style: none;
+  padding: 0.25rem 0;
+  font-size: 0.9375rem;
+  color: var(--foreground);
+}
+.learning-objectives li::before {
+  content: "\2713  ";
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* ── Confetti & XP animations ──────────────────────── */
+@keyframes confetti-pop {
+  0% { transform: scale(0) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 1; }
+}
+@keyframes xp-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-confetti { animation: confetti-pop 0.5s ease-out; }
+.animate-xp-bounce { animation: xp-bounce 0.4s ease-out; }
