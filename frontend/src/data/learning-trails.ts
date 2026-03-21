@@ -69,6 +69,33 @@ export const LEARNING_TRAILS: LearningTrail[] = [
       { path: "/crypto/defi-protocols", title: "Protocolos DeFi", description: "AMMs, lending, bridges", icon: "🌀" },
     ],
   },
+  {
+    id: "crypto",
+    title: "Crypto & Web3",
+    subtitle: "Blockchain, stablecoins e finanças descentralizadas",
+    icon: "🔗",
+    color: "#10B981",
+    colorBg: "rgba(16, 185, 129, 0.1)",
+    pages: [
+      { path: "/crypto/blockchain-map", title: "Mapa Blockchain", description: "Redes, consenso e infraestrutura", icon: "🔗" },
+      { path: "/crypto/stablecoin-systems", title: "Sistemas de Stablecoin", description: "Lastro, riscos e regulação", icon: "💵" },
+      { path: "/crypto/defi-protocols", title: "Protocolos DeFi", description: "AMMs, lending e derivativos", icon: "🏦" },
+    ],
+  },
+  {
+    id: "fraude",
+    title: "Fraude & Proteção",
+    subtitle: "Detecção, prevenção e gestão de disputas",
+    icon: "🛡️",
+    color: "#EF4444",
+    colorBg: "rgba(239, 68, 68, 0.1)",
+    pages: [
+      { path: "/fraud/fraud-map", title: "Mapa de Fraude", description: "Pipeline de detecção em 4 estágios", icon: "🗺️" },
+      { path: "/fraud/fraud-signals", title: "Sinais de Fraude", description: "Indicadores de atividade fraudulenta", icon: "🚨" },
+      { path: "/fraud/chargeback-lifecycle", title: "Ciclo de Chargeback", description: "Fluxo completo de disputas", icon: "🔄" },
+      { path: "/diagnostics/problem-library", title: "Biblioteca de Problemas", description: "Problemas comuns em pagamentos", icon: "📚" },
+    ],
+  },
 ];
 
 // Helper: find which trail a page belongs to

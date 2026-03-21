@@ -144,6 +144,7 @@ function buildIndex(): SearchResult[] {
     { name: "Simulador", description: "Simule transações de pagamento", href: "/simulation/payment-simulator" },
     { name: "Consultor de Arquitetura", description: "Recomendações de arquitetura de pagamentos", href: "/simulation/architecture-advisor" },
     { name: "Consultor de Pagamentos", description: "Assistente AI para dúvidas de pagamentos", href: "/ai/payments-advisor" },
+    { name: "Meu Progresso", description: "XP, badges, nível e conquistas", href: "/progress" },
   ];
 
   pages.forEach((p, i) => {
