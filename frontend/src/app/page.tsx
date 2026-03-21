@@ -204,7 +204,7 @@ export default function Home() {
         <section
           className="animate-fade-in stagger-1"
           style={{
-            background: "#ffffff",
+            background: "var(--surface)",
             borderRadius: "16px",
             padding: "1.75rem",
             marginBottom: "2.5rem",
@@ -325,7 +325,7 @@ export default function Home() {
               style={{
                 textAlign: "center",
                 padding: "1.25rem 1rem",
-                background: "#ffffff",
+                background: "var(--surface)",
                 borderRadius: "12px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
               }}
@@ -383,7 +383,7 @@ export default function Home() {
               <div
                 key={trail.id}
                 style={{
-                  background: "#ffffff",
+                  background: "var(--surface)",
                   borderRadius: "14px",
                   padding: "1.5rem",
                   boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
@@ -515,7 +515,7 @@ export default function Home() {
                 minWidth: "90px",
                 textAlign: "center",
                 padding: "1rem 0.75rem",
-                background: "#ffffff",
+                background: "var(--surface)",
                 borderRadius: "12px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
               }}
@@ -592,7 +592,7 @@ export default function Home() {
                 justifyContent: "center",
                 gap: "0.5rem",
                 padding: "1rem",
-                background: "#ffffff",
+                background: "var(--surface)",
                 borderRadius: "12px",
                 boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
                 textDecoration: "none",

@@ -96,7 +96,28 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [explorarOpen, setExplorarOpen] = useState(false);
   const [ferramentasOpen, setFerramentasOpen] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const { xp, streak } = useGameProgress();
+
+  useEffect(() => {
+    const saved = localStorage.getItem("pks-theme");
+    if (saved === "dark" || (!saved && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+      setIsDark(true);
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("pks-theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("pks-theme", "light");
+    }
+  };
 
   // Auto-expand if currently in a sub-section
   useEffect(() => {
@@ -474,6 +495,26 @@ export function Sidebar() {
             padding: "0.75rem 1rem",
           }}
         >
+          <button
+            onClick={toggleDarkMode}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              padding: "0.375rem 0.75rem",
+              borderRadius: "0.5rem",
+              border: "1px solid var(--border)",
+              background: "var(--surface-hover)",
+              color: "var(--text-muted)",
+              fontSize: "0.75rem",
+              cursor: "pointer",
+              width: "100%",
+              marginBottom: "0.5rem",
+            }}
+          >
+            <span style={{ fontSize: "0.875rem" }}>{isDark ? "☀️" : "🌙"}</span>
+            <span>{isDark ? "Modo Claro" : "Modo Escuro"}</span>
+          </button>
           <div className="flex items-center" style={{ gap: "0.5rem", marginBottom: "0.5rem" }}>
             <span className="xp-badge" style={{ fontSize: "0.75rem" }}>
               ⚡ {xp} XP
