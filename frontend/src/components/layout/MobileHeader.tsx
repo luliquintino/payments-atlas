@@ -37,7 +37,7 @@ export default function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
           </svg>
         </div>
         <span className="text-sm font-bold text-[var(--foreground)]">
-          Payments Knowledge
+          Payments Academy
         </span>
       </Link>
 
