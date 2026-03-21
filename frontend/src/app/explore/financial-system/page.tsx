@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import {
   financialLayers,
   FLOW_STEPS,
@@ -15,6 +18,9 @@ import {
 
 export default function FinancialSystemPage() {
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set());
+  const quiz = getQuizForPage("/explore/financial-system");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const toggleLayer = (id: string) => {
     setExpandedLayers(prev => {
       const next = new Set(prev);
@@ -72,6 +78,18 @@ export default function FinancialSystemPage() {
           conectando pagamentos tradicionais, banking, blockchain, stablecoins e DeFi em um unico modelo.
         </p>
       </header>
+
+      {/* Learning Objectives */}
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Como funciona a infraestrutura financeira global</li>
+          <li>O papel de câmaras de compensação e bancos centrais</li>
+          <li>Diferença entre RTGS e DNS</li>
+        </ul>
+      </div>
 
       {/* ================================================================= */}
       {/* STATS                                                             */}
@@ -566,6 +584,22 @@ export default function FinancialSystemPage() {
           O Payments Atlas mapeia todo o ecossistema financeiro digital — bancos, pagamentos, fintechs, blockchain — em um unico modelo mental conectado.
         </p>
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

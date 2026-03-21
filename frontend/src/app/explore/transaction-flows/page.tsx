@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
 /**
  * Fluxos de Transacao — Catalogo interativo de 8 fluxos de pagamento comuns.
@@ -528,6 +531,9 @@ const transactionFlows: TransactionFlow[] = [
 
 export default function TransactionFlowsPage() {
   const [expandedFlows, setExpandedFlows] = useState<Set<string>>(new Set());
+  const quiz = getQuizForPage("/explore/transaction-flows");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
 
   const toggleFlow = (name: string) => {
     setExpandedFlows((prev) => {
@@ -566,6 +572,18 @@ export default function TransactionFlowsPage() {
           completo com atores, acoes e features em cada etapa.
         </p>
       </header>
+
+      {/* Learning Objectives */}
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Como funciona o fluxo de um pagamento com cartão</li>
+          <li>Etapas de autorização, clearing e liquidação</li>
+          <li>Diferenças entre fluxos domésticos e cross-border</li>
+        </ul>
+      </div>
 
       {/* ================================================================= */}
       {/* STATS — Phase 2                                                   */}
@@ -897,6 +915,22 @@ export default function TransactionFlowsPage() {
           ))}
         </div>
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

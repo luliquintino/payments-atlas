@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import {
   ecosystemLayers,
   knowledgeGraphConnections,
@@ -47,6 +50,9 @@ const GRAPH_GROUP_COLORS: Record<string, string> = {
 export default function EcosystemMapPage() {
   const [search, setSearch] = useState("");
   const [activeLayer, setActiveLayer] = useState<string | null>(null);
+  const quiz = getQuizForPage("/explore/ecosystem-map");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [showGraph, setShowGraph] = useState(true);
 
@@ -143,6 +149,18 @@ export default function EcosystemMapPage() {
           conectam.
         </p>
       </header>
+
+      {/* Learning Objectives */}
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Os principais players do ecossistema de pagamentos</li>
+          <li>Diferença entre adquirente, sub-adquirente e PSP</li>
+          <li>Como fintechs e bancos interagem</li>
+        </ul>
+      </div>
 
       {/* ================================================================= */}
       {/* STATS — Phase 1                                                   */}
@@ -837,6 +855,22 @@ export default function EcosystemMapPage() {
           ))}
         </div>
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
