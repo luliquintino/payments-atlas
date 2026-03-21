@@ -6,9 +6,10 @@ import Breadcrumb from "@/components/layout/Breadcrumb";
 import RelatedSection from "@/components/ui/RelatedSection";
 import TrailNavigation from "@/components/layout/TrailNavigation";
 import SearchOverlay from "@/components/ui/SearchOverlay";
+import GameProvider from "@/components/layout/GameProvider";
 
 export const metadata: Metadata = {
-  title: "Payments Knowledge System",
+  title: "Payments Academy",
   description:
     "Sistema de conhecimento, motor de diagnóstico e simulador de arquitetura para sistemas de pagamento",
 };
@@ -33,18 +34,20 @@ export default function RootLayout({
           className="flex-1 overflow-auto"
           style={{ marginLeft: "var(--sidebar-width)" }}
         >
-          <div className="px-8 py-6 max-w-[1400px] mx-auto">
-            <Suspense>
-              <Breadcrumb />
-            </Suspense>
-            {children}
-            <Suspense>
-              <TrailNavigation />
-            </Suspense>
-            <Suspense>
-              <RelatedSection />
-            </Suspense>
-          </div>
+          <GameProvider>
+            <div className="px-8 py-6 max-w-[1400px] mx-auto">
+              <Suspense>
+                <Breadcrumb />
+              </Suspense>
+              {children}
+              <Suspense>
+                <TrailNavigation />
+              </Suspense>
+              <Suspense>
+                <RelatedSection />
+              </Suspense>
+            </div>
+          </GameProvider>
         </main>
       </body>
     </html>
