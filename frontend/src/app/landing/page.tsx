@@ -58,11 +58,13 @@ const communityPoints = [
   "Reporte bugs e sugira funcionalidades",
 ];
 
+const GITHUB_URL = "https://github.com/luliquintino/payments-atlas";
+
 const footerLinks = [
   { label: "Home", href: "/" },
-  { label: "Glossario", href: "/knowledge/taxonomy" },
+  { label: "Glossário", href: "/glossary" },
   { label: "Simulador", href: "/simulation/payment-simulator" },
-  { label: "GitHub", href: "#" },
+  { label: "GitHub", href: GITHUB_URL },
 ];
 
 /* ── Page ──────────────────────────────────────────────────────── */
@@ -145,8 +147,7 @@ export default function LandingPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
               {[
                 { label: "Recursos", href: "#recursos" },
-                { label: "Comunidade", href: "#comunidade" },
-                { label: "Licenca", href: "#licenca" },
+                { label: "Open Source", href: "#comunidade" },
               ].map((link) => (
                 <a
                   key={link.label}
@@ -315,7 +316,7 @@ export default function LandingPage() {
               Comece Gratis
             </Link>
             <a
-              href="#"
+              href={GITHUB_URL}
               style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -352,7 +353,7 @@ export default function LandingPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
             gap: "1rem",
           }}
         >
@@ -509,7 +510,7 @@ export default function LandingPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(3, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
             gap: "1.5rem",
           }}
         >
@@ -588,137 +589,119 @@ export default function LandingPage() {
             border: "1px solid var(--border)",
           }}
         >
+          {/* GitHub icon */}
+          <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+            <div style={{
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "72px",
+              height: "72px",
+              borderRadius: "50%",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              fontSize: "2rem",
+            }}>
+              ⭐
+            </div>
+          </div>
+
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <h2
-              style={{
-                fontSize: "1.75rem",
-                fontWeight: 800,
-                color: "var(--foreground)",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Este projeto precisa de voce!
+            <h2 style={{ fontSize: "2rem", fontWeight: 800, color: "var(--foreground)", marginBottom: "0.75rem" }}>
+              100% Open Source
             </h2>
-            <p
-              style={{
-                fontSize: "1.05rem",
-                color: "var(--text-muted)",
-                maxWidth: "500px",
-                margin: "0 auto",
-                lineHeight: 1.6,
-              }}
-            >
-              Ajude a construir o maior material educacional de pagamentos em portugues
+            <p style={{ fontSize: "1.1rem", color: "var(--text-muted)", maxWidth: "550px", margin: "0 auto", lineHeight: 1.7 }}>
+              O Payments Academy é construído pela comunidade, para a comunidade. Todo o código, conteúdo e ferramentas são abertos e gratuitos.
             </p>
           </div>
 
-          <div
+          {/* GitHub repo card */}
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-              gap: "0.75rem",
+              display: "block",
+              padding: "1.5rem",
+              background: "var(--surface)",
+              borderRadius: "14px",
+              border: "1px solid var(--border)",
+              textDecoration: "none",
               marginBottom: "2rem",
+              transition: "border-color 0.2s, transform 0.2s",
             }}
           >
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "0.75rem" }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" style={{ color: "var(--foreground)", flexShrink: 0 }}>
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
+              <div>
+                <div style={{ fontSize: "1rem", fontWeight: 700, color: "var(--foreground)" }}>
+                  luliquintino/payments-atlas
+                </div>
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                  Plataforma educacional open-source sobre sistemas de pagamento
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              <span>TypeScript · Next.js · React</span>
+              <span>⭐ Star no GitHub</span>
+            </div>
+          </a>
+
+          {/* Contribution points */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.75rem", marginBottom: "2rem" }}>
             {communityPoints.map((point) => (
-              <div
-                key={point}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.6rem",
-                  padding: "0.85rem 1.15rem",
-                  background: "var(--surface)",
-                  borderRadius: "10px",
-                  border: "1px solid var(--border)",
-                  fontSize: "0.9rem",
-                  color: "var(--foreground)",
-                }}
-              >
+              <div key={point} style={{ display: "flex", alignItems: "center", gap: "0.6rem", padding: "0.85rem 1.15rem", background: "var(--surface)", borderRadius: "10px", border: "1px solid var(--border)", fontSize: "0.9rem", color: "var(--foreground)" }}>
                 <span style={{ color: "var(--primary)", fontWeight: 700, fontSize: "1rem" }}>+</span>
                 {point}
               </div>
             ))}
           </div>
 
-          <div style={{ textAlign: "center" }}>
+          {/* CTAs */}
+          <div style={{ textAlign: "center", display: "flex", justifyContent: "center", gap: "1rem", flexWrap: "wrap" as const }}>
             <a
-              href="#"
+              href={GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.8rem 2rem",
+                gap: "0.6rem",
+                padding: "0.9rem 2.5rem",
                 borderRadius: "12px",
                 background: "var(--gradient-primary)",
                 color: "#fff",
-                fontSize: "1rem",
+                fontSize: "1.05rem",
                 fontWeight: 600,
                 textDecoration: "none",
-                boxShadow: "0 4px 14px rgba(99,102,241,0.25)",
-                transition: "opacity 0.2s",
+                boxShadow: "0 4px 14px rgba(99,102,241,0.3)",
               }}
             >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+              </svg>
               Contribua no GitHub
             </a>
+            <Link
+              href="/auth/register"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "0.9rem 2.5rem",
+                borderRadius: "12px",
+                border: "1px solid var(--border)",
+                color: "var(--foreground)",
+                fontSize: "1.05rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Comece a Aprender
+            </Link>
           </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════
-          LICENSE SECTION
-         ═══════════════════════════════════════════════════════════ */}
-      <section
-        id="licenca"
-        style={{
-          maxWidth: "1000px",
-          margin: "0 auto",
-          padding: "0 1.5rem",
-          marginBottom: "4rem",
-        }}
-      >
-        <div
-          style={{
-            textAlign: "center",
-            padding: "2.5rem 2rem",
-            borderRadius: "16px",
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>📜</div>
-          <h3
-            style={{
-              fontSize: "1.35rem",
-              fontWeight: 700,
-              color: "var(--foreground)",
-              marginBottom: "0.75rem",
-            }}
-          >
-            Gratuito para ONGs, educacao e uso pessoal
-          </h3>
-          <p
-            style={{
-              fontSize: "1rem",
-              color: "var(--text-muted)",
-              lineHeight: 1.6,
-              marginBottom: "0.5rem",
-            }}
-          >
-            Use livremente para fins educacionais e sem fins lucrativos.
-          </p>
-          <p
-            style={{
-              fontSize: "0.95rem",
-              color: "var(--text-muted)",
-              lineHeight: 1.6,
-            }}
-          >
-            Uso comercial: entre em contato —{" "}
-            <span style={{ color: "var(--primary)", fontWeight: 600 }}>
-              luiza@payments.dev
-            </span>
-          </p>
         </div>
       </section>
 
