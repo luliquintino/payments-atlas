@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -8,6 +8,13 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // If already logged in, go straight to home
+  useEffect(() => {
+    if (localStorage.getItem("pks-logged-in") === "true" && localStorage.getItem("pks-user")) {
+      router.replace("/");
+    }
+  }, [router]);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
@@ -31,21 +38,26 @@ export default function LoginPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    // Check if user exists in localStorage
     const stored = localStorage.getItem("pks-user");
     if (!stored) {
-      setErrors({ general: "Email nao encontrado. Cadastre-se primeiro." });
+      setErrors({ general: "Email não encontrado. Cadastre-se primeiro." });
       return;
     }
 
     try {
       const user = JSON.parse(stored);
       if (user.email !== email.trim().toLowerCase()) {
-        setErrors({ general: "Email nao encontrado. Cadastre-se primeiro." });
+        setErrors({ general: "Email não encontrado. Cadastre-se primeiro." });
         return;
       }
 
-      // Login success
+      // Verify password
+      if (user.pw && atob(user.pw) !== password) {
+        setErrors({ general: "Senha incorreta. Tente novamente." });
+        return;
+      }
+
+      // Login success — redirect immediately
       localStorage.setItem("pks-logged-in", "true");
       router.push("/");
     } catch {

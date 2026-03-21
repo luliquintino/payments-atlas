@@ -47,9 +47,13 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!validate()) return;
 
+    // Simple hash for localStorage (not production-grade, just for demo)
+    const pwHash = btoa(password);
+
     const user = {
       name: name.trim(),
       email: email.trim().toLowerCase(),
+      pw: pwHash,
       createdAt: new Date().toISOString(),
     };
 
