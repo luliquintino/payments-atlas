@@ -1025,3 +1025,54 @@ body {
 }
 .animate-confetti { animation: confetti-pop 0.5s ease-out; }
 .animate-xp-bounce { animation: xp-bounce 0.4s ease-out; }
+
+/* ---- PWA & Mobile ---- */
+@media (max-width: 768px) {
+  .card, .card-flat, .card-glow {
+    border-radius: 10px;
+  }
+
+  .stat-card {
+    padding: 12px 8px;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (pointer: coarse) {
+  button, a, select, input {
+    min-height: 44px;
+  }
+
+  .quiz-option {
+    min-height: 48px;
+    padding: 14px 16px;
+  }
+}
+
+/* Button press feedback */
+@media (pointer: coarse) {
+  button:active, a:active {
+    transform: scale(0.97);
+    transition: transform 0.1s;
+  }
+}
+
+/* Safe area for notched devices */
+body {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Bottom nav spacing */
+.bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+  }
+
+  body {
+    padding-bottom: 80px;
+  }
+}

@@ -1,13 +1,15 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import Breadcrumb from "@/components/layout/Breadcrumb";
 import RelatedSection from "@/components/ui/RelatedSection";
 import TrailNavigation from "@/components/layout/TrailNavigation";
 import SearchOverlay from "@/components/ui/SearchOverlay";
 import GameProvider from "@/components/layout/GameProvider";
+import BottomNav from "@/components/layout/BottomNav";
+import InstallBanner from "@/components/layout/InstallBanner";
 
 const PUBLIC_ROUTES = ["/landing", "/auth"];
 
@@ -19,6 +21,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isPublic = isPublicRoute(pathname);
 
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
   if (isPublic) {
     return (
       <main style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
@@ -29,6 +37,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <InstallBanner />
       <Sidebar />
       <SearchOverlay />
       <main
@@ -50,6 +59,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </GameProvider>
       </main>
+      <BottomNav />
     </>
   );
 }
