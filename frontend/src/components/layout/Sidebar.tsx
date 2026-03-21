@@ -297,12 +297,12 @@ export function Sidebar() {
 
           {/* 2. Trilhas */}
           <Link
-            href="/"
+            href="/trilhas"
             style={{
-              ...linkStyle("__trilhas__"),
+              ...linkStyle("/trilhas"),
               marginTop: "0.125rem",
             }}
-            {...hoverProps("__trilhas__")}
+            {...hoverProps("/trilhas")}
           >
             <span style={{ fontSize: "1rem", width: "1.25rem", textAlign: "center", flexShrink: 0 }}>
               🗺️
