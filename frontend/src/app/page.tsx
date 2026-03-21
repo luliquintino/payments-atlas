@@ -32,7 +32,7 @@ export default function Home() {
   // Find the next unvisited page in a trail
   function getNextPage(trailId: string) {
     const trail = LEARNING_TRAILS.find((t) => t.id === trailId);
-    if (!trail) return trail?.pages[0];
+    if (!trail) return undefined;
     const next = trail.pages.find((p) => !progress.visitedPages.includes(p.path));
     return next || trail.pages[0];
   }
