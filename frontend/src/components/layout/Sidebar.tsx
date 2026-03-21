@@ -523,13 +523,23 @@ export function Sidebar() {
               🔥 {streak.count} dias
             </span>
           </div>
-          <Link
-            href="/progress"
-            className="text-[var(--primary)] hover:underline"
-            style={{ fontSize: "0.8125rem", fontWeight: 500 }}
-          >
-            Meu Progresso →
-          </Link>
+          <div className="flex items-center" style={{ gap: "0.5rem" }}>
+            <Link
+              href="/progress"
+              className="text-[var(--primary)] hover:underline"
+              style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+            >
+              Meu Progresso
+            </Link>
+            <span style={{ color: "var(--border)" }}>·</span>
+            <Link
+              href="/auth/profile"
+              className="text-[var(--text-muted)] hover:text-[var(--primary)] hover:underline"
+              style={{ fontSize: "0.8125rem", fontWeight: 500 }}
+            >
+              Perfil
+            </Link>
+          </div>
         </div>
       </aside>
     </>
