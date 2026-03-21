@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import {
   stablecoins,
   STABLECOIN_BACKING_COLORS,
@@ -87,6 +90,9 @@ const ALL_BACKING_TYPES: BackingFilter[] = [
 // ---------------------------------------------------------------------------
 
 export default function StablecoinSystemsPage() {
+  const quiz = getQuizForPage("/crypto/stablecoin-systems");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [search, setSearch] = useState("");
   const [activeBackingType, setActiveBackingType] =
     useState<BackingFilter>("Todos");
@@ -129,6 +135,17 @@ export default function StablecoinSystemsPage() {
           lastro, blockchains suportadas, taxas e status regulatorio.
         </p>
       </header>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Tipos de stablecoins e seus lastros</li>
+          <li>Riscos e regulação de stablecoins</li>
+          <li>Como funcionam stablecoins algorítmicas</li>
+        </ul>
+      </div>
 
       {/* ================================================================ */}
       {/* STATS                                                            */}
@@ -544,6 +561,22 @@ export default function StablecoinSystemsPage() {
           </a>
         ))}
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import { FEATURES_REGISTRY } from "@/data/features";
 import {
   ALL_LAYERS,
@@ -22,6 +25,9 @@ import type { Layer, Complexity } from "@/data/types";
  */
 
 export default function FeaturesPage() {
+  const quiz = getQuizForPage("/knowledge/features");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [search, setSearch] = useState("");
   const [selectedLayer, setSelectedLayer] = useState<Layer | "all">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -58,6 +64,17 @@ export default function FeaturesPage() {
           Catálogo pesquisável de features de pagamento em todas as camadas do stack.
           Clique em uma feature para ver detalhes, dependências e regras de negócio.
         </p>
+      </div>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Catálogo de features do stack de pagamentos</li>
+          <li>Como features se relacionam entre si</li>
+          <li>Complexidade e dependências de cada feature</li>
+        </ul>
       </div>
 
       {/* Stats */}
@@ -260,6 +277,22 @@ export default function FeaturesPage() {
           </a>
         ))}
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

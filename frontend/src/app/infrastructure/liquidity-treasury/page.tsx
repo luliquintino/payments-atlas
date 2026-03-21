@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import {
   treasuryFunctions,
   TREASURY_CATEGORY_COLORS,
@@ -51,6 +54,9 @@ const CATEGORY_DESCRIPTIONS: Record<TreasuryCategory, string> = {
 // ---------------------------------------------------------------------------
 
 export default function LiquidityTreasuryPage() {
+  const quiz = getQuizForPage("/infrastructure/liquidity-treasury");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
@@ -89,6 +95,17 @@ export default function LiquidityTreasuryPage() {
           mercado.
         </p>
       </header>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>O que é gestão de liquidez</li>
+          <li>Como funciona a tesouraria de instituições financeiras</li>
+          <li>Estratégias de gestão de caixa</li>
+        </ul>
+      </div>
 
       {/* ---- Stats ---- */}
       <div className="grid grid-cols-2 sm:grid-cols-4 animate-fade-in stagger-2" style={{ gap: "1rem", marginBottom: "1.5rem" }}>
@@ -321,6 +338,22 @@ export default function LiquidityTreasuryPage() {
           ))}
         </div>
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

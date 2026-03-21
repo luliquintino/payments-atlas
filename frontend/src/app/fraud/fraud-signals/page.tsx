@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import { fraudSignals, SignalCategory, SignalStrength } from "@/data/fraud-data";
 
 /**
@@ -87,6 +90,9 @@ const FP_RISK_CONFIG: Record<
 // ---------------------------------------------------------------------------
 
 export default function FraudSignalsPage() {
+  const quiz = getQuizForPage("/fraud/fraud-signals");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<"Todos" | SignalCategory>("Todos");
 
@@ -133,6 +139,17 @@ export default function FraudSignalsPage() {
           avaliação de força como indicador e risco de falso positivo.
         </p>
       </header>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Sinais e indicadores de fraude</li>
+          <li>Device fingerprinting e análise comportamental</li>
+          <li>Modelos de scoring de risco</li>
+        </ul>
+      </div>
 
       {/* ---- Stats ---- */}
       <div className="animate-fade-in stagger-1" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
@@ -379,6 +396,22 @@ export default function FraudSignalsPage() {
           </a>
         ))}
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

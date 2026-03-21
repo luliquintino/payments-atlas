@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import {
   RULES,
   RULE_TYPE_META,
@@ -17,6 +20,9 @@ import {
 // ---------------------------------------------------------------------------
 
 export default function BusinessRulesPage() {
+  const quiz = getQuizForPage("/knowledge/business-rules");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedTypes, setExpandedTypes] = useState<Set<RuleType>>(
     new Set(ALL_RULE_TYPES),
@@ -77,6 +83,17 @@ export default function BusinessRulesPage() {
           Regras de processamento de pagamento organizadas por tipo: validação, roteamento, risco,
           compliance e operacional.
         </p>
+      </div>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Regras de validação e roteamento</li>
+          <li>Limites e controles de risco</li>
+          <li>Regras de compliance e regulação</li>
+        </ul>
       </div>
 
       {/* Stats */}
@@ -272,6 +289,22 @@ export default function BusinessRulesPage() {
           </a>
         ))}
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

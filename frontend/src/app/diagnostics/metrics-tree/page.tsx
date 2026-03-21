@@ -2,6 +2,9 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
 /**
  * Árvore de Métricas — Visualização Hierárquica de Métricas de Pagamento
@@ -512,6 +515,9 @@ function TreeNode({
 /* -------------------------------------------------------------------------- */
 
 export default function MetricsTreePage() {
+  const quiz = getQuizForPage("/diagnostics/metrics-tree");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [search, setSearch] = useState("");
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     () => new Set(["payment-success", "authorization-rate", "conversion-rate", "fraud-rate", "settlement-rate"]),
@@ -601,6 +607,17 @@ export default function MetricsTreePage() {
           Visão hierárquica de {stats.total} métricas de pagamento. Explore como
           cada sub-métrica contribui para o desempenho geral.
         </p>
+      </div>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Hierarquia de KPIs de pagamentos</li>
+          <li>Taxa de autorização como métrica raiz</li>
+          <li>Como métricas se relacionam em cascata</li>
+        </ul>
       </div>
 
       {/* ================================================================== */}
@@ -978,6 +995,22 @@ export default function MetricsTreePage() {
           ))}
         </div>
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
 
       <div style={{ height: 40 }} />
     </div>

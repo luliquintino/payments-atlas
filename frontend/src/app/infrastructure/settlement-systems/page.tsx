@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import {
   settlementSystems,
   SETTLEMENT_TYPE_COLORS,
@@ -49,6 +52,9 @@ const TYPE_DESCRIPTIONS: Record<SettlementType, string> = {
 // ---------------------------------------------------------------------------
 
 export default function SettlementSystemsPage() {
+  const quiz = getQuizForPage("/infrastructure/settlement-systems");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [search, setSearch] = useState("");
   const [activeType, setActiveType] = useState<"Todos" | SettlementType>(
     "Todos"
@@ -101,6 +107,17 @@ export default function SettlementSystemsPage() {
           participantes.
         </p>
       </header>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Diferença entre liquidação bruta (RTGS) e líquida (DNS)</li>
+          <li>O papel de câmaras de compensação</li>
+          <li>Como funciona o clearing de transações</li>
+        </ul>
+      </div>
 
       {/* ---- Stat Cards ---- */}
       <div className="grid grid-cols-2 sm:grid-cols-4 animate-fade-in stagger-2" style={{ gap: "1rem", marginBottom: "1.5rem" }}>
@@ -368,6 +385,22 @@ export default function SettlementSystemsPage() {
           ))}
         </div>
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

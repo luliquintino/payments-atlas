@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import FeatureLink from "@/components/ui/FeatureLink";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 import { fraudPipelineStages, PipelineStage } from "@/data/fraud-data";
 
 /**
@@ -58,6 +61,9 @@ const RISK_LABELS: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function FraudMapPage() {
+  const quiz = getQuizForPage("/fraud/fraud-map");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(
     new Set(fraudPipelineStages.map((s) => s.name))
   );
@@ -85,6 +91,17 @@ export default function FraudMapPage() {
           processo de proteção contra fraudes em pagamentos.
         </p>
       </header>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>Pipeline de detecção de fraude em 4 estágios</li>
+          <li>Tipos de fraude em pagamentos</li>
+          <li>Controles de prevenção e mitigação</li>
+        </ul>
+      </div>
 
       {/* ---- Stats ---- */}
       <div className="animate-fade-in stagger-1" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
@@ -359,6 +376,22 @@ export default function FraudMapPage() {
           </a>
         ))}
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

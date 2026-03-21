@@ -2,6 +2,9 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
+import { getQuizForPage } from "@/data/quizzes";
+import PageQuiz from "@/components/ui/PageQuiz";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
 /**
  * Sistemas Bancários — Redesign focado em leitura e navegação.
@@ -190,6 +193,10 @@ function truncate(text: string, max: number) {
 // ---------------------------------------------------------------------------
 
 export default function BankingSystemsPage() {
+  const quiz = getQuizForPage("/infrastructure/banking-systems");
+  const { recordQuiz } = useGameProgress();
+  const [quizCompleted, setQuizCompleted] = useState(false);
+
   // All layers COLLAPSED by default
   const [expandedLayers, setExpandedLayers] = useState<Set<string>>(() => new Set());
   const [showFlow, setShowFlow] = useState(false);
@@ -320,6 +327,17 @@ export default function BankingSystemsPage() {
           Explore cada camada para entender os componentes, atores e exemplos reais.
         </p>
       </header>
+
+      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que você vai aprender
+        </p>
+        <ul>
+          <li>O que é um core banking system</li>
+          <li>Como funciona o livro-razão (ledger) bancário</li>
+          <li>Arquitetura de sistemas bancários modernos</li>
+        </ul>
+      </div>
 
       {/* ================================================================= */}
       {/* 2. STATS                                                          */}
@@ -993,6 +1011,22 @@ export default function BankingSystemsPage() {
           ))}
         </div>
       </div>
+
+      {quiz && !quizCompleted && (
+        <div style={{ marginTop: "2.5rem" }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
+            🧠 Teste seu Conhecimento
+          </h2>
+          <PageQuiz
+            questions={quiz.questions}
+            xpPerQuestion={5}
+            onComplete={(correct, total) => {
+              recordQuiz(quiz.pageRoute, correct, total);
+              setQuizCompleted(true);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
