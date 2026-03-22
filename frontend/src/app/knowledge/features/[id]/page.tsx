@@ -188,6 +188,93 @@ export default function FeatureDetailPage() {
             </div>
           )}
 
+          {/* Requisitos Técnicos */}
+          {feature.technicalRequirements && feature.technicalRequirements.length > 0 && (
+            <div className="card animate-fade-in stagger-3">
+              <h2 className="section-heading" style={{ marginBottom: 12 }}>
+                ⚙️ Requisitos Técnicos
+              </h2>
+              <ul style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {feature.technicalRequirements.map((req, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start text-sm"
+                    style={{ gap: 10, padding: "10px 12px", borderRadius: 8, background: "color-mix(in srgb, var(--surface-hover) 50%, transparent)" }}
+                  >
+                    <span style={{ color: "var(--primary)", fontWeight: 700, flexShrink: 0, marginTop: 1 }}>▸</span>
+                    <span className="leading-relaxed">{req}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Exemplo de Payload */}
+          {feature.payloadExample && (
+            <div className="card animate-fade-in stagger-4">
+              <h2 className="section-heading" style={{ marginBottom: 12 }}>
+                📦 Exemplo de Payload
+              </h2>
+              <div
+                style={{
+                  position: "relative",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "8px 14px",
+                    background: "var(--surface-hover)",
+                    borderBottom: "1px solid var(--border)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "var(--text-muted)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  <span>JSON</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(feature.payloadExample || "");
+                    }}
+                    style={{
+                      background: "none",
+                      border: "1px solid var(--border)",
+                      borderRadius: 6,
+                      padding: "3px 10px",
+                      fontSize: 11,
+                      color: "var(--text-muted)",
+                      cursor: "pointer",
+                      fontWeight: 500,
+                    }}
+                  >
+                    Copiar
+                  </button>
+                </div>
+                <pre
+                  style={{
+                    padding: "16px",
+                    margin: 0,
+                    overflowX: "auto",
+                    fontSize: "0.82rem",
+                    lineHeight: 1.6,
+                    fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', monospace",
+                    color: "var(--foreground)",
+                    background: "var(--background)",
+                  }}
+                >
+                  <code>{feature.payloadExample}</code>
+                </pre>
+              </div>
+            </div>
+          )}
+
           {/* Dependências (grafo mini) */}
           <div className="card animate-fade-in stagger-4">
             <h2 className="section-heading" style={{ marginBottom: 12 }}>
