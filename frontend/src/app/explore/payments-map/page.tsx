@@ -5,12 +5,13 @@ import Link from "next/link";
 import { getQuizForPage } from "@/data/quizzes";
 import PageQuiz from "@/components/ui/PageQuiz";
 import { useGameProgress } from "@/hooks/useGameProgress";
+import { getFeatureById } from "@/data/features";
 
 /**
  * Mapa de Pagamentos — Mapa visual interativo em camadas da arquitetura de pagamentos.
  *
- * Clique em uma camada para expandir e ver detalhes. Features são clicáveis.
- * Inclui modo de visualização de fluxo animado, busca por features e stats.
+ * Redesigned: clear layer overview, readable feature cards with descriptions,
+ * vertical transaction flow, and improved search/filter UX.
  */
 
 // ---------------------------------------------------------------------------
@@ -151,13 +152,22 @@ const paymentLayers: PaymentLayer[] = [
 ];
 
 const FLOW_STEPS = [
-  { layer: "experience", label: "Cliente inicia pagamento", delay: 0 },
-  { layer: "orchestration", label: "Roteamento seleciona adquirente", delay: 1 },
-  { layer: "processing", label: "Autorização processada", delay: 2 },
-  { layer: "network", label: "Rede valida transação", delay: 3 },
-  { layer: "banking", label: "Emissor aprova", delay: 4 },
-  { layer: "settlement", label: "Fundos liquidados", delay: 5 },
+  { layer: "experience", label: "Cliente inicia pagamento", description: "O portador insere dados de pagamento no checkout do merchant. A interface captura número do cartão, validade e CVV (ou seleciona carteira digital)." },
+  { layer: "orchestration", label: "Roteamento seleciona adquirente", description: "A camada de orquestração avalia regras de roteamento, seleciona o melhor adquirente com base em custo, taxa de aprovação e disponibilidade." },
+  { layer: "processing", label: "Autorização processada", description: "O processador tokeniza dados sensíveis, executa verificações antifraude e envia a mensagem de autorização ao adquirente." },
+  { layer: "network", label: "Rede valida transação", description: "A bandeira (Visa, Mastercard, etc.) roteia a mensagem ISO 8583 do adquirente até o banco emissor do cartão." },
+  { layer: "banking", label: "Emissor aprova", description: "O banco emissor verifica saldo/crédito disponível, aplica regras de risco e retorna aprovação ou recusa ao adquirente." },
+  { layer: "settlement", label: "Fundos liquidados", description: "Ao final do ciclo (T+1 ou T+2), os fundos são compensados entre instituições e repassados ao lojista." },
 ];
+
+const LAYER_SHORT_DESC: Record<string, string> = {
+  experience: "Onde o cliente interage com o checkout e insere dados de pagamento",
+  orchestration: "Decide qual provedor processar a transação com base em regras inteligentes",
+  processing: "Executa autorização, captura, tokenização e verificações de fraude",
+  network: "Roteia mensagens entre adquirente e emissor via bandeiras de cartão",
+  banking: "Bancos que aprovam transações, gerenciam contas e subscrevem risco",
+  settlement: "Movimentação final de fundos, clearing e repasse ao lojista",
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -183,7 +193,7 @@ function highlightText(text: string, query: string): React.ReactNode {
 // ---------------------------------------------------------------------------
 
 export default function PaymentsMapPage() {
-  const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set());
+  const [activeLayer, setActiveLayer] = useState<string | null>(null);
   const [showFlow, setShowFlow] = useState(false);
   const [flowStep, setFlowStep] = useState(-1);
   const [flowComplete, setFlowComplete] = useState(false);
@@ -208,24 +218,29 @@ export default function PaymentsMapPage() {
       l.features.forEach(f => {
         if (f.name.toLowerCase().includes(searchQuery)) ids.add(l.id);
       });
+      l.examples.forEach(ex => {
+        if (ex.toLowerCase().includes(searchQuery)) ids.add(l.id);
+      });
     });
     return ids;
   }, [searchQuery]);
 
-  const toggleLayer = (id: string) => {
-    setExpandedLayers(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  // Filtered layers
+  const visibleLayers = useMemo(() => {
+    if (!activeLayer && !searchMatchLayerIds) return paymentLayers;
+    return paymentLayers.filter(l => {
+      if (activeLayer && l.id !== activeLayer) return false;
+      if (searchMatchLayerIds && !searchMatchLayerIds.has(l.id)) return false;
+      return true;
     });
-  };
+  }, [activeLayer, searchMatchLayerIds]);
 
-  const expandAll = () => setExpandedLayers(new Set(paymentLayers.map(l => l.id)));
-  const collapseAll = () => setExpandedLayers(new Set());
+  const visibleFeatureCount = visibleLayers.reduce((a, l) => a + l.features.length, 0);
 
   const startFlowAnimation = () => {
     setShowFlow(true);
-    setExpandedLayers(new Set());
+    setActiveLayer(null);
+    setSearch("");
     setFlowStep(0);
     setFlowComplete(false);
 
@@ -234,8 +249,6 @@ export default function PaymentsMapPage() {
       setTimeout(() => {
         if (i < FLOW_STEPS.length) {
           setFlowStep(i);
-          const el = document.getElementById(`layer-${FLOW_STEPS[i].layer}`);
-          el?.scrollIntoView({ behavior: "smooth", block: "center" });
         } else {
           setFlowComplete(true);
           setTimeout(() => {
@@ -246,37 +259,33 @@ export default function PaymentsMapPage() {
         }
       }, i * stepDelay);
     }
-
-    setTimeout(() => {
-      const el = document.getElementById(`layer-${FLOW_STEPS[0].layer}`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
   };
 
   return (
     <div style={{ maxWidth: 960, margin: "0 auto" }}>
-      {/* Header */}
+
+      {/* ── Section 1: Header + Learning Objectives ── */}
       <div className="page-header animate-fade-in" style={{ marginBottom: 24 }}>
-        <h1 className="page-title" style={{ marginBottom: 8 }}>🗺️ Mapa de Pagamentos</h1>
+        <h1 className="page-title" style={{ marginBottom: 8 }}>Mapa de Pagamentos</h1>
         <p className="page-description">
-          Uma visão interativa em camadas da stack moderna de pagamentos. Clique em
-          uma camada para explorar suas features e conexões.
+          Uma visão interativa em camadas da stack moderna de pagamentos. Explore
+          cada camada, entenda suas features e veja como uma transação flui do
+          checkout até a liquidação.
         </p>
       </div>
 
-      {/* Learning Objectives */}
-      <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
-        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          O que você vai aprender
+      <div className="learning-objectives" style={{ marginBottom: 24 }}>
+        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          O que voce vai aprender
         </p>
         <ul>
-          <li>Como o stack de pagamentos é organizado em 6 camadas</li>
-          <li>O papel de cada camada no processamento</li>
-          <li>Como as camadas se conectam entre si</li>
+          <li>Como o stack de pagamentos e organizado em 6 camadas</li>
+          <li>O papel de cada camada no processamento de uma transacao</li>
+          <li>Como as camadas se conectam entre si num fluxo real</li>
         </ul>
       </div>
 
-      {/* Stats overview */}
+      {/* ── Section 2: Stats ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 animate-fade-in stagger-1" style={{ gap: 12, marginBottom: 24 }}>
         {[
           { label: "Camadas", value: "6", icon: "📐", color: "#8b5cf6" },
@@ -291,10 +300,450 @@ export default function PaymentsMapPage() {
         ))}
       </div>
 
-      {/* Controls bar */}
-      <div className="animate-fade-in stagger-2" style={{ marginBottom: 20 }}>
-        <div className="flex items-center" style={{ gap: 10, marginBottom: 12 }}>
-          {/* Flow animation button */}
+      {/* ── Section: Como ler este mapa (moved up as callout) ── */}
+      <div
+        className="animate-fade-in stagger-2"
+        style={{
+          padding: 20,
+          marginBottom: 28,
+          borderRadius: 12,
+          border: "1px solid var(--border)",
+          background: "var(--surface)",
+          display: "flex",
+          gap: 16,
+          alignItems: "flex-start",
+        }}
+      >
+        <span style={{
+          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+          background: "rgba(99,102,241,0.1)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 20,
+        }}>
+          📖
+        </span>
+        <div>
+          <h3 style={{ fontWeight: 600, fontSize: 15, marginBottom: 6, color: "var(--foreground)" }}>Como ler este mapa</h3>
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            Cada camada se apoia na camada abaixo dela. Uma transacao de pagamento flui
+            do topo (Experiencia) passando por todas as camadas ate que os fundos sejam
+            liquidados na base. Explore cada camada para ver suas features, exemplos de
+            produtos e fluxos relacionados.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Section 3: Entenda as 6 Camadas (overview grid) ── */}
+      <div className="animate-fade-in stagger-2" style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: "var(--foreground)" }}>
+          Entenda as 6 Camadas
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-3" style={{ gap: 12 }}>
+          {paymentLayers.map((layer, i) => {
+            const lm = LAYER_META[layer.id];
+            return (
+              <button
+                key={layer.id}
+                onClick={() => {
+                  const el = document.getElementById(`layer-detail-${layer.id}`);
+                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
+                style={{
+                  padding: 16,
+                  borderRadius: 12,
+                  border: `1px solid ${lm.border}`,
+                  background: "var(--surface)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "all 0.2s",
+                  display: "flex",
+                  gap: 12,
+                  alignItems: "flex-start",
+                }}
+                className="interactive-hover"
+              >
+                <span style={{
+                  width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                  background: lm.bg,
+                  border: `1px solid ${lm.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 18,
+                }}>
+                  {lm.icon}
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{
+                    fontSize: 13, fontWeight: 700, color: "var(--foreground)",
+                    marginBottom: 2,
+                    display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, color: lm.color,
+                      background: lm.bg, padding: "1px 6px", borderRadius: 4,
+                    }}>
+                      {i + 1}
+                    </span>
+                    {layer.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                    {LAYER_SHORT_DESC[layer.id]}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Section 4: Search + Filters ── */}
+      <div className="animate-fade-in stagger-3" style={{ marginBottom: 24 }}>
+        {/* Search bar */}
+        <div style={{ position: "relative", marginBottom: 14 }}>
+          <span style={{
+            position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
+            fontSize: 16, color: "var(--text-muted)", pointerEvents: "none",
+          }}>
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Buscar features, camadas ou exemplos..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "14px 44px 14px 44px",
+              borderRadius: 14,
+              border: "2px solid var(--border)",
+              background: "var(--surface)",
+              fontSize: 15,
+              outline: "none",
+              color: "var(--foreground)",
+              transition: "border-color 0.2s",
+            }}
+            onFocus={(e) => { e.target.style.borderColor = "var(--primary)"; }}
+            onBlur={(e) => { e.target.style.borderColor = "var(--border)"; }}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              style={{
+                position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)",
+                background: "none", border: "none", cursor: "pointer",
+                fontSize: 16, color: "var(--text-muted)",
+              }}
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Layer filter pills */}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+          <button
+            onClick={() => setActiveLayer(null)}
+            style={{
+              padding: "8px 16px",
+              borderRadius: 999,
+              border: !activeLayer ? "2px solid var(--primary)" : "1px solid var(--border)",
+              background: !activeLayer ? "rgba(99,102,241,0.1)" : "var(--surface)",
+              color: !activeLayer ? "var(--primary)" : "var(--text-secondary)",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            Todas
+          </button>
+          {paymentLayers.map(l => {
+            const lm = LAYER_META[l.id];
+            const isActive = activeLayer === l.id;
+            return (
+              <button
+                key={l.id}
+                onClick={() => setActiveLayer(isActive ? null : l.id)}
+                style={{
+                  padding: "8px 14px",
+                  borderRadius: 999,
+                  border: isActive ? `2px solid ${lm.color}` : "1px solid var(--border)",
+                  background: isActive ? lm.bg : "var(--surface)",
+                  color: isActive ? lm.color : "var(--text-secondary)",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  transition: "all 0.2s",
+                }}
+              >
+                <span style={{
+                  width: 8, height: 8, borderRadius: "50%",
+                  background: lm.color, flexShrink: 0,
+                }} />
+                {l.name}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Count indicator */}
+        <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+          Mostrando <strong style={{ color: "var(--foreground)" }}>{visibleFeatureCount}</strong> features
+          em <strong style={{ color: "var(--foreground)" }}>{visibleLayers.length}</strong> camada{visibleLayers.length !== 1 ? "s" : ""}
+          {searchQuery && (
+            <span> para &ldquo;<strong style={{ color: "var(--primary)" }}>{search}</strong>&rdquo;</span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Section 5: Camadas Detalhadas (main content) ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 24, marginBottom: 40 }}>
+        {visibleLayers.map((layer, idx) => {
+          const lm = LAYER_META[layer.id];
+          const layerIndex = paymentLayers.findIndex(l => l.id === layer.id);
+
+          return (
+            <div
+              key={layer.id}
+              id={`layer-detail-${layer.id}`}
+              className="animate-fade-in"
+              style={{
+                borderRadius: 16,
+                overflow: "hidden",
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                transition: "all 0.3s",
+              }}
+            >
+              {/* Colored top border */}
+              <div style={{ height: 4, background: lm.gradient }} />
+
+              {/* Layer header */}
+              <div style={{
+                padding: "20px 24px 16px 24px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 14,
+              }}>
+                <span style={{
+                  width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                  background: lm.bg, border: `1px solid ${lm.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 22,
+                }}>
+                  {lm.icon}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    marginBottom: 6,
+                  }}>
+                    <h2 style={{
+                      fontSize: 18, fontWeight: 700, color: "var(--foreground)",
+                      textTransform: "uppercase", letterSpacing: "0.02em",
+                    }}>
+                      {searchQuery ? highlightText(layer.name, searchQuery) : layer.name}
+                    </h2>
+                    <span style={{
+                      fontSize: 11, fontWeight: 600,
+                      color: lm.color, background: lm.bg,
+                      padding: "2px 10px", borderRadius: 999,
+                      border: `1px solid ${lm.border}`,
+                      whiteSpace: "nowrap",
+                    }}>
+                      Camada {layerIndex + 1}
+                    </span>
+                  </div>
+                  <p style={{
+                    fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6,
+                  }}>
+                    {searchQuery ? highlightText(layer.description, searchQuery) : layer.description}
+                  </p>
+                </div>
+              </div>
+
+              {/* Features section */}
+              <div style={{ padding: "0 24px 20px 24px" }}>
+                <h3 style={{
+                  fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+                  letterSpacing: "0.06em", color: "var(--text-secondary)",
+                  marginBottom: 12,
+                  paddingBottom: 8,
+                  borderBottom: "1px solid var(--border)",
+                }}>
+                  Features desta camada
+                </h3>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {layer.features.map((feature) => {
+                    const featureData = feature.featureId ? getFeatureById(feature.featureId) : null;
+                    const href = feature.featureId
+                      ? `/knowledge/features/${feature.featureId}`
+                      : `/knowledge/features`;
+                    return (
+                      <Link
+                        key={feature.name}
+                        href={href}
+                        className="interactive-hover"
+                        style={{
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 12,
+                          padding: "12px 16px",
+                          borderRadius: 12,
+                          background: "var(--background)",
+                          border: "1px solid var(--border)",
+                          textDecoration: "none",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <span style={{
+                          width: 8, height: 8, borderRadius: "50%",
+                          background: lm.color, flexShrink: 0,
+                          marginTop: 5,
+                        }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: 14, fontWeight: 600, color: "var(--foreground)",
+                            marginBottom: featureData?.description ? 3 : 0,
+                          }}>
+                            {searchQuery ? highlightText(feature.name, searchQuery) : feature.name}
+                          </div>
+                          {featureData?.description && (
+                            <div style={{
+                              fontSize: 12, color: "var(--text-secondary)",
+                              lineHeight: 1.5,
+                              display: "-webkit-box",
+                              WebkitLineClamp: 2,
+                              WebkitBoxOrient: "vertical" as const,
+                              overflow: "hidden",
+                            }}>
+                              {featureData.description}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{
+                          fontSize: 12, color: lm.color, fontWeight: 500,
+                          whiteSpace: "nowrap", flexShrink: 0,
+                          marginTop: 2,
+                        }}>
+                          Ver detalhes →
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Examples + Related Flows */}
+              <div style={{
+                padding: "16px 24px 20px 24px",
+                borderTop: "1px solid var(--border)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}>
+                {/* Examples */}
+                <div>
+                  <h3 style={{
+                    fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+                    letterSpacing: "0.06em", color: "var(--text-secondary)",
+                    marginBottom: 10,
+                  }}>
+                    Exemplos no mercado
+                  </h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {layer.examples.map(ex => (
+                      <span
+                        key={ex}
+                        style={{
+                          fontSize: 13,
+                          padding: "6px 14px",
+                          borderRadius: 999,
+                          background: lm.bg,
+                          border: `1px solid ${lm.border}`,
+                          color: lm.color,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {searchQuery ? highlightText(ex, searchQuery) : ex}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Related Flows */}
+                <div>
+                  <h3 style={{
+                    fontSize: 12, fontWeight: 700, textTransform: "uppercase",
+                    letterSpacing: "0.06em", color: "var(--text-secondary)",
+                    marginBottom: 10,
+                  }}>
+                    Fluxos relacionados
+                  </h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {layer.relatedFlows.map(flow => (
+                      <Link
+                        key={flow.name}
+                        href={flow.href}
+                        className="interactive-hover"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          padding: "8px 16px",
+                          borderRadius: 10,
+                          border: "1px solid var(--border)",
+                          color: "var(--foreground)",
+                          fontSize: 13,
+                          fontWeight: 500,
+                          textDecoration: "none",
+                          background: "var(--background)",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        🔄 {flow.name}
+                        <span style={{ color: lm.color, fontSize: 12 }}>→</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        {visibleLayers.length === 0 && (
+          <div style={{
+            padding: 40,
+            textAlign: "center",
+            color: "var(--text-secondary)",
+            fontSize: 14,
+          }}>
+            Nenhuma camada encontrada para &ldquo;{search}&rdquo;.
+            <button
+              onClick={() => { setSearch(""); setActiveLayer(null); }}
+              style={{
+                background: "none", border: "none", color: "var(--primary)",
+                cursor: "pointer", fontWeight: 600, marginLeft: 4,
+              }}
+            >
+              Limpar filtros
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* ── Section 6: Fluxo de uma Transacao (vertical stepped) ── */}
+      <div className="animate-fade-in" style={{ marginBottom: 40 }}>
+        <div style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          marginBottom: 20,
+        }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)" }}>
+            Fluxo de uma Transacao
+          </h2>
           <button
             onClick={startFlowAnimation}
             disabled={showFlow}
@@ -303,78 +752,20 @@ export default function PaymentsMapPage() {
               padding: "10px 20px",
               borderRadius: 12,
               border: "none",
-              background: "linear-gradient(135deg, var(--primary), var(--primary-light))",
+              background: "linear-gradient(135deg, var(--primary), var(--primary-light, #6366f1))",
               color: "#fff",
               fontSize: 13,
               fontWeight: 600,
               cursor: showFlow ? "not-allowed" : "pointer",
-              opacity: showFlow ? 0.5 : 1,
+              opacity: showFlow ? 0.6 : 1,
               transition: "all 0.2s",
             }}
           >
-            {showFlow ? "Animando fluxo..." : "▶ Ver fluxo completo"}
+            {showFlow ? "Animando..." : "▶ Animar fluxo"}
           </button>
-
-          {/* Expand / Collapse */}
-          {!showFlow && (
-            <div className="flex items-center" style={{ gap: 6 }}>
-              <button
-                onClick={expandAll}
-                className="interactive-hover"
-                style={{ fontSize: 11, padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)" }}
-              >
-                Expandir Tudo
-              </button>
-              <button
-                onClick={collapseAll}
-                className="interactive-hover"
-                style={{ fontSize: 11, padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface)" }}
-              >
-                Recolher
-              </button>
-            </div>
-          )}
-
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--text-muted)" }}>
-            Clique em uma camada para expandir
-          </span>
         </div>
 
-        {/* Search */}
-        {!showFlow && (
-          <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 14, color: "var(--text-muted)" }}>🔍</span>
-            <input
-              type="text"
-              placeholder="Buscar features, camadas..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px 10px 38px",
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                fontSize: 13,
-                outline: "none",
-                color: "var(--foreground)",
-              }}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                style={{
-                  position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
-                  background: "none", border: "none", cursor: "pointer", fontSize: 14, color: "var(--text-muted)",
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Flow progress bar */}
+        {/* Flow progress bar (during animation) */}
         {showFlow && (
           <div
             className="animate-fade-in"
@@ -383,23 +774,25 @@ export default function PaymentsMapPage() {
               borderRadius: 12,
               border: "1px solid var(--border)",
               background: "var(--surface)",
+              marginBottom: 20,
             }}
           >
-            <div className="flex items-center" style={{ gap: 4, marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
               {FLOW_STEPS.map((step, i) => {
                 const isActive = flowStep === i;
                 const isCompleted = flowStep > i || flowComplete;
+                const lm = LAYER_META[step.layer];
                 return (
-                  <div key={step.layer} className="flex items-center" style={{ flex: 1 }}>
+                  <div key={step.layer} style={{ display: "flex", alignItems: "center", flex: 1 }}>
                     <div style={{
                       width: 28, height: 28, borderRadius: "50%",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: 11, fontWeight: 700, flexShrink: 0,
                       transition: "all 0.5s",
-                      background: isCompleted ? "#10b981" : isActive ? "var(--primary-light)" : "var(--surface-hover)",
-                      color: isCompleted || isActive ? "#fff" : "var(--text-muted)",
-                      transform: isActive ? "scale(1.15)" : isCompleted ? "scale(1)" : "scale(0.9)",
-                      boxShadow: isActive ? "0 0 12px rgba(37,99,235,0.3)" : "none",
+                      background: isCompleted ? "#10b981" : isActive ? lm.color : "var(--surface-hover, var(--border))",
+                      color: isCompleted || isActive ? "#fff" : "var(--text-muted, var(--text-secondary))",
+                      transform: isActive ? "scale(1.15)" : "scale(1)",
+                      boxShadow: isActive ? `0 0 12px ${lm.color}55` : "none",
                     }}>
                       {isCompleted ? "✓" : i + 1}
                     </div>
@@ -407,13 +800,13 @@ export default function PaymentsMapPage() {
                       <div style={{
                         flex: 1, height: 3, margin: "0 4px",
                         borderRadius: 999, overflow: "hidden",
-                        background: "var(--surface-hover)",
+                        background: "var(--border)",
                       }}>
                         <div style={{
                           height: "100%", borderRadius: 999,
                           transition: "all 0.7s ease-out",
                           width: flowStep > i || flowComplete ? "100%" : flowStep === i ? "50%" : "0%",
-                          background: flowStep > i || flowComplete ? "#10b981" : "var(--primary-light)",
+                          background: flowStep > i || flowComplete ? "#10b981" : lm.color,
                         }} />
                       </div>
                     )}
@@ -421,325 +814,125 @@ export default function PaymentsMapPage() {
                 );
               })}
             </div>
-
             <div style={{ textAlign: "center" }}>
               {flowComplete ? (
-                <span style={{ fontSize: 13, fontWeight: 600, color: "#10b981" }}>
-                  ✅ Fluxo completo — transação processada com sucesso
+                <span style={{ fontSize: 14, fontWeight: 600, color: "#10b981" }}>
+                  Transacao processada com sucesso!
                 </span>
               ) : (
-                <span style={{ fontSize: 13, fontWeight: 500 }}>
-                  <span style={{ color: "var(--primary-light)", fontWeight: 600 }}>Etapa {flowStep + 1}/{FLOW_STEPS.length}:</span>{" "}
+                <span style={{ fontSize: 14, fontWeight: 500 }}>
+                  <span style={{ color: LAYER_META[FLOW_STEPS[flowStep]?.layer]?.color || "var(--primary)", fontWeight: 600 }}>
+                    Etapa {flowStep + 1}/{FLOW_STEPS.length}:
+                  </span>{" "}
                   {FLOW_STEPS[flowStep]?.label}
                 </span>
               )}
             </div>
           </div>
         )}
-      </div>
 
-      {/* Layer legend (inline color dots) */}
-      <div className="flex items-center animate-fade-in stagger-2" style={{ gap: 14, marginBottom: 16, flexWrap: "wrap" }}>
-        {paymentLayers.map(l => {
-          const lm = LAYER_META[l.id];
-          return (
-            <div key={l.id} className="flex items-center" style={{ gap: 5 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 3, background: lm.color }} />
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{l.name}</span>
-            </div>
-          );
-        })}
-      </div>
+        {/* Vertical stepped flow */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+          {FLOW_STEPS.map((step, i) => {
+            const lm = LAYER_META[step.layer];
+            const isActive = showFlow && flowStep === i;
+            const isCompleted = showFlow && (flowStep > i || flowComplete);
+            const isUpcoming = showFlow && flowStep < i && !flowComplete;
 
-      {/* Layer stack */}
-      <div className="animate-fade-in stagger-3" style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-        {paymentLayers.map((layer, index) => {
-          const lm = LAYER_META[layer.id];
-          const isExpanded = expandedLayers.has(layer.id);
-          const flowIndex = FLOW_STEPS.findIndex(s => s.layer === layer.id);
-          const isFlowActive = showFlow && flowStep === flowIndex && !flowComplete;
-          const isFlowCompleted = showFlow && (flowComplete || flowIndex < flowStep);
-          const isFlowUpcoming = showFlow && flowIndex > flowStep && !flowComplete;
-
-          // Search dimming
-          const isSearching = searchMatchLayerIds !== null;
-          const isSearchMatch = !searchMatchLayerIds || searchMatchLayerIds.has(layer.id);
-
-          return (
-            <div key={layer.id} style={{ opacity: isSearching && !isSearchMatch ? 0.3 : isFlowUpcoming ? 0.5 : 1, transition: "all 0.3s" }}>
-              {/* Connector arrow during flow */}
-              {showFlow && index > 0 && (
-                <div className="flex justify-center" style={{ padding: "4px 0", position: "relative", zIndex: 10 }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", opacity: flowIndex <= flowStep || flowComplete ? 1 : flowIndex === flowStep + 1 ? 0.6 : 0.2, transition: "all 0.5s" }}>
-                    <div style={{ width: 2, height: 12, borderRadius: 999, background: flowIndex <= flowStep || flowComplete ? "#10b981" : "var(--border)", transition: "all 0.5s" }} />
-                    <div style={{ fontSize: 10, color: flowIndex <= flowStep || flowComplete ? "#10b981" : "var(--border)", transition: "all 0.5s" }}>▼</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Normal gap when not animating */}
-              {!showFlow && index > 0 && <div style={{ height: 12 }} />}
-
-              <div
-                id={`layer-${layer.id}`}
-                style={{
-                  borderRadius: 12,
-                  overflow: "hidden",
-                  border: isFlowActive
-                    ? `2px solid ${lm.color}`
-                    : isFlowCompleted
-                    ? "2px solid #10b98166"
-                    : `1px solid var(--border)`,
-                  boxShadow: isFlowActive ? `0 4px 20px ${lm.color}33` : "none",
-                  transform: isFlowActive ? "scale(1.01)" : isFlowUpcoming ? "scale(0.98)" : "scale(1)",
-                  transition: "all 0.5s ease-out",
-                }}
-              >
-                {/* Layer header */}
-                <button
-                  onClick={() => { if (!showFlow) toggleLayer(layer.id); }}
-                  className="w-full text-left"
-                  style={{
-                    padding: "16px 20px",
-                    background: lm.gradient,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    cursor: showFlow ? "default" : "pointer",
-                    border: "none",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {/* Flow status or layer number */}
-                  {showFlow ? (
-                    isFlowCompleted ? (
-                      <span style={{ width: 28, height: 28, borderRadius: "50%", background: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", flexShrink: 0 }}>✓</span>
-                    ) : isFlowActive ? (
-                      <span style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff", animation: "pulse 1.5s infinite" }} />
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "monospace" }}>C{index + 1}</span>
-                    )
-                  ) : (
-                    <span style={{
-                      width: 32, height: 32, borderRadius: 10,
-                      background: "rgba(255,255,255,0.15)",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 16, flexShrink: 0,
-                    }}>
-                      {lm.icon}
-                    </span>
-                  )}
-
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>{layer.name}</div>
-                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{layer.features.length} features · {layer.examples.length} exemplos</div>
-                  </div>
-
-                  {isFlowActive && (
-                    <span style={{
-                      fontSize: 12, fontWeight: 500, color: "#fff",
-                      background: "rgba(255,255,255,0.15)",
-                      padding: "4px 12px", borderRadius: 999,
-                    }}>
-                      ← {FLOW_STEPS[flowStep]?.label}
-                    </span>
-                  )}
-
-                  {!showFlow && (
-                    <span style={{
-                      fontSize: 16, color: "rgba(255,255,255,0.6)",
-                      transition: "transform 0.2s",
-                      transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                    }}>▾</span>
-                  )}
-                </button>
-
-                {/* Layer body — always visible summary */}
-                <div style={{ padding: "16px 20px", background: "var(--surface)" }}>
-                  <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.5 }}>
-                    {layer.description}
-                  </p>
-
-                  {/* Features grid */}
-                  <div style={{ marginBottom: 12 }}>
-                    <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 8 }}>
-                      Features Principais
-                    </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 8 }}>
-                      {layer.features.map((feature) => {
-                        const href = feature.featureId
-                          ? `/knowledge/features/${feature.featureId}`
-                          : `/knowledge/features`;
-                        return (
-                          <Link
-                            key={feature.name}
-                            href={href}
-                            className="interactive-hover"
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 8,
-                              fontSize: 13,
-                              padding: "10px 14px",
-                              borderRadius: 10,
-                              background: "var(--surface)",
-                              border: "1px solid var(--border)",
-                              color: "var(--foreground)",
-                              textDecoration: "none",
-                              transition: "all 0.2s",
-                            }}
-                          >
-                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: lm.color, flexShrink: 0 }} />
-                            <span style={{ flex: 1 }}>{searchQuery ? highlightText(feature.name, searchQuery) : feature.name}</span>
-                            <span style={{ fontSize: 12, color: "var(--text-muted)", opacity: 0.4 }}>→</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Expandable content — CSS Grid trick */}
+            return (
+              <div key={step.layer}>
+                <div style={{
+                  display: "flex",
+                  gap: 16,
+                  alignItems: "flex-start",
+                  opacity: isUpcoming ? 0.4 : 1,
+                  transition: "all 0.5s",
+                }}>
+                  {/* Step indicator column */}
                   <div style={{
-                    display: "grid",
-                    gridTemplateRows: isExpanded ? "1fr" : "0fr",
-                    transition: "grid-template-rows 0.3s ease",
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                    flexShrink: 0, width: 40,
                   }}>
-                    <div style={{ overflow: "hidden" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 8 }}>
-                        {/* Related flows */}
-                        <div>
-                          <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 8 }}>
-                            Fluxos que usam esta camada
-                          </h3>
-                          <div className="flex" style={{ flexWrap: "wrap", gap: 8 }}>
-                            {layer.relatedFlows.map(flow => (
-                              <Link
-                                key={flow.name}
-                                href={flow.href}
-                                style={{
-                                  display: "inline-flex",
-                                  alignItems: "center",
-                                  gap: 6,
-                                  padding: "6px 14px",
-                                  borderRadius: 8,
-                                  border: `1px solid ${lm.color}44`,
-                                  color: lm.color,
-                                  fontSize: 13,
-                                  fontWeight: 500,
-                                  textDecoration: "none",
-                                  background: lm.bg,
-                                  transition: "all 0.2s",
-                                }}
-                                className="interactive-hover"
-                              >
-                                🔄 {flow.name}
-                              </Link>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Examples */}
-                        <div>
-                          <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 8 }}>
-                            Exemplos de produtos
-                          </h3>
-                          <div className="flex" style={{ flexWrap: "wrap", gap: 6 }}>
-                            {layer.examples.map(ex => (
-                              <span
-                                key={ex}
-                                style={{
-                                  fontSize: 12,
-                                  padding: "4px 10px",
-                                  borderRadius: 999,
-                                  border: "1px solid var(--border)",
-                                  color: "var(--text-muted)",
-                                }}
-                              >
-                                {ex}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Quick links */}
-                        <div className="flex items-center" style={{ gap: 16, paddingTop: 4 }}>
-                          <Link
-                            href="/knowledge/dependency-graph"
-                            style={{ fontSize: 13, color: lm.color, fontWeight: 500, textDecoration: "none" }}
-                            className="interactive-hover"
-                          >
-                            🔗 Ver dependências
-                          </Link>
-                          <Link
-                            href="/simulation/payment-simulator"
-                            style={{ fontSize: 13, color: lm.color, fontWeight: 500, textDecoration: "none" }}
-                            className="interactive-hover"
-                          >
-                            🧪 Simular features
-                          </Link>
-                        </div>
-                      </div>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 12,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 16, fontWeight: 700,
+                      background: isCompleted ? "#10b981" : isActive ? lm.color : lm.bg,
+                      color: isCompleted || isActive ? "#fff" : lm.color,
+                      border: `2px solid ${isCompleted ? "#10b981" : lm.color}`,
+                      transition: "all 0.5s",
+                      transform: isActive ? "scale(1.1)" : "scale(1)",
+                      boxShadow: isActive ? `0 0 16px ${lm.color}44` : "none",
+                    }}>
+                      {isCompleted ? "✓" : i + 1}
                     </div>
+                    {/* Connector line */}
+                    {i < FLOW_STEPS.length - 1 && (
+                      <div style={{
+                        width: 2, height: 16,
+                        background: isCompleted ? "#10b981" : "var(--border)",
+                        transition: "all 0.5s",
+                      }} />
+                    )}
                   </div>
 
-                  {/* Compact examples when collapsed */}
-                  {!isExpanded && (
-                    <div>
-                      <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-muted)", marginBottom: 6 }}>
-                        Exemplos
-                      </h3>
-                      <div className="flex" style={{ flexWrap: "wrap", gap: 6 }}>
-                        {layer.examples.map(ex => (
-                          <span key={ex} style={{ fontSize: 12, padding: "3px 8px", borderRadius: 999, border: "1px solid var(--border)", color: "var(--text-muted)" }}>
-                            {ex}
-                          </span>
-                        ))}
-                      </div>
+                  {/* Step content */}
+                  <div style={{
+                    flex: 1,
+                    paddingBottom: i < FLOW_STEPS.length - 1 ? 16 : 0,
+                  }}>
+                    <div style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      marginBottom: 4,
+                    }}>
+                      <span style={{ fontSize: 16 }}>{lm.icon}</span>
+                      <span style={{
+                        fontSize: 15, fontWeight: 700, color: "var(--foreground)",
+                      }}>
+                        {step.label}
+                      </span>
+                      <span style={{
+                        fontSize: 11, color: lm.color, fontWeight: 500,
+                      }}>
+                        {paymentLayers.find(l => l.id === step.layer)?.name}
+                      </span>
                     </div>
-                  )}
+                    <p style={{
+                      fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6,
+                    }}>
+                      {step.description}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      {/* How to read legend */}
-      <div className="card-flat animate-fade-in stagger-4" style={{ padding: 20, marginTop: 24, marginBottom: 24 }}>
-        <h3 style={{ fontWeight: 600, marginBottom: 8 }}>📖 Como ler este mapa</h3>
-        <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
-          Cada camada se apoia na camada abaixo dela. Uma única transação de
-          pagamento flui do topo (Experiência) passando por todas as camadas até
-          que os fundos sejam liquidados na base. Clique em uma camada para ver
-          fluxos relacionados e links de navegação, ou use o botão &ldquo;Ver fluxo
-          completo&rdquo; para visualizar uma transação passando por todas as camadas.
-        </p>
-      </div>
-
-      {/* Footer */}
-      <div className="divider-text animate-fade-in stagger-5" style={{ marginBottom: 16 }}>Páginas Relacionadas</div>
+      {/* ── Section 8: Related Pages ── */}
+      <div className="divider-text animate-fade-in stagger-5" style={{ marginBottom: 16 }}>Paginas Relacionadas</div>
       <div className="grid grid-cols-1 sm:grid-cols-3 animate-fade-in stagger-5" style={{ gap: 12, marginBottom: 32 }}>
         {[
-          { label: "Trilhos de Pagamento", desc: "Compare os principais trilhos e suas características", href: "/explore/payment-rails", icon: "🛤️" },
-          { label: "Fluxos de Transação", desc: "Visualize fluxos completos de ponta a ponta", href: "/explore/transaction-flows", icon: "🔄" },
+          { label: "Trilhos de Pagamento", desc: "Compare os principais trilhos e suas caracteristicas", href: "/explore/payment-rails", icon: "🛤️" },
+          { label: "Fluxos de Transacao", desc: "Visualize fluxos completos de ponta a ponta", href: "/explore/transaction-flows", icon: "🔄" },
           { label: "Simulador", desc: "Simule o impacto de features na performance", href: "/simulation/payment-simulator", icon: "⚡" },
         ].map(p => (
           <Link key={p.href} href={p.href} className="card-flat interactive-hover" style={{ padding: 16, display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
             <span style={{ fontSize: 24 }}>{p.icon}</span>
             <div>
               <div className="text-sm font-semibold">{p.label}</div>
-              <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{p.desc}</div>
+              <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{p.desc}</div>
             </div>
           </Link>
         ))}
       </div>
 
+      {/* Quiz */}
       {quiz && !quizCompleted && (
-        <div style={{ marginTop: "2.5rem" }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
-            🧠 Teste seu Conhecimento
+        <div style={{ marginTop: 40 }}>
+          <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16, color: "var(--foreground)" }}>
+            Teste seu Conhecimento
           </h2>
           <PageQuiz
             questions={quiz.questions}
