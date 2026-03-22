@@ -15,7 +15,14 @@ export type GlossaryCategory =
   | "security"
   | "regulation"
   | "crypto"
-  | "risk";
+  | "risk"
+  | "antecipacao"
+  | "credito"
+  | "pix"
+  | "precificacao"
+  | "settlement"
+  | "tecnologia"
+  | "autenticacao";
 
 export interface GlossaryTerm {
   id: string;
@@ -58,6 +65,34 @@ export const CATEGORY_META: Record<
     label: "Risco",
     color: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
   },
+  antecipacao: {
+    label: "Antecipação",
+    color: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
+  },
+  credito: {
+    label: "Crédito",
+    color: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
+  },
+  pix: {
+    label: "Pix",
+    color: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300",
+  },
+  precificacao: {
+    label: "Precificação",
+    color: "bg-lime-100 text-lime-800 dark:bg-lime-900/40 dark:text-lime-300",
+  },
+  settlement: {
+    label: "Settlement",
+    color: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300",
+  },
+  tecnologia: {
+    label: "Tecnologia",
+    color: "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300",
+  },
+  autenticacao: {
+    label: "Autenticação",
+    color: "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-300",
+  },
 };
 
 export const ALL_CATEGORIES: GlossaryCategory[] = [
@@ -67,6 +102,13 @@ export const ALL_CATEGORIES: GlossaryCategory[] = [
   "regulation",
   "crypto",
   "risk",
+  "antecipacao",
+  "credito",
+  "pix",
+  "precificacao",
+  "settlement",
+  "tecnologia",
+  "autenticacao",
 ];
 
 // ---------------------------------------------------------------------------
@@ -588,6 +630,685 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     aliases: ["idempotency", "idempotência", "idempotent"],
     category: "risk",
     relatedTerms: ["authorization"],
+  },
+
+  // --- Antecipação & Recebíveis ---
+  {
+    id: "antecipacao-recebiveis",
+    term: "Antecipação de Recebíveis",
+    definition:
+      "Operação financeira em que o lojista recebe antecipadamente os valores de vendas parceladas no cartão, mediante desconto (deságio). Permite ao merchant melhorar o fluxo de caixa sem recorrer a empréstimos tradicionais. Regulada pelo BCB e sujeita a regras de interoperabilidade.",
+    aliases: ["antecipação", "prepayment of receivables", "antecipação de recebíveis"],
+    category: "antecipacao",
+    relatedTerms: ["agenda-recebiveis", "desagio", "cessao-credito"],
+  },
+  {
+    id: "mesa-antecipacao",
+    term: "Mesa de Antecipação",
+    definition:
+      "Área ou sistema dentro de adquirentes e fintechs responsável por precificar e executar operações de antecipação de recebíveis. Define taxas de deságio com base no risco do merchant, prazo e volume. Pode operar via leilão ou taxa fixa.",
+    aliases: ["mesa de antecipação", "prepayment desk"],
+    category: "antecipacao",
+    relatedTerms: ["antecipacao-recebiveis", "desagio"],
+  },
+  {
+    id: "registradora",
+    term: "Registradora",
+    definition:
+      "Entidade autorizada pelo BCB a registrar recebíveis de arranjos de pagamento. Garante transparência e unicidade de registro, evitando que o mesmo recebível seja dado em garantia a múltiplas instituições. Exemplos: CERC, CIP, TAG (B3).",
+    aliases: ["registradora", "registro de recebíveis"],
+    category: "antecipacao",
+    relatedTerms: ["cerc", "cip", "tag-b3", "agenda-recebiveis"],
+  },
+  {
+    id: "cerc",
+    term: "CERC",
+    definition:
+      "Câmara Interbancária de Pagamentos que atua como registradora de recebíveis de cartão e outros arranjos de pagamento. Concentra o registro e a consulta de agendas de recebíveis, permitindo operações de cessão e garantia com segurança jurídica.",
+    aliases: ["CERC", "Câmara Interbancária de Pagamentos"],
+    category: "antecipacao",
+    relatedTerms: ["registradora", "cip", "agenda-recebiveis"],
+  },
+  {
+    id: "cip",
+    term: "CIP (Câmara Interbancária de Pagamentos)",
+    definition:
+      "Infraestrutura de mercado financeiro que opera sistemas de liquidação e registro de ativos. No contexto de recebíveis, atua como registradora autorizada pelo BCB. Também opera a C3 (plataforma de registro de recebíveis de cartão).",
+    aliases: ["CIP", "Câmara Interbancária de Pagamentos"],
+    category: "antecipacao",
+    relatedTerms: ["registradora", "cerc", "tag-b3"],
+  },
+  {
+    id: "tag-b3",
+    term: "TAG (B3)",
+    definition:
+      "Registradora de recebíveis controlada pela B3 (bolsa de valores brasileira). Compete com CERC e CIP no registro de agendas de recebíveis de arranjos de pagamento. Oferece serviços de registro, consulta e gestão de garantias.",
+    aliases: ["TAG", "TAG B3", "B3 registradora"],
+    category: "antecipacao",
+    relatedTerms: ["registradora", "cerc", "cip"],
+  },
+  {
+    id: "agenda-recebiveis",
+    term: "Agenda de Recebíveis",
+    definition:
+      "Relação de todos os valores a receber de um merchant provenientes de vendas com cartão, organizados por data de liquidação. É o ativo base para operações de antecipação e cessão de crédito. Registrada obrigatoriamente em registradoras autorizadas.",
+    aliases: ["agenda de recebíveis", "receivables schedule", "agenda"],
+    category: "antecipacao",
+    relatedTerms: ["antecipacao-recebiveis", "registradora", "cessao-credito"],
+  },
+  {
+    id: "desagio",
+    term: "Deságio",
+    definition:
+      "Desconto aplicado sobre o valor nominal de um recebível quando antecipado. Representa o custo financeiro da antecipação para o merchant. Calculado com base na taxa de desconto, prazo até o vencimento e risco de crédito do estabelecimento.",
+    aliases: ["deságio", "desconto", "discount rate"],
+    category: "antecipacao",
+    relatedTerms: ["antecipacao-recebiveis", "mesa-antecipacao"],
+  },
+  {
+    id: "cessao-credito",
+    term: "Cessão de Crédito",
+    definition:
+      "Transferência de titularidade de um recebível do cedente (merchant/adquirente) para o cessionário (banco, FIDC, fintech). Permite ao merchant monetizar recebíveis futuros. O registro em registradora garante a oponibilidade contra terceiros.",
+    aliases: ["cessão de crédito", "credit assignment", "cessão"],
+    category: "antecipacao",
+    relatedTerms: ["antecipacao-recebiveis", "registradora", "fidc"],
+  },
+  {
+    id: "interoperabilidade-recebiveis",
+    term: "Interoperabilidade de Recebíveis",
+    definition:
+      "Capacidade de um merchant oferecer seus recebíveis como garantia a qualquer instituição financeira, não apenas ao adquirente original. Regulamentada pelo BCB desde 2021, promove concorrência e melhores taxas para o lojista.",
+    aliases: ["interoperabilidade de recebíveis", "receivables interoperability"],
+    category: "antecipacao",
+    relatedTerms: ["agenda-recebiveis", "registradora", "antecipacao-recebiveis"],
+  },
+
+  // --- Crédito & Estruturação ---
+  {
+    id: "scd",
+    term: "SCD (Sociedade de Crédito Direto)",
+    definition:
+      "Instituição financeira autorizada pelo BCB a conceder crédito exclusivamente com recursos próprios, por meio de plataforma eletrônica. Não pode captar depósitos do público. Base regulatória para fintechs de crédito no Brasil.",
+    aliases: ["SCD", "Sociedade de Crédito Direto"],
+    category: "credito",
+    relatedTerms: ["embedded-finance", "credit-as-a-service"],
+  },
+  {
+    id: "fidc",
+    term: "FIDC (Fundo de Investimento em Direitos Creditórios)",
+    definition:
+      "Fundo que compra recebíveis (direitos creditórios) e emite cotas para investidores. Estruturado com cotas sênior (menor risco, retorno fixo), mezanino e júnior (absorve primeiras perdas). Instrumento fundamental para securitização de recebíveis de cartão.",
+    aliases: ["FIDC", "Fundo de Direitos Creditórios", "receivables fund"],
+    category: "credito",
+    relatedTerms: ["cota-senior", "cota-mezanino", "cota-junior", "cessao-credito"],
+  },
+  {
+    id: "cedente",
+    term: "Cedente",
+    definition:
+      "Parte que transfere (cede) seus direitos creditórios a outra instituição. Na antecipação de recebíveis, o cedente é tipicamente o merchant ou sub-adquirente que vende seus recebíveis futuros em troca de liquidez imediata.",
+    aliases: ["cedente", "assignor"],
+    category: "credito",
+    relatedTerms: ["cessionario", "cessao-credito"],
+  },
+  {
+    id: "cessionario",
+    term: "Cessionário",
+    definition:
+      "Parte que adquire os direitos creditórios do cedente. Pode ser um banco, FIDC, fintech ou outra instituição financeira. O cessionário assume o risco de crédito do recebível adquirido e recebe os pagamentos futuros.",
+    aliases: ["cessionário", "assignee"],
+    category: "credito",
+    relatedTerms: ["cedente", "cessao-credito", "fidc"],
+  },
+  {
+    id: "lastro",
+    term: "Lastro",
+    definition:
+      "Ativo real que serve de garantia ou suporte para uma operação financeira. Em FIDCs, o lastro são os recebíveis de cartão. Em stablecoins, o lastro são reservas em moeda fiduciária ou títulos. A qualidade do lastro determina o risco da operação.",
+    aliases: ["lastro", "collateral", "backing"],
+    category: "credito",
+    relatedTerms: ["fidc", "cessao-credito"],
+  },
+  {
+    id: "subordinacao",
+    term: "Subordinação",
+    definition:
+      "Estrutura de proteção em FIDCs onde cotas júnior absorvem perdas antes das cotas sênior. A razão de subordinação (ex.: 20%) define o colchão de segurança. Quanto maior a subordinação, mais protegida a cota sênior.",
+    aliases: ["subordinação", "subordination", "credit enhancement"],
+    category: "credito",
+    relatedTerms: ["fidc", "cota-senior", "cota-junior"],
+  },
+  {
+    id: "cota-senior",
+    term: "Cota Sênior",
+    definition:
+      "Classe de cotas de um FIDC com prioridade no recebimento de rendimentos e amortização. Possui retorno-alvo prefixado e menor risco, pois é protegida pela subordinação das cotas mezanino e júnior.",
+    aliases: ["cota sênior", "senior tranche", "senior quota"],
+    category: "credito",
+    relatedTerms: ["fidc", "cota-mezanino", "cota-junior", "subordinacao"],
+  },
+  {
+    id: "cota-mezanino",
+    term: "Cota Mezanino",
+    definition:
+      "Classe intermediária de cotas de um FIDC, entre a sênior e a júnior em termos de risco e retorno. Absorve perdas após a cota júnior ser consumida, oferecendo retorno maior que a sênior como compensação pelo risco adicional.",
+    aliases: ["cota mezanino", "mezzanine tranche", "cota intermediária"],
+    category: "credito",
+    relatedTerms: ["fidc", "cota-senior", "cota-junior"],
+  },
+  {
+    id: "cota-junior",
+    term: "Cota Júnior",
+    definition:
+      "Classe de cotas de um FIDC que absorve as primeiras perdas do fundo. Oferece o maior retorno potencial, mas também o maior risco. Frequentemente retida pelo originador dos recebíveis como forma de alinhar incentivos.",
+    aliases: ["cota júnior", "junior tranche", "equity tranche", "cota subordinada"],
+    category: "credito",
+    relatedTerms: ["fidc", "cota-senior", "cota-mezanino", "subordinacao"],
+  },
+  {
+    id: "credit-as-a-service",
+    term: "Credit as a Service",
+    definition:
+      "Modelo onde uma fintech ou plataforma oferece infraestrutura de crédito (originação, análise, cobrança) como serviço para terceiros. Permite que empresas não financeiras ofereçam crédito sem precisar de licença bancária própria.",
+    aliases: ["Credit as a Service", "CaaS", "crédito como serviço"],
+    category: "credito",
+    relatedTerms: ["embedded-finance", "scd"],
+  },
+  {
+    id: "embedded-finance",
+    term: "Embedded Finance",
+    definition:
+      "Integração de serviços financeiros (pagamentos, crédito, seguros) diretamente em plataformas não financeiras. Exemplo: marketplace oferecendo crédito ao lojista ou app de transporte com carteira digital. Habilita BaaS (Banking as a Service).",
+    aliases: ["embedded finance", "finanças embarcadas", "finanças integradas"],
+    category: "credito",
+    relatedTerms: ["credit-as-a-service", "scd", "psp"],
+  },
+
+  // --- Parcelamento ---
+  {
+    id: "parcelado-emissor",
+    term: "Parcelado Emissor",
+    definition:
+      "Modalidade de parcelamento onde o emissor do cartão financia as parcelas. O merchant recebe o valor integral em D+30 e o portador paga ao emissor em parcelas mensais com ou sem juros. O risco de crédito é do emissor.",
+    aliases: ["parcelado emissor", "issuer installment", "parcelamento pelo banco"],
+    category: "processing",
+    relatedTerms: ["parcelado-lojista", "issuer"],
+  },
+  {
+    id: "parcelado-lojista",
+    term: "Parcelado Lojista",
+    definition:
+      "Modalidade de parcelamento onde o merchant financia as parcelas. O adquirente liquida cada parcela ao merchant na data de vencimento (D+30, D+60, etc.). O merchant pode antecipar esses recebíveis para melhorar o fluxo de caixa.",
+    aliases: ["parcelado lojista", "merchant installment", "parcelamento pela loja"],
+    category: "processing",
+    relatedTerms: ["parcelado-emissor", "antecipacao-recebiveis", "merchant"],
+  },
+  {
+    id: "taxa-desconto",
+    term: "Taxa de Desconto",
+    definition:
+      "Taxa percentual descontada do valor de cada transação pelo adquirente ou sub-adquirente. Sinônimo de MDR na prática, embora possa incluir custos adicionais. Composta por interchange, scheme fee e markup do credenciador.",
+    aliases: ["taxa de desconto", "discount rate", "taxa do adquirente"],
+    category: "processing",
+    relatedTerms: ["mdr", "interchange", "acquirer"],
+  },
+  {
+    id: "parcelado-sem-juros",
+    term: "Parcelado Sem Juros",
+    definition:
+      "Modalidade brasileira onde o merchant assume o custo do parcelamento para o consumidor. O portador paga parcelas iguais sem acréscimo, mas o merchant recebe cada parcela apenas no vencimento (ou antecipa com deságio). Amplamente utilizado no e-commerce brasileiro.",
+    aliases: ["parcelado sem juros", "interest-free installment", "PSJ"],
+    category: "processing",
+    relatedTerms: ["parcelado-lojista", "antecipacao-recebiveis", "desagio"],
+  },
+
+  // --- PIX & Pagamentos Instantâneos ---
+  {
+    id: "dict",
+    term: "DICT (Diretório de Identificadores de Contas Transacionais)",
+    definition:
+      "Base de dados centralizada do BCB que mapeia chaves PIX (CPF, CNPJ, e-mail, telefone, chave aleatória) às contas bancárias dos usuários. Permite enviar PIX usando apenas a chave, sem informar agência e conta.",
+    aliases: ["DICT", "diretório PIX", "diretório de identificadores"],
+    category: "pix",
+    relatedTerms: ["pix", "spi"],
+  },
+  {
+    id: "pix-saque",
+    term: "Pix Saque",
+    definition:
+      "Modalidade que permite ao usuário sacar dinheiro em estabelecimentos comerciais por meio de transação PIX. O merchant entrega dinheiro em espécie ao cliente e recebe o valor via PIX. Limite de R$500 por transação durante o dia.",
+    aliases: ["Pix Saque", "pix withdrawal"],
+    category: "pix",
+    relatedTerms: ["pix", "pix-troco"],
+  },
+  {
+    id: "pix-troco",
+    term: "Pix Troco",
+    definition:
+      "Modalidade que permite ao usuário receber dinheiro em espécie como troco ao pagar uma compra via PIX com valor acima do total. Combina pagamento da compra com saque de dinheiro em uma única operação.",
+    aliases: ["Pix Troco", "pix cashback"],
+    category: "pix",
+    relatedTerms: ["pix", "pix-saque"],
+  },
+  {
+    id: "pix-garantido",
+    term: "Pix Garantido",
+    definition:
+      "Modalidade de PIX que permite pagamentos parcelados com garantia de recebimento pelo merchant, mesmo sem saldo na conta do pagador no momento. Funciona como um crédito atrelado ao PIX, com débito automático nas datas acordadas.",
+    aliases: ["Pix Garantido", "pix parcelado"],
+    category: "pix",
+    relatedTerms: ["pix", "pix-automatico"],
+  },
+  {
+    id: "pix-automatico",
+    term: "Pix Automático",
+    definition:
+      "Modalidade de PIX para pagamentos recorrentes com autorização prévia do pagador. Permite débitos automáticos (assinaturas, contas) sem necessidade de autenticação a cada transação. Alternativa ao débito automático tradicional.",
+    aliases: ["Pix Automático", "pix recorrente", "automatic pix"],
+    category: "pix",
+    relatedTerms: ["pix", "pix-garantido"],
+  },
+  {
+    id: "itp",
+    term: "Iniciador de Pagamento (ITP)",
+    definition:
+      "Instituição autorizada pelo BCB a iniciar transações de pagamento a pedido do cliente, sem deter os fundos. Funciona como um intermediário que conecta o pagador à sua instituição financeira. Pilar do Open Finance e do PIX por aproximação.",
+    aliases: ["ITP", "iniciador de pagamento", "PISP", "payment initiation service provider"],
+    category: "pix",
+    relatedTerms: ["pix", "open-banking"],
+  },
+
+  // --- Arranjo de Pagamento ---
+  {
+    id: "arranjo-pagamento",
+    term: "Arranjo de Pagamento",
+    definition:
+      "Conjunto de regras e procedimentos que disciplina a prestação de serviço de pagamento ao público. Inclui regras de participação, liquidação, segurança e governança. Exemplos: arranjos Visa, Mastercard, PIX, boleto.",
+    aliases: ["arranjo de pagamento", "payment scheme", "payment arrangement"],
+    category: "regulation",
+    relatedTerms: ["instituidor-arranjo", "card-scheme"],
+  },
+  {
+    id: "instituidor-arranjo",
+    term: "Instituidor de Arranjo",
+    definition:
+      "Pessoa jurídica responsável por criar e gerir as regras de um arranjo de pagamento. Define taxas, padrões técnicos, regras de participação e governança. Visa, Mastercard, Elo e o BCB (PIX) são exemplos de instituidores.",
+    aliases: ["instituidor de arranjo", "scheme owner", "payment scheme manager"],
+    category: "regulation",
+    relatedTerms: ["arranjo-pagamento", "card-scheme"],
+  },
+  {
+    id: "sub-adquirente",
+    term: "Sub-adquirente",
+    definition:
+      "Intermediário entre o merchant e o adquirente. Não se conecta diretamente às bandeiras; utiliza a conexão do adquirente parceiro. Facilita a aceitação de pagamentos para pequenos merchants. Exemplos: PagSeguro (inicialmente), Mercado Pago.",
+    aliases: ["sub-adquirente", "subacquirer", "sub-credenciadora"],
+    category: "processing",
+    relatedTerms: ["acquirer", "facilitador-pagamento", "payfac"],
+  },
+  {
+    id: "facilitador-pagamento",
+    term: "Facilitador de Pagamento",
+    definition:
+      "Empresa que agrega múltiplos merchants sob seu cadastro de adquirente (master merchant). Simplifica o onboarding e elimina a necessidade de cada merchant ter contrato direto com adquirente. Modelo regulado pelo BCB no Brasil.",
+    aliases: ["facilitador de pagamento", "payment facilitator", "subcredenciador"],
+    category: "processing",
+    relatedTerms: ["sub-adquirente", "payfac", "acquirer"],
+  },
+  {
+    id: "payfac",
+    term: "PayFac (Payment Facilitator)",
+    definition:
+      "Modelo de negócio onde uma empresa se cadastra como master merchant junto a um adquirente e processa transações em nome de sub-merchants. Permite onboarding rápido e experiência integrada. Equivalente internacional do facilitador de pagamento.",
+    aliases: ["PayFac", "payment facilitator", "payfac"],
+    category: "processing",
+    relatedTerms: ["sub-adquirente", "facilitador-pagamento", "acquirer"],
+  },
+
+  // --- Precificação ---
+  {
+    id: "interchange-plus-plus",
+    term: "Interchange++ (IC++)",
+    definition:
+      "Modelo de precificação transparente onde o merchant paga interchange real + scheme fee real + markup fixo do adquirente. Diferente do modelo blended (taxa única), permite ao merchant ver exatamente o custo de cada componente.",
+    aliases: ["IC++", "interchange plus plus", "interchange++", "cost plus"],
+    category: "precificacao",
+    relatedTerms: ["interchange", "blended-rate", "scheme-fee"],
+  },
+  {
+    id: "blended-rate",
+    term: "Blended Rate (Taxa Única)",
+    definition:
+      "Modelo de precificação onde o adquirente cobra uma taxa fixa única para todas as transações, independente do tipo de cartão ou bandeira. Mais simples para o merchant, mas geralmente mais caro que IC++ para volumes altos.",
+    aliases: ["blended rate", "taxa única", "flat rate"],
+    category: "precificacao",
+    relatedTerms: ["interchange-plus-plus", "mdr"],
+  },
+  {
+    id: "scheme-fee",
+    term: "Scheme Fee",
+    definition:
+      "Taxa cobrada pelas bandeiras (Visa, Mastercard, Elo) sobre cada transação processada. Compõe o MDR junto com o interchange e o markup do adquirente. Inclui assessment fees, transaction fees, cross-border fees, entre outros componentes.",
+    aliases: ["scheme fee", "brand fee", "taxa da bandeira"],
+    category: "precificacao",
+    relatedTerms: ["interchange", "mdr", "assessment-fee"],
+  },
+  {
+    id: "assessment-fee",
+    term: "Assessment Fee",
+    definition:
+      "Taxa cobrada pela bandeira sobre o volume total de transações processadas. Diferente do interchange (que vai ao emissor), o assessment fee remunera diretamente a bandeira por manter a rede. Componente do scheme fee.",
+    aliases: ["assessment fee", "network assessment", "taxa de rede"],
+    category: "precificacao",
+    relatedTerms: ["scheme-fee", "interchange", "card-scheme"],
+  },
+
+  // --- Segurança & Compliance ---
+  {
+    id: "pci-saq-a",
+    term: "PCI SAQ-A",
+    definition:
+      "Questionário de autoavaliação PCI DSS para merchants que terceirizam completamente o processamento de cartão (ex.: redirect para página do PSP). Menor escopo de conformidade, sem armazenamento ou transmissão de dados de cartão pelo merchant.",
+    aliases: ["SAQ-A", "PCI SAQ A", "self-assessment questionnaire A"],
+    category: "security",
+    relatedTerms: ["pci-dss", "pci-saq-d"],
+  },
+  {
+    id: "pci-saq-d",
+    term: "PCI SAQ-D",
+    definition:
+      "Questionário de autoavaliação PCI DSS mais abrangente, para merchants que armazenam, processam ou transmitem dados de cartão. Contém todos os requisitos PCI DSS e exige controles rigorosos de segurança.",
+    aliases: ["SAQ-D", "PCI SAQ D", "self-assessment questionnaire D"],
+    category: "security",
+    relatedTerms: ["pci-dss", "pci-saq-a"],
+  },
+  {
+    id: "pa-dss",
+    term: "PA-DSS (Payment Application Data Security Standard)",
+    definition:
+      "Padrão de segurança para softwares de pagamento comercializados e instalados em múltiplos clientes. Substituído pelo PCI Software Security Framework (SSF) em 2022. Garantia de que o aplicativo de pagamento não armazena dados proibidos.",
+    aliases: ["PA-DSS", "payment application DSS"],
+    category: "security",
+    relatedTerms: ["pci-dss"],
+  },
+  {
+    id: "avs",
+    term: "AVS (Address Verification Service)",
+    definition:
+      "Serviço antifraude que compara o endereço informado pelo comprador com o endereço cadastrado no emissor do cartão. Retorna códigos indicando match total, parcial ou sem match. Comum nos EUA e Reino Unido, pouco utilizado no Brasil.",
+    aliases: ["AVS", "address verification service", "verificação de endereço"],
+    category: "security",
+    relatedTerms: ["cvv", "fraud", "3ds"],
+  },
+  {
+    id: "dpan",
+    term: "DPAN (Device Primary Account Number)",
+    definition:
+      "Token gerado pela bandeira que substitui o PAN real em carteiras digitais (Apple Pay, Google Pay). Vinculado a um dispositivo específico, o DPAN é inútil se interceptado em outro contexto. Diferente do FPAN (PAN real do cartão físico).",
+    aliases: ["DPAN", "device PAN", "device account number"],
+    category: "security",
+    relatedTerms: ["pan", "fpan", "tokenization"],
+  },
+  {
+    id: "fpan",
+    term: "FPAN (Funding Primary Account Number)",
+    definition:
+      "Número real do cartão de pagamento (o PAN impresso no cartão físico), em contraste com o DPAN (token do dispositivo). Usado internamente pelo emissor para identificar a conta. Deve ser protegido conforme PCI DSS.",
+    aliases: ["FPAN", "funding PAN", "funding primary account number"],
+    category: "security",
+    relatedTerms: ["pan", "dpan", "tokenization", "pci-dss"],
+  },
+  {
+    id: "bin-iin",
+    term: "BIN/IIN (Bank Identification Number / Issuer Identification Number)",
+    definition:
+      "Primeiros 6 a 8 dígitos de um cartão de pagamento que identificam o emissor e a bandeira. IIN é o termo mais recente da ISO, mas BIN ainda é amplamente utilizado. Permite roteamento inteligente e regras de risco baseadas no emissor.",
+    aliases: ["BIN", "IIN", "bank identification number", "issuer identification number"],
+    category: "security",
+    relatedTerms: ["bin", "pan", "issuer"],
+  },
+
+  // --- Autenticação ---
+  {
+    id: "acs",
+    term: "ACS (Access Control Server)",
+    definition:
+      "Servidor do emissor do cartão que participa do fluxo 3D Secure. Recebe a requisição de autenticação, avalia o risco da transação e decide se aprova com autenticação frictionless ou exige challenge (OTP, biometria, etc.).",
+    aliases: ["ACS", "access control server"],
+    category: "autenticacao",
+    relatedTerms: ["3ds", "ds-directory-server", "frictionless-auth"],
+  },
+  {
+    id: "ds-directory-server",
+    term: "DS (Directory Server)",
+    definition:
+      "Componente da infraestrutura 3D Secure operado pela bandeira (Visa, Mastercard). Roteia mensagens de autenticação entre o 3DS Server do merchant e o ACS do emissor. Determina se o cartão está inscrito no 3DS.",
+    aliases: ["DS", "directory server", "3DS directory server"],
+    category: "autenticacao",
+    relatedTerms: ["3ds", "acs", "card-scheme"],
+  },
+  {
+    id: "frictionless-auth",
+    term: "Frictionless Authentication",
+    definition:
+      "Fluxo do 3DS 2.x onde a transação é autenticada sem interação do portador. O ACS do emissor avalia dados contextuais (dispositivo, histórico, valor) e aprova silenciosamente. Resulta em melhor experiência de checkout e maior taxa de conversão.",
+    aliases: ["frictionless", "frictionless authentication", "autenticação sem fricção"],
+    category: "autenticacao",
+    relatedTerms: ["3ds", "acs", "challenge-flow"],
+  },
+  {
+    id: "challenge-flow",
+    term: "Challenge Flow",
+    definition:
+      "Fluxo do 3DS 2.x onde o ACS do emissor exige verificação adicional do portador do cartão. Apresenta um desafio (OTP via SMS, biometria, push notification) em um iframe ou redirect. Usado quando o risco da transação é considerado elevado.",
+    aliases: ["challenge flow", "fluxo de desafio", "3DS challenge"],
+    category: "autenticacao",
+    relatedTerms: ["3ds", "acs", "frictionless-auth"],
+  },
+
+  // --- Tecnologia ---
+  {
+    id: "emv-tech",
+    term: "EMV (Europay, Mastercard, Visa)",
+    definition:
+      "Especificação técnica global para cartões com chip e pagamentos contactless. Define padrões de comunicação entre cartão e terminal, gerando criptogramas únicos por transação. Administrado pela EMVCo, consórcio das principais bandeiras.",
+    aliases: ["EMV", "EMVCo", "chip and PIN"],
+    category: "tecnologia",
+    relatedTerms: ["nfc", "tokenization", "3ds"],
+  },
+  {
+    id: "contactless-nfc",
+    term: "Contactless/NFC",
+    definition:
+      "Tecnologia que permite pagamentos por aproximação usando NFC (Near Field Communication) a 13.56 MHz. Cartões e dispositivos móveis se comunicam com o terminal a distâncias de até 4cm. Padrão EMV Contactless define os protocolos de comunicação.",
+    aliases: ["contactless", "NFC", "pagamento por aproximação", "tap to pay"],
+    category: "tecnologia",
+    relatedTerms: ["emv", "tokenization"],
+  },
+  {
+    id: "hosted-fields",
+    term: "Hosted Fields",
+    definition:
+      "Técnica de integração onde campos sensíveis do formulário de pagamento (número do cartão, CVV) são renderizados em iframes controlados pelo PSP. O merchant nunca recebe dados de cartão, reduzindo escopo PCI DSS para SAQ-A.",
+    aliases: ["hosted fields", "campos hospedados", "secure fields"],
+    category: "tecnologia",
+    relatedTerms: ["pci-dss", "pci-saq-a", "psp"],
+  },
+  {
+    id: "tokenizacao-client-side",
+    term: "Tokenização Client-Side",
+    definition:
+      "Processo onde dados do cartão são convertidos em token diretamente no navegador ou app do cliente via JavaScript SDK do PSP, antes de chegar ao servidor do merchant. Protege dados em trânsito e simplifica conformidade PCI.",
+    aliases: ["client-side tokenization", "tokenização no cliente", "browser tokenization"],
+    category: "tecnologia",
+    relatedTerms: ["tokenization", "pci-dss", "hosted-fields"],
+  },
+  {
+    id: "webhook",
+    term: "Webhook",
+    definition:
+      "Mecanismo de notificação HTTP onde o PSP/adquirente envia requisições POST ao endpoint do merchant quando eventos ocorrem (pagamento aprovado, chargeback, etc.). Alternativa a polling. Requer validação de assinatura e tratamento idempotente.",
+    aliases: ["webhook", "callback", "notificação HTTP"],
+    category: "tecnologia",
+    relatedTerms: ["idempotency", "psp"],
+  },
+  {
+    id: "idempotencia-tech",
+    term: "Idempotência (API)",
+    definition:
+      "Garantia de que múltiplas requisições idênticas produzem o mesmo resultado. Em APIs de pagamento, implementada via idempotency key no header. Previne cobranças duplicadas em cenários de retry após timeout ou erro de rede.",
+    aliases: ["idempotency key", "chave de idempotência"],
+    category: "tecnologia",
+    relatedTerms: ["webhook", "psp"],
+  },
+  {
+    id: "sandbox",
+    term: "Sandbox",
+    definition:
+      "Ambiente de teste fornecido por PSPs e adquirentes que simula transações sem movimentar dinheiro real. Permite desenvolvedores integrar e testar fluxos de pagamento com cartões de teste, respostas simuladas e cenários de erro.",
+    aliases: ["sandbox", "ambiente de testes", "test environment"],
+    category: "tecnologia",
+    relatedTerms: ["homologacao", "webhook"],
+  },
+  {
+    id: "homologacao",
+    term: "Homologação",
+    definition:
+      "Processo de validação e certificação de uma integração de pagamento antes de entrar em produção. Envolve testes funcionais, de segurança e de conformidade com requisitos do adquirente ou bandeira. Etapa obrigatória para ir ao ar.",
+    aliases: ["homologação", "certification", "UAT", "user acceptance testing"],
+    category: "tecnologia",
+    relatedTerms: ["sandbox"],
+  },
+
+  // --- Settlement ---
+  {
+    id: "rtgs-settlement",
+    term: "RTGS (Real-Time Gross Settlement)",
+    definition:
+      "Sistema onde cada transação é liquidada individualmente e em tempo real, com finalidade imediata. Usado para transferências de grandes valores entre bancos. Exemplos: Fedwire (EUA), TARGET2 (Europa), STR (Brasil).",
+    aliases: ["RTGS", "liquidação bruta em tempo real", "LBTR"],
+    category: "settlement",
+    relatedTerms: ["dns-settlement", "str", "settlement"],
+  },
+  {
+    id: "dns-settlement",
+    term: "DNS (Deferred Net Settlement)",
+    definition:
+      "Modelo de liquidação onde transações são acumuladas durante o dia e compensadas em lote, transferindo apenas o valor líquido entre as partes. Reduz o volume de transferências, mas não oferece finalidade em tempo real.",
+    aliases: ["DNS", "deferred net settlement", "liquidação diferida"],
+    category: "settlement",
+    relatedTerms: ["rtgs-settlement", "netting", "clearing"],
+  },
+  {
+    id: "spread-cambial",
+    term: "Spread Cambial",
+    definition:
+      "Diferença entre a taxa de câmbio de compra e venda praticada por uma instituição financeira. Em pagamentos internacionais com cartão, o spread é cobrado pelo emissor ou bandeira sobre a cotação do dólar no dia da conversão.",
+    aliases: ["spread cambial", "FX spread", "spread de câmbio"],
+    category: "settlement",
+    relatedTerms: ["dcc", "remessa-internacional"],
+  },
+  {
+    id: "iof",
+    term: "IOF (Imposto sobre Operações Financeiras)",
+    definition:
+      "Tributo federal brasileiro incidente sobre operações de crédito, câmbio, seguros e valores mobiliários. Em compras internacionais com cartão, a alíquota é de 4,38% sobre o valor convertido. Em PIX e transferências domésticas, não há incidência.",
+    aliases: ["IOF", "imposto sobre operações financeiras"],
+    category: "settlement",
+    relatedTerms: ["spread-cambial", "remessa-internacional"],
+  },
+  {
+    id: "remessa-internacional",
+    term: "Remessa Internacional",
+    definition:
+      "Transferência de valores entre países, tipicamente via SWIFT ou correspondente bancário. Envolve conversão cambial, IOF, taxas de intermediários e compliance AML/KYC. Fintechs como Wise e Remessa Online oferecem alternativas mais baratas.",
+    aliases: ["remessa internacional", "international remittance", "cross-border transfer"],
+    category: "settlement",
+    relatedTerms: ["swift", "correspondent-banking", "iof", "spread-cambial"],
+  },
+
+  // --- Crypto Avançado ---
+  {
+    id: "bridge-blockchain",
+    term: "Bridge (Blockchain)",
+    definition:
+      "Protocolo que permite transferir ativos e dados entre blockchains diferentes (ex.: Ethereum para Solana). Funciona bloqueando ativos na chain de origem e emitindo equivalentes na chain de destino. Ponto crítico de segurança no ecossistema cripto.",
+    aliases: ["bridge", "cross-chain bridge", "ponte blockchain"],
+    category: "crypto",
+    relatedTerms: ["blockchain", "layer-2"],
+  },
+  {
+    id: "mev",
+    term: "MEV (Maximal Extractable Value)",
+    definition:
+      "Valor que mineradores ou validadores podem extrair reordenando, incluindo ou excluindo transações em um bloco. Inclui arbitragem, liquidações e front-running. Fenômeno significativo em DeFi que afeta custos de transação dos usuários.",
+    aliases: ["MEV", "maximal extractable value", "miner extractable value"],
+    category: "crypto",
+    relatedTerms: ["defi", "blockchain"],
+  },
+  {
+    id: "impermanent-loss",
+    term: "Impermanent Loss",
+    definition:
+      "Perda temporária sofrida por provedores de liquidez em AMMs quando o preço relativo dos tokens no pool muda em relação ao momento do depósito. Torna-se permanente se os tokens são retirados antes de o preço retornar. Risco inerente a pools de liquidez.",
+    aliases: ["impermanent loss", "perda impermanente", "IL"],
+    category: "crypto",
+    relatedTerms: ["amm", "liquidity-pool", "defi"],
+  },
+  {
+    id: "flash-loan",
+    term: "Flash Loan",
+    definition:
+      "Empréstimo sem colateral que deve ser tomado e devolvido na mesma transação de blockchain. Se não for devolvido, toda a transação é revertida. Usado para arbitragem, refinanciamento e ataques. Inovação única de DeFi sem paralelo em finanças tradicionais.",
+    aliases: ["flash loan", "empréstimo relâmpago"],
+    category: "crypto",
+    relatedTerms: ["defi", "smart-contract"],
+  },
+  {
+    id: "oracle-blockchain",
+    term: "Oracle (Blockchain)",
+    definition:
+      "Serviço que fornece dados do mundo real (preços, clima, resultados) para smart contracts na blockchain. Essencial para DeFi (feeds de preço), seguros paramétricos e mercados de previsão. Principal provedor: Chainlink.",
+    aliases: ["oracle", "blockchain oracle", "oráculo"],
+    category: "crypto",
+    relatedTerms: ["smart-contract", "defi"],
+  },
+  {
+    id: "rollup",
+    term: "Rollup",
+    definition:
+      "Solução de escalabilidade Layer 2 que processa transações fora da chain principal e publica provas compactadas de volta nela. Dois tipos: Optimistic Rollups (assumem validade, permitem desafios) e ZK-Rollups (provam validade matematicamente).",
+    aliases: ["rollup", "optimistic rollup", "ZK rollup"],
+    category: "crypto",
+    relatedTerms: ["layer-2", "blockchain", "zk-proof"],
+  },
+  {
+    id: "layer-2",
+    term: "Layer 2",
+    definition:
+      "Protocolo construído sobre uma blockchain principal (Layer 1) para aumentar escalabilidade e reduzir custos de transação. Herda a segurança da chain base. Exemplos: Lightning Network (Bitcoin), Arbitrum e Optimism (Ethereum).",
+    aliases: ["Layer 2", "L2", "segunda camada"],
+    category: "crypto",
+    relatedTerms: ["rollup", "blockchain"],
+  },
+  {
+    id: "zk-proof",
+    term: "Zero Knowledge Proof (ZKP)",
+    definition:
+      "Método criptográfico que permite provar a veracidade de uma informação sem revelar a informação em si. Aplicações em blockchain: privacidade de transações (Zcash), escalabilidade (ZK-Rollups) e identidade descentralizada.",
+    aliases: ["ZKP", "zero knowledge proof", "prova de conhecimento zero", "ZK"],
+    category: "crypto",
+    relatedTerms: ["rollup", "blockchain"],
+  },
+  {
+    id: "liquidity-pool",
+    term: "Liquidity Pool",
+    definition:
+      "Par de tokens depositados em um smart contract que fornece liquidez para trocas em DEXs baseadas em AMM. Provedores de liquidez recebem fees proporcionais à sua participação no pool. Base da infraestrutura de DeFi.",
+    aliases: ["liquidity pool", "pool de liquidez", "LP"],
+    category: "crypto",
+    relatedTerms: ["amm", "defi", "impermanent-loss"],
   },
 ];
 

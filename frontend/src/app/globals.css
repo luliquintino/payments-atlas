@@ -1076,3 +1076,27 @@ body {
     padding-bottom: 80px;
   }
 }
+
+/* ── Toast animations ─────────────────────────────────── */
+@keyframes toast-slide-in {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toast-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+.toast-enter { animation: toast-slide-in 0.3s ease-out; }
+.toast-exit { animation: toast-fade-out 0.3s ease-out forwards; }
+.skeleton { animation: skeleton-pulse 1.5s ease-in-out infinite; }
+
+/* ── Quiz Difficulty & Scenario ───────────────────── */
+.quiz-difficulty-easy { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(34,197,94,0.15); color: #22c55e; font-weight: 600; }
+.quiz-difficulty-medium { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(245,158,11,0.15); color: #f59e0b; font-weight: 600; }
+.quiz-difficulty-hard { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(239,68,68,0.15); color: #ef4444; font-weight: 600; }
+.quiz-scenario-box { background: rgba(99,102,241,0.08); border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; }
+.quiz-wrong-why { color: #ef4444; font-style: italic; font-size: 0.85rem; }

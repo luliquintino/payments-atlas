@@ -39,6 +39,8 @@ export default function ForgotPasswordPage() {
       style={{
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start",
+        width: "100%",
         paddingTop: "80px",
         paddingBottom: "2rem",
         minHeight: "100vh",
@@ -50,6 +52,7 @@ export default function ForgotPasswordPage() {
           width: "100%",
           maxWidth: "400px",
           padding: "0 1rem",
+          margin: "0 auto",
         }}
       >
         {/* Brand icon */}

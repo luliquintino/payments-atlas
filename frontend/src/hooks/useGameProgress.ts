@@ -144,9 +144,9 @@ export function useGameProgress() {
     });
   }, [checkBadges]);
 
-  const recordQuiz = useCallback((pageRoute: string, correct: number, total: number) => {
+  const recordQuiz = useCallback((pageRoute: string, correct: number, total: number, xpEarned?: number) => {
     setState((prev) => {
-      const xpGain = correct * 5;
+      const xpGain = xpEarned ?? correct * 5;
       const next: GameState = {
         ...prev,
         xp: prev.xp + xpGain,

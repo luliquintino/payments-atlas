@@ -31,6 +31,10 @@ export interface PaymentFeature {
   relatedProblems?: string[];
   /** Regras de negócio associadas */
   businessRules?: string[];
+  /** Requisitos técnicos para implementação */
+  technicalRequirements?: string[];
+  /** Exemplo de payload JSON (string formatada) */
+  payloadExample?: string;
 }
 
 export interface GraphNode {

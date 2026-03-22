@@ -94,12 +94,14 @@ export default function OnboardingPage() {
       style={{
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start",
         paddingTop: "60px",
         paddingBottom: "2rem",
         minHeight: "100vh",
+        width: "100%",
       }}
     >
-      <div style={{ width: "100%", maxWidth: "480px", padding: "0 1rem" }}>
+      <div style={{ width: "100%", maxWidth: "480px", padding: "0 1rem", margin: "0 auto" }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>👋</div>

@@ -115,11 +115,11 @@ export default function SearchPage() {
 
       {/* Results */}
       {showResults && (
-        <div className="animate-fade-in stagger-4">
+        <div style={{ overflow: "visible", minHeight: results.length > 0 ? "120px" : "auto" }}>
           <p className="text-sm" style={{ color: "var(--text-muted)", marginBottom: "0.75rem" }}>
             {results.length} resultado{results.length !== 1 ? "s" : ""}
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflow: "visible" }}>
             {results.map((item) => {
               const colorStyle = TYPE_COLORS[item.type];
               return (

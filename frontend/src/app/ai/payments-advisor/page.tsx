@@ -4,6 +4,71 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 
 // ---------------------------------------------------------------------------
+// Rate limiting helper
+// ---------------------------------------------------------------------------
+
+interface RateLimitData {
+  count: number;
+  resetAt: number;
+}
+
+function checkRateLimit(): { allowed: boolean; minutesLeft: number } {
+  const key = "pks-ai-requests";
+  const now = Date.now();
+  const raw = localStorage.getItem(key);
+  let data: RateLimitData = raw ? JSON.parse(raw) : { count: 0, resetAt: now + 3600000 };
+
+  // Reset if window expired
+  if (now > data.resetAt) {
+    data = { count: 0, resetAt: now + 3600000 };
+  }
+
+  if (data.count >= 20) {
+    const minutesLeft = Math.ceil((data.resetAt - now) / 60000);
+    return { allowed: false, minutesLeft };
+  }
+
+  data.count++;
+  localStorage.setItem(key, JSON.stringify(data));
+  return { allowed: true, minutesLeft: 0 };
+}
+
+// ---------------------------------------------------------------------------
+// SSE stream parser helper
+// ---------------------------------------------------------------------------
+
+async function parseSSEStream(
+  response: Response,
+  onText: (fullText: string) => void
+): Promise<string> {
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let fullText = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const chunk = decoder.decode(value);
+    const lines = chunk.split("\n").filter((l) => l.startsWith("data: "));
+    for (const line of lines) {
+      const data = line.slice(6);
+      if (data === "[DONE]") break;
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.text) {
+          fullText += parsed.text;
+          onText(fullText);
+        }
+      } catch {
+        // skip malformed lines
+      }
+    }
+  }
+
+  return fullText;
+}
+
+// ---------------------------------------------------------------------------
 // Type definitions
 // ---------------------------------------------------------------------------
 
@@ -342,6 +407,8 @@ export default function PaymentsAdvisorPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
+  const [rateLimitToast, setRateLimitToast] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -350,10 +417,27 @@ export default function PaymentsAdvisorPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  /** Send a message and receive a mock AI response after a brief delay */
+  // Auto-dismiss rate limit toast
+  useEffect(() => {
+    if (rateLimitToast) {
+      const timer = setTimeout(() => setRateLimitToast(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [rateLimitToast]);
+
+  /** Send message — tries AI API first, falls back to keyword-based */
   const sendMessage = useCallback(
-    (text: string) => {
+    async (text: string) => {
       if (!text.trim() || isTyping) return;
+
+      // Rate limit check
+      const rateCheck = checkRateLimit();
+      if (!rateCheck.allowed) {
+        setRateLimitToast(
+          `Limite de requisicoes atingido. Tente novamente em ${rateCheck.minutesLeft} minutos.`
+        );
+        return;
+      }
 
       const userMessage: ChatMessage = {
         id: generateId(),
@@ -366,9 +450,55 @@ export default function PaymentsAdvisorPage() {
       setInput("");
       setIsTyping(true);
 
-      // Simulate AI "thinking" delay (800-1500ms)
-      const delay = 800 + Math.random() * 700;
-      setTimeout(() => {
+      try {
+        const response = await fetch("/api/ai/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text.trim(), mode: "knowledge" }),
+        });
+
+        // Fallback to keyword-based if API not configured
+        if (response.status === 503) {
+          setIsFallbackMode(true);
+          const answer = findBestAnswer(text);
+          const assistantMessage: ChatMessage = {
+            id: generateId(),
+            role: "assistant",
+            content: answer,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, assistantMessage]);
+          setIsTyping(false);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("API error");
+        }
+
+        // SSE streaming
+        setIsFallbackMode(false);
+        const placeholderId = generateId();
+        setMessages((prev) => [
+          ...prev,
+          { id: placeholderId, role: "assistant", content: "", timestamp: new Date() },
+        ]);
+
+        await parseSSEStream(response, (fullText) => {
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              content: fullText,
+            };
+            return updated;
+          });
+        });
+
+        setIsTyping(false);
+      } catch {
+        // Network error or other failure — fallback
+        setIsFallbackMode(true);
         const answer = findBestAnswer(text);
         const assistantMessage: ChatMessage = {
           id: generateId(),
@@ -378,7 +508,7 @@ export default function PaymentsAdvisorPage() {
         };
         setMessages((prev) => [...prev, assistantMessage]);
         setIsTyping(false);
-      }, delay);
+      }
     },
     [isTyping],
   );
@@ -450,8 +580,42 @@ export default function PaymentsAdvisorPage() {
         * Esses números podem ter sofrido alteração com o tempo. Verifique novamente se permanecem atuais.
       </p>
 
+      {/* Rate limit toast */}
+      {rateLimitToast && (
+        <div
+          style={{
+            padding: "10px 16px",
+            marginBottom: 12,
+            borderRadius: 8,
+            background: "var(--danger, #ef4444)",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 500,
+          }}
+        >
+          {rateLimitToast}
+        </div>
+      )}
+
+      {/* Fallback mode banner */}
+      {isFallbackMode && messages.length > 0 && (
+        <div
+          style={{
+            padding: "8px 16px",
+            marginBottom: 12,
+            borderRadius: 8,
+            background: "var(--surface-hover)",
+            border: "1px solid var(--border)",
+            fontSize: 12,
+            color: "var(--text-muted)",
+          }}
+        >
+          Respostas limitadas — configure ANTHROPIC_API_KEY para respostas completas
+        </div>
+      )}
+
       {/* Chat area */}
-      <div className="card-glow flex flex-col animate-fade-in stagger-2" style={{ flex: 1, padding: 0, overflow: "hidden" }}>
+      <div className="card-glow flex flex-col animate-fade-in stagger-2" style={{ flex: 1, padding: 0, overflow: "hidden", minHeight: 500 }}>
         {/* Messages list */}
         <div className="overflow-y-auto" style={{ flex: 1, padding: 16 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -527,7 +691,7 @@ export default function PaymentsAdvisorPage() {
                     {msg.role === "user" ? "Você" : "Consultor de Pagamentos"}
                   </div>
                   {/* Message content */}
-                  <div className="text-sm leading-relaxed">
+                  <div style={{ fontSize: "1rem", lineHeight: 1.7 }}>
                     {msg.role === "assistant" ? renderMarkdown(msg.content) : msg.content}
                   </div>
                   {/* Timestamp */}

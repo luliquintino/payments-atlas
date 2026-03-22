@@ -52,6 +52,10 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Grafo de Dependências", href: "/knowledge/dependency-graph", icon: "🔗" },
       { name: "Taxonomia", href: "/knowledge/taxonomy", icon: "🏷️" },
       { name: "Glossário", href: "/glossary", icon: "📖" },
+      { name: "Regras de Bandeiras", href: "/knowledge/brand-rules", icon: "🏦" },
+      { name: "Antecipação de Recebíveis", href: "/knowledge/antecipacao-recebiveis", icon: "💰" },
+      { name: "Parcelamento", href: "/knowledge/parcelamento", icon: "📊" },
+      { name: "Crédito Estruturado", href: "/knowledge/credito-estruturado", icon: "🏦" },
     ],
   },
   {
@@ -78,6 +82,7 @@ const ferramentasItems: NavItem[] = [
   { name: "Dashboard", href: "/observability/payments-dashboard", icon: "📈" },
   { name: "Explorador de Eventos", href: "/observability/event-explorer", icon: "📋" },
   { name: "Consultor AI", href: "/ai/payments-advisor", icon: "🤖" },
+  { name: "Analisador de Docs", href: "/tools/document-analyzer", icon: "📄" },
 ];
 
 // Check if pathname matches any item in the explorar categories

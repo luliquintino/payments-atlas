@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { hashPassword, sanitizeInput, isValidEmail, getPasswordStrength } from "@/lib/security";
 
 interface FormErrors {
   name?: string;
@@ -26,7 +27,7 @@ export default function RegisterPage() {
     if (!name.trim()) errs.name = "Nome é obrigatório";
     if (!email.trim()) {
       errs.email = "Email é obrigatório";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!isValidEmail(email)) {
       errs.email = "Email inválido";
     }
     if (!password) {
@@ -43,15 +44,14 @@ export default function RegisterPage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!validate()) return;
 
-    // Simple hash for localStorage (not production-grade, just for demo)
-    const pwHash = btoa(password);
+    const pwHash = await hashPassword(password);
 
     const user = {
-      name: name.trim(),
+      name: sanitizeInput(name),
       email: email.trim().toLowerCase(),
       pw: pwHash,
       createdAt: new Date().toISOString(),
@@ -66,6 +66,26 @@ export default function RegisterPage() {
       router.push("/auth/onboarding");
     }, 1200);
   }
+
+  const passwordStrength = password ? getPasswordStrength(password) : null;
+  const strengthColor =
+    passwordStrength === "strong"
+      ? "#22C55E"
+      : passwordStrength === "medium"
+        ? "#EAB308"
+        : "#EF4444";
+  const strengthLabel =
+    passwordStrength === "strong"
+      ? "Forte"
+      : passwordStrength === "medium"
+        ? "Média"
+        : "Fraca";
+  const strengthWidth =
+    passwordStrength === "strong"
+      ? "100%"
+      : passwordStrength === "medium"
+        ? "60%"
+        : "30%";
 
   const inputStyle: React.CSSProperties = {
     width: "100%",
@@ -99,12 +119,14 @@ export default function RegisterPage() {
       style={{
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start",
         paddingTop: "60px",
         paddingBottom: "2rem",
         minHeight: "100vh",
+        width: "100%",
       }}
     >
-      <div style={{ width: "100%", maxWidth: "440px", padding: "0 1rem" }}>
+      <div style={{ width: "100%", maxWidth: "440px", padding: "0 1rem", margin: "0 auto" }}>
         {/* Brand */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <div
@@ -211,6 +233,38 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
+                {password && passwordStrength && (
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <div
+                      style={{
+                        height: "4px",
+                        borderRadius: "2px",
+                        background: "var(--border)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: strengthWidth,
+                          background: strengthColor,
+                          borderRadius: "2px",
+                          transition: "width 0.3s, background 0.3s",
+                        }}
+                      />
+                    </div>
+                    <p
+                      style={{
+                        fontSize: "0.75rem",
+                        color: strengthColor,
+                        marginTop: "0.25rem",
+                        fontWeight: 500,
+                      }}
+                    >
+                      Senha {strengthLabel}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Confirmar Senha */}

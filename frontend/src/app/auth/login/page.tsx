@@ -1,8 +1,28 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, useRef, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { hashPassword } from "@/lib/security";
+
+interface LoginAttempts {
+  count: number;
+  lockedUntil: number | null;
+}
+
+function getLoginAttempts(): LoginAttempts {
+  try {
+    const raw = localStorage.getItem("pks-login-attempts");
+    if (raw) return JSON.parse(raw);
+  } catch {
+    // ignore
+  }
+  return { count: 0, lockedUntil: null };
+}
+
+function setLoginAttempts(data: LoginAttempts) {
+  localStorage.setItem("pks-login-attempts", JSON.stringify(data));
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,8 +35,36 @@ export default function LoginPage() {
       router.replace("/");
     }
   }, [router]);
+
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+  const [lockCountdown, setLockCountdown] = useState("");
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Check lock status on mount and start countdown if locked
+  useEffect(() => {
+    function tick() {
+      const attempts = getLoginAttempts();
+      if (attempts.lockedUntil && Date.now() < attempts.lockedUntil) {
+        const remaining = attempts.lockedUntil - Date.now();
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        setLockCountdown(`Conta bloqueada. Tente novamente em ${mins}:${secs.toString().padStart(2, "0")}`);
+      } else {
+        setLockCountdown("");
+        if (attempts.lockedUntil) {
+          // Lock expired — reset
+          setLoginAttempts({ count: 0, lockedUntil: null });
+        }
+      }
+    }
+
+    tick();
+    timerRef.current = setInterval(tick, 1000);
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   function validate(): boolean {
     const errs: { email?: string; password?: string } = {};
@@ -34,12 +82,20 @@ export default function LoginPage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // Check rate limit
+    const attempts = getLoginAttempts();
+    if (attempts.lockedUntil && Date.now() < attempts.lockedUntil) {
+      return; // still locked
+    }
+
     if (!validate()) return;
 
     const stored = localStorage.getItem("pks-user");
     if (!stored) {
+      recordFailure();
       setErrors({ general: "Email não encontrado. Cadastre-se primeiro." });
       return;
     }
@@ -47,21 +103,35 @@ export default function LoginPage() {
     try {
       const user = JSON.parse(stored);
       if (user.email !== email.trim().toLowerCase()) {
+        recordFailure();
         setErrors({ general: "Email não encontrado. Cadastre-se primeiro." });
         return;
       }
 
-      // Verify password
-      if (user.pw && atob(user.pw) !== password) {
+      // Verify password using hash comparison
+      const inputHash = await hashPassword(password);
+      if (user.pw !== inputHash) {
+        recordFailure();
         setErrors({ general: "Senha incorreta. Tente novamente." });
         return;
       }
 
-      // Login success — redirect immediately
+      // Login success — reset attempts and redirect
+      setLoginAttempts({ count: 0, lockedUntil: null });
       localStorage.setItem("pks-logged-in", "true");
       router.push("/");
     } catch {
       setErrors({ general: "Erro ao verificar conta. Tente novamente." });
+    }
+  }
+
+  function recordFailure() {
+    const attempts = getLoginAttempts();
+    const newCount = attempts.count + 1;
+    if (newCount >= 5) {
+      setLoginAttempts({ count: newCount, lockedUntil: Date.now() + 15 * 60 * 1000 });
+    } else {
+      setLoginAttempts({ count: newCount, lockedUntil: null });
     }
   }
 
@@ -92,14 +162,18 @@ export default function LoginPage() {
     marginTop: "0.3rem",
   };
 
+  const isLocked = !!lockCountdown;
+
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
+        alignItems: "flex-start",
         paddingTop: "80px",
         paddingBottom: "2rem",
         minHeight: "100vh",
+        width: "100%",
       }}
     >
       <div
@@ -154,8 +228,31 @@ export default function LoginPage() {
           }}
         >
           <form onSubmit={handleSubmit}>
+            {/* Rate limit lock message */}
+            {isLocked && (
+              <div
+                style={{
+                  padding: "0.75rem 1rem",
+                  borderRadius: "10px",
+                  background: "rgba(239,68,68,0.1)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                  marginBottom: "1.25rem",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "var(--error, #EF4444)",
+                    fontWeight: 500,
+                  }}
+                >
+                  {lockCountdown}
+                </p>
+              </div>
+            )}
+
             {/* General error */}
-            {errors.general && (
+            {errors.general && !isLocked && (
               <div
                 style={{
                   padding: "0.75rem 1rem",
@@ -186,6 +283,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 style={inputStyle}
+                disabled={isLocked}
               />
               {errors.email && <p style={errorTextStyle}>{errors.email}</p>}
             </div>
@@ -200,6 +298,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Sua senha"
                   style={{ ...inputStyle, paddingRight: "2.75rem" }}
+                  disabled={isLocked}
                 />
                 <button
                   type="button"
@@ -219,7 +318,7 @@ export default function LoginPage() {
                   }}
                   aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
                 >
-                  {showPassword ? "🙈" : "👁"}
+                  {showPassword ? "\uD83D\uDE48" : "\uD83D\uDC41"}
                 </button>
               </div>
               {errors.password && <p style={errorTextStyle}>{errors.password}</p>}
@@ -243,18 +342,20 @@ export default function LoginPage() {
             {/* Submit */}
             <button
               type="submit"
+              disabled={isLocked}
               style={{
                 width: "100%",
                 padding: "0.75rem",
                 borderRadius: "12px",
                 border: "none",
-                background: "var(--gradient-primary)",
+                background: isLocked ? "var(--border)" : "var(--gradient-primary)",
                 color: "#fff",
                 fontSize: "1rem",
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: isLocked ? "not-allowed" : "pointer",
                 transition: "opacity 0.2s",
-                boxShadow: "0 4px 14px rgba(99,102,241,0.25)",
+                boxShadow: isLocked ? "none" : "0 4px 14px rgba(99,102,241,0.25)",
+                opacity: isLocked ? 0.6 : 1,
               }}
             >
               Entrar

@@ -145,6 +145,11 @@ function buildIndex(): SearchResult[] {
     { name: "Consultor de Arquitetura", description: "Recomendações de arquitetura de pagamentos", href: "/simulation/architecture-advisor" },
     { name: "Consultor de Pagamentos", description: "Assistente AI para dúvidas de pagamentos", href: "/ai/payments-advisor" },
     { name: "Meu Progresso", description: "XP, badges, nível e conquistas", href: "/progress" },
+    { name: "Regras de Bandeiras", description: "Regras de Visa, Mastercard, Elo, Diners, Amex e Hipercard", href: "/knowledge/brand-rules" },
+    { name: "Analisador de Documentos", description: "Upload de regulações e documentações técnicas para análise com IA", href: "/tools/document-analyzer" },
+    { name: "Antecipação de Recebíveis", description: "Deságio, mesa de antecipação, registradoras e regulação", href: "/knowledge/antecipacao-recebiveis" },
+    { name: "Parcelamento", description: "Parcelado emissor vs lojista, interchange, chargeback em parcelas", href: "/knowledge/parcelamento" },
+    { name: "Crédito Estruturado", description: "SCD, FIDC, cessão de recebíveis e credit as a service", href: "/knowledge/credito-estruturado" },
   ];
 
   pages.forEach((p, i) => {

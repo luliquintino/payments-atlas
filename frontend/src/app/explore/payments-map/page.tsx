@@ -743,9 +743,8 @@ export default function PaymentsMapPage() {
           </h2>
           <PageQuiz
             questions={quiz.questions}
-            xpPerQuestion={5}
-            onComplete={(correct, total) => {
-              recordQuiz(quiz.pageRoute, correct, total);
+            onComplete={(correct, total, xpEarned) => {
+              recordQuiz(quiz.pageRoute, correct, total, xpEarned);
               setQuizCompleted(true);
             }}
           />

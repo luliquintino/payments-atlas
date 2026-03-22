@@ -10,6 +10,8 @@ import SearchOverlay from "@/components/ui/SearchOverlay";
 import GameProvider from "@/components/layout/GameProvider";
 import BottomNav from "@/components/layout/BottomNav";
 import InstallBanner from "@/components/layout/InstallBanner";
+import ScrollToTop from "@/components/ui/ScrollToTop";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const PUBLIC_ROUTES = ["/landing", "/auth"];
 
@@ -29,14 +31,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   if (isPublic) {
     return (
-      <main style={{ minHeight: "100vh", background: "var(--background)", color: "var(--foreground)" }}>
-        {children}
-      </main>
+      <ToastProvider>
+        <main style={{
+          minHeight: "100vh",
+          width: "100%",
+          background: "var(--background)",
+          color: "var(--foreground)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}>
+          <div style={{ width: "100%", maxWidth: "100%" }}>
+            {children}
+          </div>
+        </main>
+      </ToastProvider>
     );
   }
 
   return (
-    <>
+    <ToastProvider>
       <InstallBanner />
       <Sidebar />
       <SearchOverlay />
@@ -60,6 +74,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </GameProvider>
       </main>
       <BottomNav />
-    </>
+      <ScrollToTop />
+    </ToastProvider>
   );
 }

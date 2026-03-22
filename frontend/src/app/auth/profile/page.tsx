@@ -98,7 +98,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div style={{ maxWidth: "32rem", margin: "0 auto" }}>
+    <div style={{ maxWidth: "32rem", margin: "0 auto", paddingBottom: "4rem" }}>
       {/* Header */}
       <div className="animate-fade-in" style={{ marginBottom: "2rem" }}>
         <h1 className="page-title" style={{ marginBottom: "0.5rem" }}>Meu Perfil</h1>
