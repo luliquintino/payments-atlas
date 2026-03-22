@@ -1168,6 +1168,264 @@ const RECURRING_STEPS: SequenceStep[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// 6) Chargeback / Dispute Flow
+// ---------------------------------------------------------------------------
+
+const CHARGEBACK_ACTORS: SequenceActor[] = [
+  { id: "portador", label: "Portador", color: "#3b82f6" },
+  { id: "emissor", label: "Emissor", color: "#ef4444" },
+  { id: "bandeira", label: "Bandeira", color: "#f59e0b" },
+  { id: "adquirente", label: "Adquirente", color: "#8b5cf6" },
+  { id: "merchant", label: "Merchant", color: "#10b981" },
+  { id: "alerts", label: "Alertas (CDRN/Ethoca)", color: "#f97316" },
+  { id: "arbitragem", label: "Arbitragem", color: "#dc2626" },
+];
+
+const CHARGEBACK_STEPS: SequenceStep[] = [
+  {
+    from: 0,
+    to: 1,
+    label: "Portador contesta transacao junto ao emissor",
+    features: ["chargeback-management"],
+    payload: `{
+  "dispute_type": "cardholder_initiated",
+  "reason": "nao_reconheco_cobranca",
+  "transaction_id": "txn_original_123",
+  "amount": 35000,
+  "currency": "BRL",
+  "days_since_transaction": 45
+}`,
+    timing: "Ate 120 dias apos a transacao",
+    errors: "Prazo expirado — emissor rejeita contestacao",
+    layer: "settlement",
+  },
+  {
+    from: 1,
+    to: 5,
+    label: "Alerta pre-chargeback enviado ao merchant (se ativo)",
+    features: ["chargeback-alerts", "dispute-prevention"],
+    payload: `{
+  "alert_source": "verifi_cdrn",
+  "alert_type": "pre_chargeback",
+  "transaction_id": "txn_original_123",
+  "amount": 35000,
+  "deadline_hours": 72,
+  "auto_refund_eligible": true
+}`,
+    timing: "72h antes do chargeback formal (CDRN)",
+    layer: "settlement",
+  },
+  {
+    from: 5,
+    to: 4,
+    label: "Merchant decide: refund proativo ou deixar seguir",
+    features: ["chargeback-alerts", "refund-processing"],
+    payload: `{
+  "decision": "auto_refund",
+  "rule_matched": "fraud_under_50k_auto_refund",
+  "refund_id": "ref_proactive_001",
+  "chargeback_prevented": true,
+  "savings": { "fee_avoided": 2500, "ops_avoided": 5000 }
+}`,
+    timing: "Dentro da janela de 72h",
+    layer: "settlement",
+  },
+  {
+    from: 1,
+    to: 2,
+    label: "Emissor atribui reason code e envia chargeback a bandeira",
+    features: ["chargeback-reason-codes", "chargeback-management"],
+    payload: `{
+  "reason_code": "10.4",
+  "reason_category": "fraud_card_absent",
+  "reason_description": "Fraud — Card Absent Environment",
+  "chargeback_amount": 35000,
+  "chargeback_fee": 2500,
+  "network": "visa"
+}`,
+    timing: "Emissor analisa em ate 30 dias",
+    layer: "network",
+  },
+  {
+    from: 2,
+    to: 3,
+    label: "Bandeira encaminha chargeback ao adquirente",
+    features: ["network-compliance", "chargeback-management"],
+    timing: "1-5 dias uteis",
+    layer: "network",
+  },
+  {
+    from: 3,
+    to: 4,
+    label: "Adquirente notifica o merchant com prazo de resposta",
+    features: ["chargeback-management", "webhooks"],
+    payload: `{
+  "notification_type": "chargeback_received",
+  "dispute_id": "dsp_cb_001",
+  "reason_code": "10.4",
+  "response_deadline": "2026-04-21",
+  "days_remaining": 30,
+  "amount": 35000,
+  "fee": 2500
+}`,
+    timing: "30 dias (Visa) / 45 dias (Mastercard) para responder",
+    layer: "settlement",
+  },
+  {
+    from: 4,
+    to: 4,
+    label: "Merchant classifica reason code e avalia fight/accept",
+    features: ["chargeback-reason-codes", "chargeback-analytics"],
+    payload: `{
+  "reason_code": "10.4",
+  "decision_engine": {
+    "ce3_eligible": true,
+    "evidence_strength": 78,
+    "historical_win_rate": 0.65,
+    "recommendation": "fight_with_ce3"
+  },
+  "financial_impact": {
+    "transaction": 35000,
+    "fee": 2500,
+    "ops_cost": 5000,
+    "total_if_lost": 42500
+  }
+}`,
+    timing: "SLA interno: <4h para classificacao",
+    layer: "settlement",
+  },
+  {
+    from: 4,
+    to: 4,
+    label: "Coleta automatizada de evidencias (OMS, 3DS, CRM, delivery)",
+    features: ["compelling-evidence", "chargeback-management"],
+    payload: `{
+  "evidence_package": {
+    "3ds_log": { "eci": "05", "cavv": "xxx", "liability_shift": true },
+    "delivery_proof": "tracking_signed_receipt.pdf",
+    "device_fingerprint": "dev_abc123",
+    "prior_undisputed_txns": 4,
+    "customer_email": "confirmacao_pedido.eml",
+    "ip_match": true
+  },
+  "ce3_evaluation": {
+    "eligible": true,
+    "confidence": 95,
+    "auto_submit": true
+  }
+}`,
+    timing: "SLA interno: <5 dias",
+    layer: "settlement",
+  },
+  {
+    from: 4,
+    to: 3,
+    label: "Merchant submete representment com evidencias",
+    features: ["chargeback-management", "compelling-evidence"],
+    payload: `{
+  "representment": {
+    "dispute_id": "dsp_cb_001",
+    "evidence_type": "compelling_evidence_3_0",
+    "submission_channel": "vrol_api",
+    "documents": [
+      "3ds_auth_log.json",
+      "delivery_proof.pdf",
+      "customer_communication.pdf"
+    ]
+  }
+}`,
+    timing: "Dentro do prazo de 30/45 dias",
+    errors: "Prazo expirado — chargeback aceito automaticamente",
+    layer: "settlement",
+  },
+  {
+    from: 3,
+    to: 2,
+    label: "Adquirente encaminha representment a bandeira",
+    features: ["network-compliance"],
+    timing: "1-3 dias uteis",
+    layer: "network",
+  },
+  {
+    from: 2,
+    to: 1,
+    label: "Bandeira encaminha ao emissor para avaliacao",
+    features: ["chargeback-reason-codes"],
+    timing: "Emissor tem 30 dias (Visa) / 45 dias (MC) para avaliar",
+    layer: "network",
+  },
+  {
+    from: 1,
+    to: 2,
+    label: "Emissor aceita evidencias → chargeback revertido (WIN)",
+    features: ["chargeback-management", "chargeback-analytics"],
+    payload: `{
+  "result": "representment_won",
+  "chargeback_reversed": true,
+  "amount_recovered": 35000,
+  "fee_recovered": false,
+  "ce3_used": true
+}`,
+    timing: "Resolucao em 30-45 dias",
+    layer: "settlement",
+  },
+  {
+    from: 1,
+    to: 2,
+    label: "Emissor rejeita evidencias → pre-arbitragem (opcional)",
+    features: ["chargeback-management"],
+    payload: `{
+  "result": "representment_lost",
+  "escalation_available": true,
+  "pre_arbitration_fee": 50000,
+  "deadline_days": 30,
+  "recommendation": "accept_if_value_under_500"
+}`,
+    timing: "30 dias para escalar (Visa) / 45 dias (MC)",
+    errors: "Merchant desiste — chargeback finalizado como perda",
+    layer: "settlement",
+  },
+  {
+    from: 4,
+    to: 6,
+    label: "Merchant escala para arbitragem final (raro, ~2% dos casos)",
+    features: ["chargeback-management", "network-compliance"],
+    payload: `{
+  "arbitration": {
+    "fee": 50000,
+    "currency": "USD",
+    "losing_party_pays": true,
+    "decision_timeline_days": "60-90",
+    "no_further_appeal": true
+  }
+}`,
+    timing: "60-90 dias para decisao final",
+    errors: "Parte perdedora arca com taxas de USD 500",
+    layer: "network",
+  },
+  {
+    from: 6,
+    to: 4,
+    label: "Decisao final irrecorrivel — monitora programas VDMP/ECM",
+    features: ["chargeback-analytics", "network-compliance"],
+    payload: `{
+  "monitoring_status": {
+    "visa_vdmp": { "enrolled": false, "current_rate": 0.72, "threshold": 0.9 },
+    "mastercard_ecm": { "enrolled": false, "current_rate": 0.68, "threshold": 1.0 }
+  },
+  "kpis_updated": {
+    "chargeback_rate": 0.72,
+    "win_rate": 0.38,
+    "cost_per_chargeback": 42500,
+    "deflection_rate": 0.32
+  }
+}`,
+    timing: "Continuo — monitoramento mensal",
+    layer: "settlement",
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Flow-to-feature mapping for Section 6 "Em quais fluxos aparece"
 // ---------------------------------------------------------------------------
 
@@ -1177,6 +1435,7 @@ const FLOW_FEATURE_MAP: Record<string, string[]> = {
   "Cross-Border": CROSSBORDER_STEPS.flatMap((s) => s.features),
   "Marketplace": MARKETPLACE_STEPS.flatMap((s) => s.features),
   "Recorrencia": RECURRING_STEPS.flatMap((s) => s.features),
+  "Chargeback": CHARGEBACK_STEPS.flatMap((s) => s.features),
 };
 
 function getFlowAppearances(featureId: string): string[] {
@@ -1331,11 +1590,41 @@ export default function FeatureDiscoveryPage() {
       ),
     },
 
-    // ─── Section 6: Complete Feature Catalogue by Layer ───
+    // ─── Section 6: Chargeback / Dispute Flow ───
+    {
+      id: "fluxo-chargeback",
+      title: "Fluxo de Chargeback / Disputa Completo",
+      icon: "6",
+      content: (
+        <>
+          <p style={paragraphStyle}>
+            O fluxo de chargeback envolve 7 atores e pode durar ate 120 dias + 90 dias de arbitragem.
+            Este diagrama mostra todas as etapas — desde a contestacao do portador ate a arbitragem
+            final, incluindo alertas pre-chargeback (CDRN/Ethoca), classificacao de reason codes,
+            coleta de evidencias, Compelling Evidence 3.0, representment, e monitoramento de
+            programas VDMP/ECM. Cada etapa mostra as features envolvidas e exemplos de payload.
+          </p>
+          <div style={{ padding: "0.75rem", borderRadius: 8, background: "var(--primary-bg)", border: "1px solid var(--primary)", marginBottom: "1rem" }}>
+            <p style={{ fontSize: "0.85rem", color: "var(--primary)", margin: 0 }}>
+              <strong>Dica:</strong> Clique em cada etapa para ver os payloads de exemplo, features
+              envolvidas e o que pode dar errado. Este e o fluxo mais complexo do ecossistema de
+              pagamentos — dominar chargebacks e essencial para qualquer PM de payments.
+            </p>
+          </div>
+          <SequenceDiagram
+            actors={CHARGEBACK_ACTORS}
+            steps={CHARGEBACK_STEPS}
+            title="Chargeback / Disputa — Sequence Diagram Completo"
+          />
+        </>
+      ),
+    },
+
+    // ─── Section 7: Complete Feature Catalogue by Layer ───
     {
       id: "catalogo-camadas",
       title: "Catalogo Completo por Camada",
-      icon: "6",
+      icon: "7",
       content: (
         <>
           <p style={paragraphStyle}>
@@ -1419,11 +1708,11 @@ export default function FeatureDiscoveryPage() {
       ),
     },
 
-    // ─── Section 7: Critical Dependency Map ───
+    // ─── Section 8: Critical Dependency Map ───
     {
       id: "mapa-dependencias",
       title: "Mapa de Dependencias Criticas",
-      icon: "7",
+      icon: "8",
       content: (
         <>
           <p style={paragraphStyle}>
@@ -1493,8 +1782,8 @@ export default function FeatureDiscoveryPage() {
       color: "#6366f1",
     },
     { label: "Camadas", value: "6", color: "#10b981" },
-    { label: "Fluxos Interativos", value: "5", color: "#f59e0b" },
-    { label: "Diagramas", value: "50+", color: "#ef4444" },
+    { label: "Fluxos Interativos", value: "6", color: "#f59e0b" },
+    { label: "Diagramas", value: "60+", color: "#ef4444" },
   ];
 
   // -----------------------------------------------------------------------
