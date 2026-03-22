@@ -33,15 +33,124 @@ const STAT_COLORS = [
   { from: "#d97706", to: "#fbbf24" },
 ];
 
-const GRAPH_GROUP_COLORS: Record<string, string> = {
-  "processes_payments_via": "#6366f1",
-  "routes_through": "#2563eb",
-  "settles_with": "#059669",
-  "runs_on": "#f59e0b",
-  "issues": "#d97706",
-  "deployed_on": "#8b5cf6",
-  "bridge": "#ec4899",
+const LAYER_DESCRIPTIONS: Record<string, string> = {
+  merchants:
+    "O ponto de partida: empresas que vendem produtos e servicos e precisam aceitar pagamentos dos consumidores finais.",
+  "payment-platforms":
+    "A camada de integracao: PSPs, gateways, carteiras digitais e BNPL que conectam merchants ao sistema financeiro.",
+  "payment-infra":
+    "Os trilhos: redes de cartao, adquirentes, pagamentos em tempo real e plataformas de fraude que movimentam o dinheiro.",
+  "financial-infra":
+    "A base: bancos emissores, core banking e sistemas de liquidacao que sustentam todo o ecossistema.",
+  "blockchain-infra":
+    "A nova fronteira: exchanges, stablecoins, blockchains e protocolos DeFi que criam alternativas descentralizadas.",
 };
+
+const GRAPH_GROUPS = [
+  {
+    key: "processes",
+    title: "Processa pagamentos via",
+    icon: "🏪",
+    description: "Merchants enviam transacoes para PSPs e processadores",
+    color: "#6366f1",
+    filter: (r: string) => r === "processes_payments_via" || r === "accepts",
+  },
+  {
+    key: "routes",
+    title: "Roteia atraves de",
+    icon: "💎",
+    description: "PSPs roteiam transacoes pelas redes de cartao",
+    color: "#2563eb",
+    filter: (r: string) => r === "routes_through" || r === "acquires_for",
+  },
+  {
+    key: "settles",
+    title: "Liquida com",
+    icon: "🏛️",
+    description: "Redes liquidam fundos com bancos emissores e adquirentes",
+    color: "#059669",
+    filter: (r: string) => r === "settles_with",
+  },
+  {
+    key: "stablecoin",
+    title: "Opera em blockchain",
+    icon: "⛓️",
+    description: "Stablecoins e protocolos DeFi operam em redes blockchain",
+    color: "#7c3aed",
+    filter: (r: string) => r === "runs_on" || r === "deployed_on",
+  },
+  {
+    key: "issues",
+    title: "Emite stablecoin",
+    icon: "🪙",
+    description: "Empresas emitem tokens ancorados a moedas fiduciarias",
+    color: "#f59e0b",
+    filter: (r: string) => r === "issues" || r === "issues_via",
+  },
+  {
+    key: "bridge",
+    title: "Ponte Tradicional - Cripto",
+    icon: "🌉",
+    description: "Conexoes entre o sistema financeiro tradicional e cripto",
+    color: "#ec4899",
+    filter: (r: string) =>
+      r === "settles_in" ||
+      r === "enables_payouts_in" ||
+      r === "issues_card_via",
+  },
+];
+
+const TRANSACTION_STEPS = [
+  {
+    num: 1,
+    layer: "Cliente",
+    company: "Apple Pay",
+    color: "#6366f1",
+    role: "O consumidor inicia o pagamento usando sua carteira digital com autenticacao biometrica (Face ID).",
+  },
+  {
+    num: 2,
+    layer: "Merchant",
+    company: "Shopify",
+    color: "#6366f1",
+    role: "A loja online recebe o pedido e envia os dados do pagamento ao seu PSP integrado.",
+  },
+  {
+    num: 3,
+    layer: "PSP",
+    company: "Stripe",
+    color: "#2563eb",
+    role: "O PSP tokeniza o cartao, verifica fraude (Radar), e roteia a transacao para a rede de cartao.",
+  },
+  {
+    num: 4,
+    layer: "Rede",
+    company: "Visa",
+    color: "#059669",
+    role: "A rede de cartao roteia a autorizacao entre o adquirente e o banco emissor em milissegundos.",
+  },
+  {
+    num: 5,
+    layer: "Adquirente",
+    company: "Fiserv",
+    color: "#059669",
+    role: "O adquirente processa a transacao e garante que o merchant receba os fundos na liquidacao.",
+  },
+  {
+    num: 6,
+    layer: "Emissor",
+    company: "JPMorgan",
+    color: "#d97706",
+    role: "O banco emissor verifica o saldo/credito do cliente e aprova ou recusa a transacao.",
+  },
+  {
+    num: 7,
+    layer: "Liquidacao",
+    company: "Fedwire",
+    color: "#d97706",
+    role: "O sistema de liquidacao transfere os fundos finais entre os bancos, completando o ciclo.",
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -53,7 +162,18 @@ export default function EcosystemMapPage() {
   const quiz = getQuizForPage("/explore/ecosystem-map");
   const { recordQuiz } = useGameProgress();
   const [quizCompleted, setQuizCompleted] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    () => {
+      // Start with first category of each layer expanded
+      const initial = new Set<string>();
+      ecosystemLayers.forEach((layer) => {
+        if (layer.categories.length > 0) {
+          initial.add(layer.categories[0].id);
+        }
+      });
+      return initial;
+    }
+  );
   const [showGraph, setShowGraph] = useState(true);
 
   // Filter layers/categories/players based on search & active layer
@@ -136,7 +256,7 @@ export default function EcosystemMapPage() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* ================================================================= */}
-      {/* HEADER                                                            */}
+      {/* SECTION 1: HEADER + STATS                                         */}
       {/* ================================================================= */}
       <header className="page-header animate-fade-in">
         <h1 className="page-title" style={{ marginBottom: "0.75rem" }}>
@@ -152,19 +272,26 @@ export default function EcosystemMapPage() {
 
       {/* Learning Objectives */}
       <div className="learning-objectives" style={{ marginBottom: "1.5rem" }}>
-        <p style={{ fontWeight: 700, fontSize: "0.875rem", color: "var(--primary)", marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          O que você vai aprender
+        <p
+          style={{
+            fontWeight: 700,
+            fontSize: "0.875rem",
+            color: "var(--primary)",
+            marginBottom: "0.5rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em",
+          }}
+        >
+          O que voce vai aprender
         </p>
         <ul>
           <li>Os principais players do ecossistema de pagamentos</li>
-          <li>Diferença entre adquirente, sub-adquirente e PSP</li>
+          <li>Diferenca entre adquirente, sub-adquirente e PSP</li>
           <li>Como fintechs e bancos interagem</li>
         </ul>
       </div>
 
-      {/* ================================================================= */}
-      {/* STATS — Phase 1                                                   */}
-      {/* ================================================================= */}
+      {/* Stats Row */}
       <div
         className="grid grid-cols-2 md:grid-cols-4 animate-fade-in stagger-1"
         style={{ gap: "1rem", marginBottom: "2rem" }}
@@ -173,7 +300,11 @@ export default function EcosystemMapPage() {
           { label: "Camadas", value: ecosystemLayers.length, icon: "📊" },
           { label: "Categorias", value: totalCategories, icon: "📁" },
           { label: "Players", value: totalPlayers, icon: "🏢" },
-          { label: "Conexoes", value: knowledgeGraphConnections.length, icon: "🔗" },
+          {
+            label: "Conexoes",
+            value: knowledgeGraphConnections.length,
+            icon: "🔗",
+          },
         ].map((stat, idx) => (
           <div
             key={stat.label}
@@ -206,101 +337,188 @@ export default function EcosystemMapPage() {
         ))}
       </div>
 
-      <p style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 16, fontStyle: "italic" }}>
-        * Números de players e conexões podem variar com o tempo. Verifique novamente se permanecem atuais.
-      </p>
-
       {/* ================================================================= */}
-      {/* LAYER VISUAL STACK — Phase 2                                      */}
+      {/* SECTION 2: COMO O ECOSSISTEMA FUNCIONA                            */}
       {/* ================================================================= */}
-      <div className="animate-fade-in stagger-2" style={{ marginBottom: "2rem" }}>
+      <section className="animate-fade-in stagger-2" style={{ marginBottom: "3rem" }}>
         <h2
-          className="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]"
-          style={{ marginBottom: "0.75rem" }}
+          className="text-lg font-bold"
+          style={{ marginBottom: "0.5rem" }}
         >
-          Camadas da Infraestrutura
+          Como o Ecossistema Funciona
         </h2>
-        <div
-          className="flex flex-col relative"
-          style={{ gap: "0.5rem" }}
+        <p
+          className="text-sm text-[var(--text-muted)]"
+          style={{ marginBottom: "1.25rem" }}
         >
-          {/* Dashed connector line */}
-          <div
-            className="absolute hidden md:block"
-            style={{
-              left: "1rem",
-              top: "2.75rem",
-              bottom: "2.75rem",
-              width: "0",
-              borderLeft: "2px dashed var(--border)",
-              zIndex: 0,
-            }}
-          />
+          O ecossistema de pagamentos se organiza em 5 camadas — do consumidor
+          final ate a infraestrutura de liquidacao. Clique em uma camada para
+          filtrar os players abaixo.
+        </p>
 
+        <div className="flex flex-col" style={{ gap: "0.75rem" }}>
           {ecosystemLayers.map((layer, idx) => {
             const isActive = activeLayer === layer.id;
             const playerCount = layer.categories.reduce(
               (t, c) => t + c.players.length,
               0
             );
+            const exampleNames = layer.categories
+              .flatMap((c) => c.players)
+              .slice(0, 4)
+              .map((p) => p.name);
+
             return (
               <button
                 key={layer.id}
-                onClick={() => setActiveLayer(isActive ? null : layer.id)}
-                className="card-interactive relative flex items-center text-left transition-all duration-200"
+                onClick={() =>
+                  setActiveLayer(isActive ? null : layer.id)
+                }
+                className="text-left transition-all duration-200 rounded-xl"
                 style={{
-                  gap: "0.75rem",
-                  padding: "0.875rem 1.25rem",
-                  borderLeft: `4px solid ${isActive ? layer.colorFrom : "transparent"}`,
+                  padding: "1.25rem 1.5rem",
                   background: isActive
-                    ? `linear-gradient(135deg, ${layer.colorFrom}15, ${layer.colorTo}10)`
-                    : undefined,
-                  zIndex: 1,
+                    ? `linear-gradient(135deg, ${layer.colorFrom}12, ${layer.colorTo}08)`
+                    : "var(--surface)",
+                  border: isActive
+                    ? `1px solid ${layer.colorFrom}40`
+                    : "1px solid var(--border)",
+                  borderLeft: `5px solid ${layer.colorFrom}`,
+                  cursor: "pointer",
                 }}
               >
-                {/* Index badge */}
-                <span
-                  className="flex items-center justify-center text-xs font-bold text-white shrink-0"
-                  style={{
-                    width: "2rem",
-                    height: "2rem",
-                    borderRadius: "50%",
-                    background: `linear-gradient(135deg, ${layer.colorFrom}, ${layer.colorTo})`,
-                  }}
-                >
-                  {idx + 1}
-                </span>
-                {/* Icon + Name */}
-                <span style={{ fontSize: "1.25rem" }}>{layer.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm">{layer.name}</div>
-                  <div className="text-xs text-[var(--text-muted)]">
-                    {layer.categories.length} categorias · {playerCount} players
-                  </div>
-                </div>
-                {/* Active indicator / dismiss */}
-                {isActive && (
-                  <span
-                    className="text-xs font-medium rounded-full flex items-center"
+                <div className="flex items-start" style={{ gap: "1rem" }}>
+                  {/* Number + icon */}
+                  <div
+                    className="flex items-center justify-center shrink-0 text-white font-bold"
                     style={{
-                      padding: "0.25rem 0.75rem",
-                      gap: "0.375rem",
-                      background: `${layer.colorFrom}20`,
-                      color: layer.colorFrom,
-                      border: `1px solid ${layer.colorFrom}40`,
+                      width: "2.5rem",
+                      height: "2.5rem",
+                      borderRadius: "0.75rem",
+                      background: `linear-gradient(135deg, ${layer.colorFrom}, ${layer.colorTo})`,
+                      fontSize: "1.125rem",
                     }}
                   >
-                    ✕ Filtrado
-                  </span>
+                    {layer.icon}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div
+                      className="flex items-center flex-wrap"
+                      style={{ gap: "0.5rem", marginBottom: "0.375rem" }}
+                    >
+                      <span
+                        className="font-bold text-base"
+                        style={{
+                          color: isActive
+                            ? layer.colorFrom
+                            : "var(--foreground)",
+                        }}
+                      >
+                        {idx + 1}. {layer.name}
+                      </span>
+                      <span
+                        className="text-xs font-medium rounded-full"
+                        style={{
+                          padding: "0.125rem 0.625rem",
+                          background: `${layer.colorFrom}15`,
+                          color: layer.colorFrom,
+                          border: `1px solid ${layer.colorFrom}25`,
+                        }}
+                      >
+                        {layer.categories.length} categorias · {playerCount}{" "}
+                        players
+                      </span>
+                      {isActive && (
+                        <span
+                          className="text-xs font-medium rounded-full"
+                          style={{
+                            padding: "0.125rem 0.625rem",
+                            background: `${layer.colorFrom}20`,
+                            color: layer.colorFrom,
+                            border: `1px solid ${layer.colorFrom}40`,
+                          }}
+                        >
+                          ✕ Filtrado
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className="text-sm text-[var(--text-secondary)]"
+                      style={{ marginBottom: "0.5rem", lineHeight: 1.5 }}
+                    >
+                      {LAYER_DESCRIPTIONS[layer.id] || layer.description}
+                    </p>
+                    <div
+                      className="flex items-center flex-wrap"
+                      style={{ gap: "0.375rem" }}
+                    >
+                      <span
+                        className="text-xs text-[var(--text-muted)]"
+                        style={{ marginRight: "0.25rem" }}
+                      >
+                        Ex:
+                      </span>
+                      {exampleNames.map((name) => (
+                        <span
+                          key={name}
+                          className="text-xs font-medium rounded-full"
+                          style={{
+                            padding: "0.125rem 0.5rem",
+                            background: "var(--surface-hover)",
+                            border: "1px solid var(--border)",
+                            color: "var(--foreground)",
+                          }}
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Arrow */}
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={isActive ? layer.colorFrom : "var(--text-muted)"}
+                    strokeWidth="2"
+                    className="shrink-0"
+                    style={{ marginTop: "0.25rem" }}
+                  >
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                </div>
+
+                {/* Downward connector arrow between layers */}
+                {idx < ecosystemLayers.length - 1 && (
+                  <div
+                    className="flex justify-center"
+                    style={{ marginTop: "0.5rem" }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="var(--text-muted)"
+                      strokeWidth="2"
+                      style={{ opacity: 0.4 }}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
                 )}
               </button>
             );
           })}
         </div>
-      </div>
+      </section>
 
       {/* ================================================================= */}
-      {/* SEARCH BAR — Phase 3                                              */}
+      {/* SEARCH BAR                                                        */}
       {/* ================================================================= */}
       <div className="animate-fade-in stagger-3" style={{ marginBottom: "2rem" }}>
         {/* Active filter bar */}
@@ -313,7 +531,9 @@ export default function EcosystemMapPage() {
               gap: "0.5rem",
             }}
           >
-            <span className="text-xs text-[var(--text-muted)]">Filtros ativos:</span>
+            <span className="text-xs text-[var(--text-muted)]">
+              Filtros ativos:
+            </span>
 
             {activeLayerData && (
               <button
@@ -348,8 +568,12 @@ export default function EcosystemMapPage() {
               </button>
             )}
 
-            <span className="text-xs text-[var(--text-muted)]" style={{ marginLeft: "auto" }}>
-              Mostrando {visibleStats.players} players em {visibleStats.categories} categorias
+            <span
+              className="text-xs text-[var(--text-muted)]"
+              style={{ marginLeft: "auto" }}
+            >
+              Mostrando {visibleStats.players} players em{" "}
+              {visibleStats.categories} categorias
             </span>
           </div>
         )}
@@ -388,106 +612,9 @@ export default function EcosystemMapPage() {
       </div>
 
       {/* ================================================================= */}
-      {/* KNOWLEDGE GRAPH — Phase 8                                         */}
+      {/* SECTION 3: PLAYERS POR CAMADA                                     */}
       {/* ================================================================= */}
-      <div className="animate-fade-in stagger-4" style={{ marginBottom: "2.5rem" }}>
-        {/* Section header with toggle */}
-        <div
-          className="flex items-center"
-          style={{ marginBottom: showGraph ? "1rem" : "0", gap: "0.75rem" }}
-        >
-          <span style={{ fontSize: "1.25rem" }}>🔗</span>
-          <div className="flex-1">
-            <h3 className="font-bold text-base">Knowledge Graph</h3>
-            <p className="text-xs text-[var(--text-muted)]">
-              {knowledgeGraphConnections.length} relacoes mapeadas entre empresas, redes e protocolos
-            </p>
-          </div>
-          <button
-            onClick={() => setShowGraph(!showGraph)}
-            className="text-xs font-medium rounded-lg border border-[var(--border)] hover:border-[var(--primary)]/30 transition-all"
-            style={{ padding: "0.375rem 0.875rem" }}
-          >
-            {showGraph ? "Ocultar ↑" : "Mostrar ↓"}
-          </button>
-        </div>
-
-        {/* Graph content */}
-        {showGraph && (
-          <div
-            className="grid grid-cols-1 md:grid-cols-2"
-            style={{ gap: "0.75rem" }}
-          >
-            {[
-              { label: "Merchant → PSP", filter: "processes_payments_via", icon: "🏪→💳" },
-              { label: "PSP → Rede", filter: "routes_through", icon: "💳→💎" },
-              { label: "Rede → Banco", filter: "settles_with", icon: "💎→🏛️" },
-              { label: "Stablecoin → Blockchain", filter: "runs_on", icon: "🪙→⛓️" },
-              { label: "Emissor → Stablecoin", filter: "issues", icon: "🏢→🪙" },
-              { label: "DeFi → Blockchain", filter: "deployed_on", icon: "🌀→⛓️" },
-              { label: "Tradicional ↔ Cripto", filter: "bridge", icon: "🌉" },
-            ].map((group) => {
-              const connections = knowledgeGraphConnections.filter((c) => {
-                if (group.filter === "bridge") {
-                  return ["settles_in", "enables_payouts_in", "issues_card_via", "issues_via"].includes(c.relationship);
-                }
-                return c.relationship === group.filter;
-              });
-              if (connections.length === 0) return null;
-
-              const groupColor = GRAPH_GROUP_COLORS[group.filter] || "var(--primary)";
-
-              return (
-                <div
-                  key={group.label}
-                  className="rounded-xl"
-                  style={{
-                    padding: "1rem",
-                    background: "var(--surface-hover)",
-                    borderLeft: `3px solid ${groupColor}`,
-                  }}
-                >
-                  <div
-                    className="text-xs font-bold uppercase tracking-wider flex items-center"
-                    style={{
-                      color: groupColor,
-                      marginBottom: "0.625rem",
-                      gap: "0.5rem",
-                    }}
-                  >
-                    <span>{group.icon}</span>
-                    {group.label}
-                  </div>
-                  <div className="flex flex-col" style={{ gap: "0.375rem" }}>
-                    {connections.map((conn, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center text-sm"
-                        style={{ gap: "0.5rem" }}
-                      >
-                        <span className="font-semibold text-[var(--foreground)]">{conn.from}</span>
-                        <span style={{ color: groupColor }}>→</span>
-                        <span className="font-semibold text-[var(--primary)]">{conn.to}</span>
-                        <span
-                          className="text-xs text-[var(--text-muted)] hidden sm:block"
-                          style={{ marginLeft: "auto" }}
-                        >
-                          {conn.description}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ================================================================= */}
-      {/* LAYERS & CATEGORIES — Phases 4, 5, 6                              */}
-      {/* ================================================================= */}
-      <div className="flex flex-col" style={{ gap: "2.5rem" }}>
+      <div className="flex flex-col" style={{ gap: "3rem" }}>
         {filteredLayers.map((layer) => {
           const layerPlayerCount = layer.categories.reduce(
             (t, c) => t + c.players.length,
@@ -496,8 +623,8 @@ export default function EcosystemMapPage() {
           const allExpanded = isLayerFullyExpanded(layer.id);
 
           return (
-            <section key={layer.id} className="animate-fade-in">
-              {/* ── Layer header — Phase 6 ── */}
+            <section key={layer.id} id={`layer-${layer.id}`} className="animate-fade-in">
+              {/* Layer header */}
               <div>
                 {/* Gradient accent bar */}
                 <div
@@ -509,7 +636,10 @@ export default function EcosystemMapPage() {
                   }}
                 />
 
-                <div className="flex items-center" style={{ gap: "0.75rem", marginBottom: "1.5rem" }}>
+                <div
+                  className="flex items-center"
+                  style={{ gap: "0.75rem", marginBottom: "0.5rem" }}
+                >
                   {/* Icon circle */}
                   <div
                     className="flex items-center justify-center text-white shrink-0"
@@ -527,9 +657,6 @@ export default function EcosystemMapPage() {
 
                   <div className="flex-1">
                     <h2 className="text-lg font-bold">{layer.name}</h2>
-                    <p className="text-xs text-[var(--text-muted)]">
-                      {layer.description}
-                    </p>
                   </div>
 
                   {/* Stats badge */}
@@ -537,7 +664,8 @@ export default function EcosystemMapPage() {
                     className="badge text-xs hidden sm:flex items-center"
                     style={{ gap: "0.25rem" }}
                   >
-                    {layer.categories.length} categorias · {layerPlayerCount} players
+                    {layer.categories.length} categorias · {layerPlayerCount}{" "}
+                    players
                   </span>
 
                   {/* Toggle all button */}
@@ -546,12 +674,19 @@ export default function EcosystemMapPage() {
                     className="text-xs font-medium transition-all rounded-lg border border-[var(--border)] hover:border-[var(--primary)]/30 hover:text-[var(--primary)]"
                     style={{ padding: "0.375rem 0.875rem" }}
                   >
-                    {allExpanded ? "Recolher tudo ↑" : "Expandir tudo ↓"}
+                    {allExpanded ? "Recolher tudo" : "Expandir tudo"}
                   </button>
                 </div>
+
+                <p
+                  className="text-sm text-[var(--text-muted)]"
+                  style={{ marginBottom: "1.25rem", lineHeight: 1.5 }}
+                >
+                  {layer.description}
+                </p>
               </div>
 
-              {/* ── Categories — Phase 4 ── */}
+              {/* Categories */}
               <div className="flex flex-col" style={{ gap: "1rem" }}>
                 {layer.categories.map((cat) => {
                   const isExpanded = expandedCategories.has(cat.id);
@@ -567,12 +702,20 @@ export default function EcosystemMapPage() {
                         className="w-full flex items-center text-left hover:bg-[var(--surface-hover)] transition-colors"
                         style={{ gap: "0.75rem", padding: "1rem 1.25rem" }}
                       >
-                        <span style={{ fontSize: "1.375rem" }}>{cat.icon}</span>
+                        <span style={{ fontSize: "1.375rem" }}>
+                          {cat.icon}
+                        </span>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-base">{cat.name}</h3>
+                          <p
+                            className="text-xs text-[var(--text-muted)]"
+                            style={{ marginTop: "0.125rem" }}
+                          >
+                            {cat.description}
+                          </p>
                         </div>
                         <span
-                          className="badge-primary text-xs font-medium"
+                          className="badge-primary text-xs font-medium shrink-0"
                           style={{ padding: "0.25rem 0.625rem" }}
                         >
                           {cat.players.length} players
@@ -584,7 +727,7 @@ export default function EcosystemMapPage() {
                           fill="none"
                           stroke="currentColor"
                           strokeWidth="2"
-                          className={`text-[var(--text-muted)] transition-transform duration-200 ${
+                          className={`text-[var(--text-muted)] transition-transform duration-200 shrink-0 ${
                             isExpanded ? "rotate-180" : ""
                           }`}
                         >
@@ -592,7 +735,7 @@ export default function EcosystemMapPage() {
                         </svg>
                       </button>
 
-                      {/* Player grid (expand/collapse) */}
+                      {/* Player cards (expand/collapse) */}
                       <div
                         className="grid transition-all duration-300 ease-in-out"
                         style={{
@@ -600,92 +743,99 @@ export default function EcosystemMapPage() {
                         }}
                       >
                         <div className="overflow-hidden">
-                          {/* Description inside expanded area */}
-                          <p
-                            className="text-xs text-[var(--text-muted)]"
-                            style={{
-                              padding: "0 1.25rem",
-                              marginBottom: "0.75rem",
-                            }}
-                          >
-                            {cat.description}
-                          </p>
-
-                          {/* Player cards grid — Phase 5 */}
+                          {/* Player cards — full width, 2 col on desktop */}
                           <div
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                            className="grid grid-cols-1 md:grid-cols-2"
                             style={{
-                              gap: "0.875rem",
-                              padding: "0 1.25rem 1.25rem 1.25rem",
+                              gap: "1rem",
+                              padding: "1rem 1.25rem 1.25rem 1.25rem",
                             }}
                           >
                             {cat.players.map((player, pidx) => (
                               <div
                                 key={player.id}
-                                className="card-flat interactive-hover animate-fade-in rounded-xl transition-all duration-200"
+                                className="rounded-xl transition-all duration-200"
                                 style={{
-                                  padding: "1rem",
-                                  borderTop: `3px solid ${cat.color}`,
+                                  padding: "1.25rem",
+                                  background: "var(--surface)",
+                                  border: "1px solid var(--border)",
+                                  borderLeft: `4px solid ${cat.color}`,
                                   animationDelay: `${pidx * 40}ms`,
                                 }}
                               >
-                                {/* Name + Type */}
-                                <div style={{ marginBottom: "0.75rem" }}>
-                                  <h4 className="text-sm font-bold">
+                                {/* Name + Type badge */}
+                                <div
+                                  className="flex items-start flex-wrap"
+                                  style={{
+                                    gap: "0.5rem",
+                                    marginBottom: "0.75rem",
+                                  }}
+                                >
+                                  <h4
+                                    className="font-bold"
+                                    style={{ fontSize: "1rem" }}
+                                  >
                                     {player.name}
                                   </h4>
                                   <span
-                                    className="badge text-[11px] font-medium"
+                                    className="text-xs font-medium rounded-full"
                                     style={{
-                                      marginTop: "0.25rem",
-                                      display: "inline-block",
-                                      background: `${cat.color}15`,
+                                      padding: "0.125rem 0.625rem",
+                                      background: `${cat.color}12`,
                                       color: cat.color,
                                       border: `1px solid ${cat.color}30`,
-                                      padding: "0.125rem 0.5rem",
                                     }}
                                   >
                                     {player.type}
                                   </span>
                                 </div>
 
-                                {/* Features as chips */}
-                                <div style={{ marginBottom: "0.625rem" }}>
-                                  <div className="flex flex-wrap" style={{ gap: "0.375rem" }}>
-                                    {player.keyFeatures.slice(0, 3).map((f) => (
+                                {/* Key Features as pills */}
+                                <div style={{ marginBottom: "0.75rem" }}>
+                                  <div
+                                    className="flex flex-wrap"
+                                    style={{ gap: "0.375rem" }}
+                                  >
+                                    {player.keyFeatures.map((f) => (
                                       <span
                                         key={f}
-                                        className="chip-muted text-[11px]"
-                                        style={{ padding: "0.125rem 0.5rem" }}
+                                        className="text-xs rounded-full"
+                                        style={{
+                                          padding: "0.25rem 0.625rem",
+                                          background: "var(--surface-hover)",
+                                          border: "1px solid var(--border)",
+                                          color: "var(--foreground)",
+                                        }}
                                       >
                                         {f}
                                       </span>
                                     ))}
-                                    {player.keyFeatures.length > 3 && (
-                                      <span
-                                        className="text-[11px] text-[var(--text-muted)] font-medium"
-                                        style={{ padding: "0.125rem 0.25rem" }}
-                                      >
-                                        +{player.keyFeatures.length - 3} mais
-                                      </span>
-                                    )}
                                   </div>
                                 </div>
 
                                 {/* Regions */}
-                                <div className="flex flex-wrap" style={{ gap: "0.25rem" }}>
+                                <div
+                                  className="flex flex-wrap items-center"
+                                  style={{ gap: "0.375rem" }}
+                                >
+                                  <span
+                                    className="text-xs text-[var(--text-muted)]"
+                                    style={{ marginRight: "0.125rem" }}
+                                  >
+                                    🌍
+                                  </span>
                                   {player.regions.map((r) => (
                                     <span
                                       key={r}
-                                      className="badge text-[11px]"
+                                      className="text-xs rounded-full"
                                       style={{
                                         padding: "0.125rem 0.5rem",
-                                        background: "var(--surface-hover)",
-                                        border: "1px solid var(--border)",
-                                        color: "var(--text-muted)",
+                                        background: `${cat.color}08`,
+                                        border: `1px solid ${cat.color}20`,
+                                        color: "var(--text-secondary)",
                                       }}
                                     >
-                                      🌍 {r}
+                                      {r}
                                     </span>
                                   ))}
                                 </div>
@@ -703,12 +853,15 @@ export default function EcosystemMapPage() {
         })}
       </div>
 
-      {/* ================================================================= */}
-      {/* EMPTY STATE                                                       */}
-      {/* ================================================================= */}
+      {/* Empty state */}
       {filteredLayers.length === 0 && (
-        <div className="text-center text-[var(--text-muted)]" style={{ padding: "4rem 0" }}>
-          <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>🔍</div>
+        <div
+          className="text-center text-[var(--text-muted)]"
+          style={{ padding: "4rem 0" }}
+        >
+          <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>
+            🔍
+          </div>
           <p className="text-sm">
             Nenhum player encontrado para &ldquo;{search}&rdquo;
             {activeLayer && " nesta camada"}.
@@ -727,95 +880,243 @@ export default function EcosystemMapPage() {
       )}
 
       {/* ================================================================= */}
-      {/* TRANSACTION FLOW — Phase 7                                        */}
+      {/* SECTION 4: KNOWLEDGE GRAPH — Como as Empresas se Conectam         */}
       {/* ================================================================= */}
-      <div
-        className="card-glow animate-fade-in"
-        style={{ marginTop: "2.5rem", padding: "1.5rem" }}
+      <section
+        className="animate-fade-in stagger-4"
+        style={{ marginTop: "3rem", marginBottom: "3rem" }}
       >
-        <h3
-          className="font-bold flex items-center"
-          style={{ gap: "0.5rem", marginBottom: "0.5rem", fontSize: "1rem" }}
-        >
-          <span>⚡</span>
-          Exemplo: Fluxo de uma Transacao
-        </h3>
-        <p
-          className="text-xs text-[var(--text-muted)]"
-          style={{ marginBottom: "1.25rem" }}
-        >
-          Uma unica transacao atravessa multiplas camadas do ecossistema:
-        </p>
+        {/* Section header with toggle */}
         <div
-          className="flex flex-wrap items-center"
-          style={{ gap: "0.5rem" }}
+          className="flex items-center"
+          style={{
+            marginBottom: showGraph ? "1rem" : "0",
+            gap: "0.75rem",
+          }}
         >
-          {[
-            { label: "Cliente", sub: "Apple Pay", color: "#6366f1" },
-            { label: "Merchant", sub: "Shopify", color: "#6366f1" },
-            { label: "PSP", sub: "Stripe", color: "#2563eb" },
-            { label: "Rede", sub: "Visa", color: "#059669" },
-            { label: "Adquirente", sub: "Fiserv", color: "#059669" },
-            { label: "Emissor", sub: "JPMorgan", color: "#d97706" },
-            { label: "Liquidacao", sub: "Fedwire", color: "#d97706" },
-          ].map((step, i) => (
-            <div key={step.label} className="flex items-center" style={{ gap: "0.5rem" }}>
-              <div
-                className="rounded-xl text-center relative"
-                style={{
-                  padding: "0.75rem 1rem",
-                  background: "var(--surface-hover)",
-                  borderTop: `3px solid ${step.color}`,
-                  minWidth: "5rem",
-                }}
-              >
-                {/* Step number */}
+          <span style={{ fontSize: "1.25rem" }}>🔗</span>
+          <div className="flex-1">
+            <h2 className="font-bold text-lg">
+              Como as Empresas se Conectam
+            </h2>
+            <p className="text-xs text-[var(--text-muted)]">
+              {knowledgeGraphConnections.length} relacoes mapeadas entre
+              empresas, redes e protocolos — agrupadas por tipo de conexao
+            </p>
+          </div>
+          <button
+            onClick={() => setShowGraph(!showGraph)}
+            className="text-xs font-medium rounded-lg border border-[var(--border)] hover:border-[var(--primary)]/30 transition-all"
+            style={{ padding: "0.375rem 0.875rem" }}
+          >
+            {showGraph ? "Ocultar" : "Mostrar"}
+          </button>
+        </div>
+
+        {/* Graph grouped by connection type */}
+        {showGraph && (
+          <div
+            className="grid grid-cols-1 md:grid-cols-2"
+            style={{ gap: "1rem" }}
+          >
+            {GRAPH_GROUPS.map((group) => {
+              const connections = knowledgeGraphConnections.filter((c) =>
+                group.filter(c.relationship)
+              );
+              if (connections.length === 0) return null;
+
+              return (
                 <div
-                  className="absolute flex items-center justify-center text-white font-bold"
+                  key={group.key}
+                  className="rounded-xl"
                   style={{
-                    width: "1.25rem",
-                    height: "1.25rem",
-                    borderRadius: "50%",
-                    background: step.color,
-                    fontSize: "0.625rem",
-                    top: "-0.625rem",
-                    right: "-0.375rem",
+                    padding: "1.25rem",
+                    background: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    borderLeft: `4px solid ${group.color}`,
                   }}
                 >
-                  {i + 1}
+                  {/* Group header */}
+                  <div
+                    className="flex items-center"
+                    style={{
+                      gap: "0.5rem",
+                      marginBottom: "0.25rem",
+                    }}
+                  >
+                    <span style={{ fontSize: "1.125rem" }}>
+                      {group.icon}
+                    </span>
+                    <h3
+                      className="font-bold text-sm"
+                      style={{ color: group.color }}
+                    >
+                      {group.title}
+                    </h3>
+                  </div>
+                  <p
+                    className="text-xs text-[var(--text-muted)]"
+                    style={{ marginBottom: "1rem" }}
+                  >
+                    {group.description}
+                  </p>
+
+                  {/* Connections list */}
+                  <div
+                    className="flex flex-col"
+                    style={{ gap: "0.625rem" }}
+                  >
+                    {connections.map((conn, i) => (
+                      <div
+                        key={i}
+                        className="rounded-lg"
+                        style={{
+                          padding: "0.625rem 0.75rem",
+                          background: "var(--surface-hover)",
+                        }}
+                      >
+                        <div
+                          className="flex items-center"
+                          style={{ gap: "0.5rem", marginBottom: "0.25rem" }}
+                        >
+                          <span className="font-semibold text-sm text-[var(--foreground)]">
+                            {conn.from}
+                          </span>
+                          <span
+                            style={{
+                              color: group.color,
+                              fontWeight: 700,
+                            }}
+                          >
+                            →
+                          </span>
+                          <span className="font-semibold text-sm text-[var(--primary)]">
+                            {conn.to}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--text-muted)]">
+                          {conn.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="text-xs font-bold" style={{ color: step.color }}>
-                  {step.label}
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ================================================================= */}
+      {/* SECTION 5: FLUXO DE UMA TRANSACAO                                 */}
+      {/* ================================================================= */}
+      <section style={{ marginBottom: "3rem" }}>
+        <h2
+          className="text-lg font-bold flex items-center"
+          style={{ gap: "0.5rem", marginBottom: "0.375rem" }}
+        >
+          <span>⚡</span>
+          Exemplo: Fluxo Completo de uma Transacao
+        </h2>
+        <p
+          className="text-sm text-[var(--text-muted)]"
+          style={{ marginBottom: "1.5rem", lineHeight: 1.5 }}
+        >
+          Uma unica transacao de pagamento atravessa multiplas camadas do
+          ecossistema. Veja o que acontece em cada etapa:
+        </p>
+
+        {/* Desktop: horizontal flow / Mobile: vertical flow */}
+        <div
+          className="flex flex-col"
+          style={{ gap: "0" }}
+        >
+          {TRANSACTION_STEPS.map((step, i) => (
+            <div key={step.num}>
+              <div
+                className="flex items-start rounded-xl"
+                style={{
+                  padding: "1.25rem",
+                  gap: "1rem",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
+                  borderLeft: `4px solid ${step.color}`,
+                }}
+              >
+                {/* Numbered circle */}
+                <div
+                  className="flex items-center justify-center shrink-0 text-white font-bold"
+                  style={{
+                    width: "2.5rem",
+                    height: "2.5rem",
+                    borderRadius: "50%",
+                    background: step.color,
+                    fontSize: "0.875rem",
+                  }}
+                >
+                  {step.num}
                 </div>
-                <div className="text-[11px] text-[var(--text-muted)]">
-                  {step.sub}
+
+                {/* Content */}
+                <div className="flex-1">
+                  <div
+                    className="flex items-center flex-wrap"
+                    style={{ gap: "0.5rem", marginBottom: "0.375rem" }}
+                  >
+                    <span className="font-bold text-sm">
+                      {step.layer}
+                    </span>
+                    <span
+                      className="text-xs font-medium rounded-full"
+                      style={{
+                        padding: "0.125rem 0.625rem",
+                        background: `${step.color}15`,
+                        color: step.color,
+                        border: `1px solid ${step.color}30`,
+                      }}
+                    >
+                      {step.company}
+                    </span>
+                  </div>
+                  <p
+                    className="text-sm text-[var(--text-secondary)]"
+                    style={{ lineHeight: 1.5 }}
+                  >
+                    {step.role}
+                  </p>
                 </div>
               </div>
-              {i < 6 && (
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke={step.color}
-                  strokeWidth="2.5"
-                  className="shrink-0"
-                  style={{ opacity: 0.7 }}
+
+              {/* Connector arrow between steps */}
+              {i < TRANSACTION_STEPS.length - 1 && (
+                <div
+                  className="flex justify-center"
+                  style={{ padding: "0.25rem 0" }}
                 >
-                  <polyline points="9 18 15 12 9 6" />
-                </svg>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={step.color}
+                    strokeWidth="2"
+                    style={{ opacity: 0.5 }}
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </div>
               )}
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* ================================================================= */}
-      {/* NAVIGATION LINKS                                                  */}
+      {/* SECTION 6: EXPLORE MAIS                                           */}
       {/* ================================================================= */}
       <div
         className="card-glow animate-fade-in"
-        style={{ marginTop: "2rem", padding: "1.5rem" }}
+        style={{ marginBottom: "2rem", padding: "1.5rem" }}
       >
         <h3 className="font-bold" style={{ marginBottom: "0.875rem" }}>
           Explore mais no Atlas
@@ -825,9 +1126,21 @@ export default function EcosystemMapPage() {
           style={{ gap: "0.75rem" }}
         >
           {[
-            { name: "Sistema Financeiro Global", href: "/explore/financial-system", icon: "🌍" },
-            { name: "Trilhos de Pagamento", href: "/explore/payment-rails", icon: "🛤️" },
-            { name: "Mapa Blockchain", href: "/crypto/blockchain-map", icon: "🔗" },
+            {
+              name: "Sistema Financeiro Global",
+              href: "/explore/financial-system",
+              icon: "🌍",
+            },
+            {
+              name: "Trilhos de Pagamento",
+              href: "/explore/payment-rails",
+              icon: "🛤️",
+            },
+            {
+              name: "Mapa Blockchain",
+              href: "/crypto/blockchain-map",
+              icon: "🔗",
+            },
           ].map((link) => (
             <Link
               key={link.href}
@@ -856,10 +1169,20 @@ export default function EcosystemMapPage() {
         </div>
       </div>
 
+      {/* ================================================================= */}
+      {/* SECTION 7: QUIZ                                                   */}
+      {/* ================================================================= */}
       {quiz && !quizCompleted && (
         <div style={{ marginTop: "2.5rem" }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "1rem", color: "var(--foreground)" }}>
-            🧠 Teste seu Conhecimento
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: 700,
+              marginBottom: "1rem",
+              color: "var(--foreground)",
+            }}
+          >
+            Teste seu Conhecimento
           </h2>
           <PageQuiz
             questions={quiz.questions}
