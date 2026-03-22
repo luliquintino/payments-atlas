@@ -587,6 +587,114 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     relatedTerms: ["chargeback", "representment"],
   },
   {
+    id: "friendly-fraud",
+    term: "Friendly Fraud (Fraude Amigável)",
+    definition:
+      "Friendly fraud (ou fraude amigável) ocorre quando o titular legítimo do cartão realiza uma compra e posteriormente contesta a transação junto ao emissor, alegando não reconhecê-la ou não tê-la autorizado. Representa 40-70% dos chargebacks no e-commerce. Difere de fraude real pois o portador é quem fez a compra.",
+    aliases: ["friendly fraud", "fraude amigável", "first-party fraud"],
+    category: "risk",
+    relatedTerms: ["chargeback", "representment", "fraud"],
+  },
+  {
+    id: "tc40-safe",
+    term: "TC40 / SAFE Reports",
+    definition:
+      "TC40 (Visa) e SAFE (Mastercard) são relatórios de fraude emitidos pelo banco emissor quando o portador reporta uma transação como fraudulenta, independentemente de abrir chargeback. Alta taxa de TC40/SAFE pode colocar o merchant em programas de monitoramento de fraude da bandeira (VFMP/GMAP).",
+    aliases: ["TC40", "SAFE", "fraud report", "relatório de fraude"],
+    category: "risk",
+    relatedTerms: ["chargeback", "fraud", "reason-code"],
+  },
+  {
+    id: "reason-code",
+    term: "Reason Code (Código de Motivo)",
+    definition:
+      "Código padronizado atribuído pela bandeira a cada chargeback indicando o motivo da disputa. Visa usa categorias 10.x (fraude), 11.x (autorização), 12.x (processamento), 13.x (consumidor). Mastercard usa códigos 48xx-49xx. O reason code determina a estratégia de defesa e evidências necessárias.",
+    aliases: ["reason code", "código de motivo", "dispute reason code"],
+    category: "risk",
+    relatedTerms: ["chargeback", "representment", "compelling-evidence"],
+  },
+  {
+    id: "compelling-evidence",
+    term: "Compelling Evidence (CE)",
+    definition:
+      "Compelling Evidence (CE) é o framework da Visa para defesa de chargebacks de fraude (reason code 10.4). CE 3.0 permite matching automático de device fingerprint, IP e histórico de transações para provar que o portador é o mesmo de compras anteriores não disputadas. Pode reverter liability shift sem 3DS.",
+    aliases: ["compelling evidence", "CE 3.0", "evidência convincente"],
+    category: "risk",
+    relatedTerms: ["chargeback", "reason-code", "representment"],
+  },
+  {
+    id: "cdrn",
+    term: "CDRN (Cardholder Dispute Resolution Network)",
+    definition:
+      "CDRN (Cardholder Dispute Resolution Network) é um serviço da Verifi (Visa) que envia alertas ao merchant antes da formalização do chargeback, dando janela de 72 horas para resolver proativamente via refund. Custo típico: R$5-15 por alerta. Pode prevenir 20-40% dos chargebacks.",
+    aliases: ["CDRN", "Verifi CDRN", "chargeback alert", "alerta de chargeback"],
+    category: "risk",
+    relatedTerms: ["chargeback", "rdr", "ethoca-alerts"],
+  },
+  {
+    id: "rdr",
+    term: "RDR (Rapid Dispute Resolution)",
+    definition:
+      "RDR (Rapid Dispute Resolution) é um serviço da Verifi (Visa) que permite ao merchant definir regras para auto-refund de disputas antes de se tornarem chargebacks. Diferente do CDRN que envia alerta para decisão manual, o RDR automatiza a resolução baseado em regras pré-configuradas.",
+    aliases: ["RDR", "Rapid Dispute Resolution", "resolução rápida de disputas"],
+    category: "risk",
+    relatedTerms: ["chargeback", "cdrn", "ethoca-alerts"],
+  },
+  {
+    id: "ethoca-alerts",
+    term: "Ethoca Alerts",
+    definition:
+      "Ethoca Alerts é um serviço da Ethoca (adquirida pela Mastercard) que envia alertas de fraude confirmada ao merchant quando o emissor identifica uma transação como fraudulenta. Permite cancelar a entrega ou emitir refund antes do chargeback formal. Cobre tanto Visa quanto Mastercard.",
+    aliases: ["Ethoca Alerts", "Ethoca", "alerta Ethoca", "fraud alert"],
+    category: "risk",
+    relatedTerms: ["chargeback", "cdrn", "rdr"],
+  },
+  {
+    id: "pre-arbitration",
+    term: "Pré-Arbitragem",
+    definition:
+      "Pré-arbitragem é a etapa intermediária do ciclo de disputas entre o representment e a arbitragem final. Ocorre quando o emissor rejeita as evidências do representment e o merchant decide escalar. Envolve taxas ($300-500) e evidências adicionais. Prazo: 30 dias (Visa), 45 dias (Mastercard).",
+    aliases: ["pre-arbitration", "pré-arbitragem", "pre-arb"],
+    category: "risk",
+    relatedTerms: ["chargeback", "representment", "arbitration"],
+  },
+  {
+    id: "dispute-lifecycle",
+    term: "Ciclo de Vida da Disputa",
+    definition:
+      "Ciclo completo de uma disputa de pagamento, desde a contestação do portador até a resolução final. Etapas: transação → contestação → análise do emissor → notificação → coleta de evidências → representment → pré-arbitragem → arbitragem. Duração total: até 120 dias + 60-90 dias de arbitragem.",
+    aliases: ["dispute lifecycle", "ciclo de vida da disputa", "dispute cycle"],
+    category: "risk",
+    relatedTerms: ["chargeback", "representment", "pre-arbitration", "arbitration"],
+  },
+  {
+    id: "chargeback-rate",
+    term: "Chargeback Rate (Taxa de Chargeback)",
+    definition:
+      "Métrica que indica a proporção de transações que resultam em chargebacks. Calculado como: (número de chargebacks no mês / número de transações no mês anterior) × 100. Thresholds críticos: Visa VDMP ≥ 0.9%, Mastercard ECM ≥ 1.0%. Calculado separadamente por bandeira e por MID.",
+    aliases: ["chargeback rate", "taxa de chargeback", "dispute rate"],
+    category: "risk",
+    relatedTerms: ["chargeback", "win-rate"],
+  },
+  {
+    id: "win-rate",
+    term: "Win Rate (Taxa de Vitória)",
+    definition:
+      "Taxa de sucesso do merchant em contestar chargebacks via representment. Calculado como: (chargebacks revertidos / total de chargebacks contestados) × 100. Média do mercado: 20-40% dependendo do reason code. Fatores: qualidade da evidência, reason code, 3DS liability shift, CE 3.0 elegibilidade.",
+    aliases: ["win rate", "taxa de vitória", "representment win rate"],
+    category: "risk",
+    relatedTerms: ["chargeback", "representment", "chargeback-rate"],
+  },
+  {
+    id: "evidence-package",
+    term: "Pacote de Evidências",
+    definition:
+      "Pacote consolidado de evidências que o merchant submete durante o representment para contestar um chargeback. Conteúdo típico: comprovante de entrega, logs de autenticação 3DS (CAVV/ECI), correspondência com o cliente, prints do pedido, tracking de envio, IP/device fingerprint do comprador.",
+    aliases: ["evidence package", "pacote de evidências", "representment evidence"],
+    category: "risk",
+    relatedTerms: ["chargeback", "representment", "compelling-evidence"],
+  },
+  {
     id: "fraud",
     term: "Fraude em Pagamentos",
     definition:

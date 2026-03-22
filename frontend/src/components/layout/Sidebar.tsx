@@ -53,6 +53,7 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Taxonomia", href: "/knowledge/taxonomy", icon: "🏷️" },
       { name: "Glossário", href: "/glossary", icon: "📖" },
       { name: "Regras de Bandeiras", href: "/knowledge/brand-rules", icon: "🏦" },
+      { name: "Chargeback: Guia Completo", href: "/knowledge/chargeback-deep-dive", icon: "⚖️" },
       { name: "Antecipação de Recebíveis", href: "/knowledge/antecipacao-recebiveis", icon: "💰" },
       { name: "Parcelamento", href: "/knowledge/parcelamento", icon: "📊" },
       { name: "Crédito Estruturado", href: "/knowledge/credito-estruturado", icon: "🏦" },

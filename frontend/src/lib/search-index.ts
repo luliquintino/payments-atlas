@@ -147,6 +147,7 @@ function buildIndex(): SearchResult[] {
     { name: "Meu Progresso", description: "XP, badges, nível e conquistas", href: "/progress" },
     { name: "Regras de Bandeiras", description: "Regras de Visa, Mastercard, Elo, Diners, Amex e Hipercard", href: "/knowledge/brand-rules" },
     { name: "Analisador de Documentos", description: "Upload de regulações e documentações técnicas para análise com IA", href: "/tools/document-analyzer" },
+    { name: "Chargeback: Guia Completo", description: "Anatomia financeira, reason codes, defesa, monitoramento e KPIs de chargeback", href: "/knowledge/chargeback-deep-dive" },
     { name: "Antecipação de Recebíveis", description: "Deságio, mesa de antecipação, registradoras e regulação", href: "/knowledge/antecipacao-recebiveis" },
     { name: "Parcelamento", description: "Parcelado emissor vs lojista, interchange, chargeback em parcelas", href: "/knowledge/parcelamento" },
     { name: "Crédito Estruturado", description: "SCD, FIDC, cessão de recebíveis e credit as a service", href: "/knowledge/credito-estruturado" },

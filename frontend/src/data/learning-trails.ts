@@ -49,6 +49,7 @@ export const LEARNING_TRAILS: LearningTrail[] = [
       { path: "/fraud/fraud-map", title: "Mapa de Fraude", description: "Pipeline de deteccao de fraude", icon: "🛡️" },
       { path: "/fraud/fraud-signals", title: "Sinais de Fraude", description: "16 sinais que indicam fraude", icon: "📡" },
       { path: "/fraud/chargeback-lifecycle", title: "Ciclo de Chargeback", description: "Da disputa a resolucao", icon: "⚖️" },
+      { path: "/knowledge/chargeback-deep-dive", title: "Chargeback: Guia Completo", description: "Anatomia financeira, reason codes e defesa", icon: "📋" },
     ],
   },
   {
