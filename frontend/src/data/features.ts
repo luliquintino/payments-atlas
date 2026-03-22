@@ -3704,6 +3704,202 @@ export const FEATURES_REGISTRY: PaymentFeature[] = [
 }`,
   },
   {
+    id: "chargeback-analytics",
+    name: "Chargeback Analytics & Intelligence",
+    description:
+      "Plataforma de analytics especializada em chargebacks que oferece dashboards de trending, análise de cohort por MCC/região/método de pagamento, modelagem de impacto financeiro e detecção preditiva de spikes para ação proativa.",
+    layer: "settlement",
+    category: "Disputas",
+    complexity: "high",
+    actors: ["Merchant", "Time de Risco", "Adquirente", "Time Financeiro"],
+    metricsImpacted: ["Taxa de Chargeback", "Win Rate", "Custo por Chargeback", "Tempo de Resposta"],
+    aliases: ["Chargeback Analytics", "Analytics de Disputas", "Dispute Intelligence", "Chargeback Dashboard"],
+    dependencies: ["chargeback-management", "settlement-reconciliation"],
+    relatedFlows: ["card-payment"],
+    relatedProblems: ["p5"],
+    businessRules: [
+      "Trending de chargeback rate calculado em janela rolling de 30, 60 e 90 dias com comparação YoY",
+      "Cohort analysis por dimensões: MCC, região do portador, método de pagamento, faixa de valor, dia da semana",
+      "Revenue impact model: custo total = sum(valor_transação + fee + ops + multa) por período",
+      "Early warning: alertas preditivos quando tendência de chargeback rate projeta ultrapassar 0.9% em 30 dias",
+      "Benchmark comparativo: chargeback rate e win rate do merchant vs. média do setor (MCC) e top quartile",
+    ],
+    technicalRequirements: [
+      "Time-series database (InfluxDB/TimescaleDB) para armazenar métricas de chargeback com granularidade horária",
+      "Pipeline de reason code distribution com breakdown por período, região e faixa de valor",
+      "Motor de win rate analytics segmentado por tipo de evidência apresentada e reason code",
+      "Modelo preditivo (regressão/ARIMA) para detecção antecipada de spikes de chargeback",
+      "Dashboard com drill-down interativo: rate → reason code → transações individuais → evidências",
+    ],
+    payloadExample: `{
+  "period": "2026-03",
+  "merchant_id": "mid_001",
+  "summary": {
+    "total_chargebacks": 47,
+    "total_transactions": 5200,
+    "chargeback_rate_percent": 0.90,
+    "trend": "increasing",
+    "projected_next_month": 1.12,
+    "total_financial_impact": 198500,
+    "win_rate_percent": 35.2
+  },
+  "by_reason_code": {
+    "10.4_fraud": { "count": 22, "win_rate": 18, "avg_amount": 28000 },
+    "13.1_not_recognized": { "count": 15, "win_rate": 45, "avg_amount": 8500 },
+    "13.3_not_received": { "count": 7, "win_rate": 62, "avg_amount": 15000 }
+  },
+  "alerts": [
+    { "type": "threshold_warning", "message": "Rate projetado para ultrapassar 0.9%", "severity": "high" }
+  ]
+}`,
+  },
+  {
+    id: "compelling-evidence",
+    name: "Compelling Evidence (Visa CE 3.0)",
+    description:
+      "Framework da Visa para defesa automatizada de chargebacks de fraude (reason code 10.4) usando matching de device fingerprint, endereço IP e histórico de transações anteriores não disputadas do mesmo portador. CE 3.0 pode reverter liability shift mesmo sem 3DS.",
+    layer: "settlement",
+    category: "Disputas",
+    complexity: "high",
+    actors: ["Merchant", "Visa", "Adquirente", "Processador"],
+    metricsImpacted: ["Win Rate", "Taxa de Chargeback", "Receita Recuperada", "Custo de Disputas"],
+    aliases: ["CE 3.0", "Compelling Evidence", "Visa CE", "Evidência Convincente", "Compelling Evidence 3.0"],
+    dependencies: ["chargeback-management", "fraud-scoring"],
+    relatedFlows: ["card-payment"],
+    relatedProblems: ["p5"],
+    businessRules: [
+      "CE 3.0 aplica-se exclusivamente a chargebacks com reason code 10.4 (Fraud - Card Absent Environment)",
+      "Requer match de pelo menos 2 transações anteriores não disputadas do mesmo portador nos últimos 365 dias",
+      "Critérios de matching: device fingerprint OU IP address + pelo menos 1 de: email, telefone, endereço de entrega",
+      "Transação disputada e transações de referência devem ter sido processadas pelo mesmo merchant ID",
+      "Auto-decisioning: se critérios CE 3.0 atendidos, chargeback pode ser revertido automaticamente sem representment manual",
+    ],
+    technicalRequirements: [
+      "Engine de device fingerprint matching com armazenamento de 365 dias de histórico por cartão/token",
+      "API de correlação histórica: dado um PAN/token, retornar transações anteriores não disputadas com dados de matching",
+      "Integração com Visa VROL (Visa Resolve Online) para submissão automatizada de evidências CE 3.0",
+      "Sistema de scoring de elegibilidade CE 3.0: avaliar automaticamente se chargeback 10.4 tem dados suficientes",
+    ],
+    payloadExample: `{
+  "dispute_id": "dsp_cb_ce3_001",
+  "reason_code": "10.4",
+  "ce3_evaluation": {
+    "eligible": true,
+    "confidence_score": 95,
+    "matching_criteria": {
+      "device_fingerprint": { "matched": true, "device_id": "dev_abc123", "match_count": 4 },
+      "ip_address": { "matched": true, "ip": "189.40.xx.xx", "match_count": 3 },
+      "email": { "matched": true, "email_hash": "sha256_xxxx" }
+    },
+    "prior_undisputed_transactions": [
+      { "txn_id": "txn_prior_001", "date": "2026-01-15", "amount": 15000 },
+      { "txn_id": "txn_prior_002", "date": "2026-02-20", "amount": 22000 }
+    ]
+  },
+  "auto_decision": "reverse_chargeback",
+  "submission_status": "submitted_to_vrol"
+}`,
+  },
+  {
+    id: "chargeback-alerts",
+    name: "Pre-Chargeback Alert Services",
+    description:
+      "Serviços de alerta pré-chargeback que notificam o merchant antes da formalização da disputa, permitindo resolução proativa via refund ou crédito. Inclui Verifi CDRN (Visa), Ethoca Alerts (Mastercard) e Visa Order Insight.",
+    layer: "settlement",
+    category: "Disputas",
+    complexity: "high",
+    actors: ["Merchant", "Verifi", "Ethoca", "Emissor", "Adquirente"],
+    metricsImpacted: ["Taxa de Chargeback", "Custo de Disputas", "Taxa de Deflexão", "Receita Líquida"],
+    aliases: ["Pre-Chargeback Alerts", "CDRN", "Ethoca", "Order Insight", "Alertas Pré-Chargeback"],
+    dependencies: ["chargeback-management", "dispute-prevention"],
+    relatedFlows: ["card-payment"],
+    relatedProblems: ["p5"],
+    businessRules: [
+      "CDRN (Verifi/Visa): merchant recebe alerta 72h antes do chargeback formal. Janela para emitir refund proativo",
+      "Ethoca Alerts (Mastercard): alerta de fraude confirmada pelo emissor. Merchant cancela transação/entrega",
+      "Order Insight (Visa): enriquece experiência do portador com detalhes da compra no app bancário, reduzindo 'não reconheço'",
+      "Decision engine para auto-refund: regras baseadas em valor, tipo de alerta e histórico do portador",
+      "ROI de prevenção: custo do alert (~R$5-15/alerta) vs. custo do chargeback (R$150-675). Break-even com deflexão > 3-5%",
+    ],
+    technicalRequirements: [
+      "Webhook integration com Verifi CDRN API para receber alertas em real-time com SLA < 1h",
+      "Integração Ethoca Alerts API com matching automático por descriptor + BIN + amount + date",
+      "Motor de decisão auto-refund: regras configuráveis por merchant com thresholds de valor e tipo de fraude",
+      "Dashboard de efetividade: alertas recebidos vs. chargebacks prevenidos vs. custo vs. economia",
+    ],
+    payloadExample: `{
+  "alert_id": "cdrn_alert_001",
+  "source": "verifi_cdrn",
+  "type": "pre_chargeback",
+  "transaction": {
+    "id": "txn_original_789",
+    "amount": 12000,
+    "currency": "BRL",
+    "date": "2026-03-10",
+    "descriptor": "LOJA EXEMPLO*PEDIDO123"
+  },
+  "dispute_reason": "fraud_reported",
+  "deadline": "2026-03-25T14:30:00Z",
+  "auto_decision": {
+    "rule_matched": "auto_refund_fraud_under_50k",
+    "action": "refund_issued",
+    "refund_id": "ref_proactive_001"
+  },
+  "financial_outcome": {
+    "chargeback_fee_avoided": 2500,
+    "alert_cost": 800,
+    "net_savings": 6700
+  }
+}`,
+  },
+  {
+    id: "chargeback-reason-codes",
+    name: "Taxonomia de Reason Codes",
+    description:
+      "Classificação completa dos códigos de motivo de chargeback por bandeira (Visa, Mastercard, Elo, Amex), com estratégia de defesa, evidências necessárias e benchmark de win rate para cada código. Base para automação de classificação e roteamento de disputas.",
+    layer: "settlement",
+    category: "Disputas",
+    complexity: "medium",
+    actors: ["Bandeira", "Merchant", "Adquirente", "Time de Disputas"],
+    metricsImpacted: ["Win Rate", "Tempo de Classificação", "Eficiência de Defesa"],
+    aliases: ["Reason Codes", "Códigos de Motivo", "Dispute Reason Codes", "Chargeback Codes", "Taxonomia de Disputas"],
+    dependencies: ["chargeback-management"],
+    relatedFlows: ["card-payment"],
+    relatedProblems: [],
+    businessRules: [
+      "Visa: 4 categorias — 10.x Fraude, 11.x Autorização, 12.x Processamento, 13.x Disputas do Consumidor",
+      "Mastercard: códigos numéricos 4xxx — 4834, 4837, 4840, 4853, 4855, 4859, 4863, 4871",
+      "Cada reason code tem evidências obrigatórias específicas: 10.4 aceita CE 3.0, 13.1 requer descriptor, 13.3 requer tracking",
+      "Win rate varia drasticamente por código: 10.4 ~18%, 13.1 ~40%, 13.3 ~55%, 13.6 ~35%",
+      "Classificação automática do reason code determina template de evidência, prioridade e decisão fight/accept",
+    ],
+    technicalRequirements: [
+      "Database de reason codes com mapping: código → categoria → evidências → template de defesa → win rate",
+      "Engine de classificação automática que parseia reason code e roteia para template de evidência",
+      "Tracking de win rate por reason code com atualização mensal para ajuste de estratégia",
+      "API de lookup: dado um reason code, retorna estratégia, evidências e probabilidade de sucesso",
+    ],
+    payloadExample: `{
+  "reason_code": "10.4",
+  "network": "visa",
+  "category": "fraud",
+  "subcategory": "card_absent_environment",
+  "description": "Transação fraudulenta em ambiente CNP",
+  "defense_strategy": {
+    "primary": "Compelling Evidence 3.0 — device/IP matching",
+    "secondary": "3DS authentication log com liability shift",
+    "evidence_required": ["device_fingerprint_match", "ip_address_match", "prior_undisputed_txns"],
+    "evidence_optional": ["customer_email", "delivery_proof"]
+  },
+  "benchmarks": {
+    "win_rate_without_ce3": 15,
+    "win_rate_with_ce3": 65,
+    "win_rate_with_3ds": 85,
+    "recommended_action": "fight_if_ce3_eligible"
+  }
+}`,
+  },
+  {
     id: "fraud-alerts-tc40-safe",
     name: "Fraud Alerts (TC40/SAFE)",
     description:
