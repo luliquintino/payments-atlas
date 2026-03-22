@@ -47,6 +47,7 @@ const explorarCategories: ExplorarCategory[] = [
   {
     label: "Knowledge Base",
     items: [
+      { name: "Feature Discovery", href: "/knowledge/feature-discovery", icon: "🔍" },
       { name: "Base de Features", href: "/knowledge/features", icon: "📦" },
       { name: "Regras de Negócio", href: "/knowledge/business-rules", icon: "📋" },
       { name: "Grafo de Dependências", href: "/knowledge/dependency-graph", icon: "🔗" },
