@@ -1,6 +1,16 @@
 export type QuestionType = "multiple-choice" | "true-false" | "ordering" | "scenario";
 export type Difficulty = "easy" | "medium" | "hard";
 
+export type QuizCategory =
+  | "fundamentos"      // Basics: layers, actors, flows
+  | "autorizacao"      // Authorization, 3DS, fraud scoring
+  | "liquidacao"       // Settlement, clearing, reconciliation
+  | "fraude"           // Fraud, chargebacks, disputes
+  | "infraestrutura"   // Banking systems, ISO 8583, networks
+  | "produto"          // Product strategy, metrics, optimization
+  | "crypto"           // Blockchain, stablecoins, DeFi
+  | "regulacao";       // PCI, compliance, brand rules
+
 export interface QuizQuestion {
   id: string;
   question: string;
@@ -12,6 +22,7 @@ export interface QuizQuestion {
   explanation: string;
   wrongExplanations?: Record<number, string>;
   scenario?: string;
+  category?: QuizCategory;
 }
 
 export interface PageQuiz {
@@ -34,6 +45,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Processamento", "Experiencia", "Rede", "Liquidacao"],
         correctIndex: 1,
         explanation: "A camada de Experiencia inclui checkout UI, selecao de metodo de pagamento e SDKs mobile — tudo que o cliente ve e interage.",
+        category: "fundamentos",
       },
       {
         id: "pm-2",
@@ -44,6 +56,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto. A camada de Settlement realiza a transferencia definitiva de fundos entre adquirente, bandeira e emissor apos o clearing.",
         wrongExplanations: { 1: "Settlement e de fato a camada que transfere os fundos. Sem ela, a transacao seria apenas autorizada mas o dinheiro nunca mudaria de maos." },
+        category: "fundamentos",
       },
       {
         id: "pm-3",
@@ -61,6 +74,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: -1,
         correctOrder: [0, 1, 2, 3, 4, 5],
         explanation: "O fluxo segue: Experiencia (checkout) -> Gateway -> Adquirente -> Bandeira -> Emissor -> Clearing -> Settlement. Cada camada tem responsabilidade especifica.",
+        category: "fundamentos",
       },
       {
         id: "pm-4",
@@ -81,6 +95,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Pix e um sistema brasileiro. No Mexico, o equivalente seria SPEI/CoDi, mas isso nao resolve o problema de cartoes internacionais.",
           3: "Aumentar timeout nao ajuda em soft declines. O emissor ja respondeu — a resposta foi uma recusa reversivel, nao um timeout.",
         },
+        category: "fundamentos",
       },
     ],
   },
@@ -99,6 +114,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Cartao de credito", "Pix", "Boleto bancario", "TED"],
         correctIndex: 1,
         explanation: "Pix e o sistema de pagamento instantaneo do Banco Central do Brasil, com liquidacao em segundos, 24/7, incluindo feriados.",
+        category: "fundamentos",
       },
       {
         id: "pr-2",
@@ -118,6 +134,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Tanto Pix quanto boleto exigem vinculacao a uma conta ou chave. Boleto pode ser pago em loteria sem conta, mas isso e do lado do pagador.",
           3: "Pix ainda nao opera internacionalmente. O Banco Central esta trabalhando em interoperabilidade, mas nao e uma vantagem atual.",
         },
+        category: "fundamentos",
       },
       {
         id: "pr-3",
@@ -128,6 +145,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto. Diferente de cartoes (que tem chargeback), boleto pago e compensado nao pode ser estornado unilateralmente pelo pagador. Devolucoes exigem acordo entre as partes.",
         wrongExplanations: { 1: "Boleto compensado nao tem mecanismo de chargeback. O pagador nao pode reverter unilateralmente — diferente de cartoes de credito." },
+        category: "fundamentos",
       },
       {
         id: "pr-4",
@@ -148,6 +166,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Parcelamento via Pix ainda tem adocao limitada e nao resolve o problema de inadimplencia do boleto.",
           3: "Aumentar precos em 3% com margem de 8% pode prejudicar competitividade e reduzir volume total de vendas.",
         },
+        category: "fundamentos",
       },
     ],
   },
@@ -166,6 +185,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["O adquirente", "A bandeira", "O emissor", "O gateway"],
         correctIndex: 2,
         explanation: "O emissor (banco do portador) e quem autoriza ou recusa a transacao baseado no saldo, limites e regras de fraude do titular.",
+        category: "fundamentos",
       },
       {
         id: "tf-2",
@@ -176,6 +196,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Verdadeiro em casos excepcionais. No STIP (Stand-In Processing), quando o emissor esta indisponivel, a bandeira ou o adquirente pode aprovar transacoes dentro de parametros pre-definidos.",
         wrongExplanations: { 1: "Embora raro, o STIP (Stand-In Processing) permite aprovacao sem resposta do emissor. A bandeira assume o risco dentro de limites pre-acordados." },
+        category: "fundamentos",
       },
       {
         id: "tf-3",
@@ -191,6 +212,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: -1,
         correctOrder: [0, 1, 2, 3],
         explanation: "O fluxo de autorizacao passa por Gateway -> Adquirente (ISO 8583) -> Bandeira (routing) -> Emissor (decisao). Cada etapa adiciona informacoes e validacoes.",
+        category: "fundamentos",
       },
       {
         id: "tf-4",
@@ -211,6 +233,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Bloquear o emissor impediria TODOS os clientes desse banco de comprar — perda massiva de receita desnecessaria.",
           3: "Enviar por outro adquirente sem tentar o mesmo emissor ignora os 60% de aprovacao que o retry simples capturaria.",
         },
+        category: "fundamentos",
       },
     ],
   },
@@ -229,6 +252,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Sistema de cartoes pre-pagos", "Sistema de liquidacao bruta em tempo real", "Rede de criptomoedas", "Protocolo de autenticacao bancaria"],
         correctIndex: 1,
         explanation: "RTGS (Real-Time Gross Settlement) liquida transacoes individualmente em tempo real, usado para transferencias de alto valor entre bancos.",
+        category: "fundamentos",
       },
       {
         id: "fs-2",
@@ -239,6 +263,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto. O BCB e o operador do SPI (Sistema de Pagamentos Instantaneos), a infraestrutura que processa as transacoes Pix, diferente de outros paises onde instant payments sao operados por entidades privadas.",
         wrongExplanations: { 1: "O Pix e operado diretamente pelo Banco Central, via SPI. Isso e diferente de sistemas como SEPA Instant na Europa, operados por entidades privadas." },
+        category: "fundamentos",
       },
       {
         id: "fs-3",
@@ -248,6 +273,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Emitir moeda", "Ser contraparte central e reduzir risco sistemico", "Processar pagamentos Pix", "Regular fintechs"],
         correctIndex: 1,
         explanation: "Camaras de compensacao atuam como contraparte central (CCP), garantindo que ambas as partes cumpram suas obrigacoes e reduzindo risco sistemico no mercado financeiro.",
+        category: "fundamentos",
       },
       {
         id: "fs-4",
@@ -268,6 +294,7 @@ export const QUIZZES: PageQuiz[] = [
           1: "Pix funcionaria mas cada transacao teria custo e a fintech dependeria do SPI. Para transferencias internas, o ledger e mais eficiente.",
           3: "Migrar para banco e um processo de anos e exige capital regulatorio muito maior. Nao e proporcional ao problema.",
         },
+        category: "fundamentos",
       },
     ],
   },
@@ -286,6 +313,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Emitir cartoes", "Intermediar entre comerciante e infraestrutura de pagamentos", "Regular o mercado", "Liquidar transacoes"],
         correctIndex: 1,
         explanation: "PSPs como Stripe, Adyen e PagSeguro intermediam entre o comerciante e a infraestrutura de pagamentos, simplificando a integracao tecnica e regulatoria.",
+        category: "fundamentos",
       },
       {
         id: "em-2",
@@ -296,6 +324,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. O sub-adquirente usa o adquirente como intermediario para se conectar as bandeiras. Isso facilita a entrada de pequenos comerciantes mas adiciona uma camada de intermediacao.",
         wrongExplanations: { 0: "Sub-adquirentes (facilitadores) nao tem conexao direta com Visa/Mastercard. Eles operam sob o registro de um adquirente certificado." },
+        category: "fundamentos",
       },
       {
         id: "em-3",
@@ -310,6 +339,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "O emissor (ex: Itau, Nubank) fornece o cartao ao consumidor. O adquirente (ex: Cielo, Rede) processa pagamentos para o comerciante. Sao lados opostos da transacao.",
+        category: "fundamentos",
       },
       {
         id: "em-4",
@@ -330,6 +360,7 @@ export const QUIZZES: PageQuiz[] = [
           1: "Certificacao PCI-DSS e cara e complexa. O objetivo e reduzir custo sem assumir essa responsabilidade.",
           3: "Criar infraestrutura propria exige licencas regulatorias, investimento de anos e equipe especializada — desproporcional ao problema.",
         },
+        category: "fundamentos",
       },
     ],
   },
@@ -348,6 +379,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Sistema de internet banking", "Sistema central que processa operacoes bancarias", "Sistema de seguranca", "Sistema de atendimento ao cliente"],
         correctIndex: 1,
         explanation: "Core banking e o sistema central que gerencia contas, transacoes, saldos e operacoes fundamentais do banco, funcionando 24/7.",
+        category: "infraestrutura",
       },
       {
         id: "bs-2",
@@ -358,6 +390,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. O ledger (livro-razao) registra TODAS as transacoes contabeis — debitos e creditos. Cada lancamento tem uma contrapartida seguindo o principio de partidas dobradas.",
         wrongExplanations: { 0: "O ledger usa partidas dobradas: todo debito tem um credito correspondente. Ele registra todas as movimentacoes financeiras sem excecao." },
+        category: "infraestrutura",
       },
       {
         id: "bs-3",
@@ -373,6 +406,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: -1,
         correctOrder: [0, 1, 2, 3],
         explanation: "Bancos digitais tipicamente comecam com BaaS, migram para core proprio quando o volume justifica, evoluem para multi-ledger e depois para uma plataforma completa com orquestracao.",
+        category: "infraestrutura",
       },
       {
         id: "bs-4",
@@ -393,6 +427,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Pausar Pix violaria regulacao do BCB que exige disponibilidade 24/7 e prejudicaria severamente a reputacao do banco.",
           3: "Migracao de core banking leva 18-36 meses. O problema de reconciliacao precisa de solucao imediata.",
         },
+        category: "infraestrutura",
       },
     ],
   },
@@ -416,6 +451,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Liquidacao bruta (RTGS) processa cada transacao individualmente. Liquidacao liquida (DNS) compensa as transacoes entre si primeiro, transferindo apenas o saldo liquido.",
+        category: "liquidacao",
       },
       {
         id: "ss-2",
@@ -426,6 +462,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto. O SPI (Sistema de Pagamentos Instantaneos) usa liquidacao bruta em tempo real para cada transacao Pix, diferente de sistemas como boleto que usam compensacao liquida em lotes.",
         wrongExplanations: { 1: "O Pix de fato usa RTGS. Cada transacao e liquidada individualmente em tempo real pelo SPI, garantindo finalidade imediata." },
+        category: "liquidacao",
       },
       {
         id: "ss-3",
@@ -440,6 +477,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 0,
         explanation: "Netting bilateral compensa obrigacoes entre duas partes: se A deve R$100 a B e B deve R$70 a A, apenas R$30 sao transferidos. Reduz volume de liquidacao e risco.",
+        category: "liquidacao",
       },
       {
         id: "ss-4",
@@ -460,6 +498,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Liquidacao semanal prejudicaria o fluxo de caixa dos merchants e poderia violar regulacao que exige D+1 ou D+2.",
           3: "Negociar tarifa e valido mas o problema fundamental e o volume de 500 mil TEDs individuais. Mesmo com desconto, o custo seria alto.",
         },
+        category: "liquidacao",
       },
     ],
   },
@@ -483,6 +522,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Gestao de liquidez assegura que a instituicao tenha fundos suficientes para honrar pagamentos e obrigacoes, equilibrando rentabilidade e disponibilidade.",
+        category: "liquidacao",
       },
       {
         id: "lt-2",
@@ -493,6 +533,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. Qualquer entidade que processa pagamentos precisa de gestao de liquidez. Uma fintech precisa garantir fundos para liquidar merchants, processar estornos e manter reservas regulatorias.",
         wrongExplanations: { 0: "Fintechs de pagamento tem obrigacoes de liquidacao com merchants e devem manter reservas. A falta de liquidez pode causar atrasos de pagamento e penalidades regulatorias." },
+        category: "liquidacao",
       },
       {
         id: "lt-3",
@@ -507,6 +548,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Float e o dinheiro em transito — ja cobrado do consumidor mas ainda nao liquidado ao merchant. E uma fonte de receita para adquirentes/PSPs que podem investir esse capital temporariamente.",
+        category: "liquidacao",
       },
       {
         id: "lt-4",
@@ -527,6 +569,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Manter R$80M sem remuneracao com Selic a 13.75% representa perda de ~R$11M/ano em custo de oportunidade.",
           3: "Eliminar float reduz receita de tesouraria e nem sempre e possivel operacionalmente. O float e um ativo valioso quando bem gerido.",
         },
+        category: "liquidacao",
       },
     ],
   },
@@ -545,6 +588,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Acordo entre reguladores", "Metodo para validar transacoes na blockchain sem autoridade central", "Tipo de criptografia", "Protocolo de comunicacao entre wallets"],
         correctIndex: 1,
         explanation: "Mecanismo de consenso (PoW, PoS, etc.) e como os nos da rede concordam sobre quais transacoes sao validas, sem uma autoridade central.",
+        category: "crypto",
       },
       {
         id: "bm-2",
@@ -555,6 +599,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. Layer 2 herda seguranca da Layer 1, mas adiciona premissas de confianca adicionais. A L1 e a base de seguranca; L2 otimiza velocidade e custo com trade-offs de seguranca.",
         wrongExplanations: { 0: "Layer 2 sacrifica algum grau de seguranca/descentralizacao em troca de escalabilidade. A seguranca da L2 depende e e derivada da L1." },
+        category: "crypto",
       },
       {
         id: "bm-3",
@@ -569,6 +614,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Layer 1 e a blockchain principal (Bitcoin, Ethereum). Layer 2 sao protocolos construidos sobre L1 para aumentar velocidade e reduzir custos (Lightning Network, Arbitrum).",
+        category: "crypto",
       },
       {
         id: "bm-4",
@@ -589,6 +635,7 @@ export const QUIZZES: PageQuiz[] = [
           1: "Bitcoin/Lightning nao suporta smart contracts complexos necessarios para tokenizacao de duplicatas.",
           3: "Polygon e mais barato que Ethereum mas transacoes sao publicas, nao atendendo requisito de privacidade entre partes.",
         },
+        category: "crypto",
       },
     ],
   },
@@ -607,6 +654,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Algoritmos matematicos", "Reservas em moeda fiduciaria mantidas pelo emissor", "Mineracao de criptomoedas", "Contratos inteligentes auto-ajustaveis"],
         correctIndex: 1,
         explanation: "Stablecoins lastreadas em fiat (USDT, USDC) mantem reservas equivalentes em dolares, titulos do tesouro ou equivalentes de caixa para garantir a paridade 1:1.",
+        category: "crypto",
       },
       {
         id: "sc-2",
@@ -617,6 +665,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto em teoria. Stablecoins algoritmicas usam mecanismos de mint/burn e incentivos economicos para manter paridade, sem reservas diretas. Porem, como demonstrou o colapso do UST/Luna, esse modelo tem riscos significativos.",
         wrongExplanations: { 1: "Por design, stablecoins algoritmicas nao mantem reservas diretas. Usam mecanismos de oferta/demanda, embora esse modelo tenha falhado em casos como UST." },
+        category: "crypto",
       },
       {
         id: "sc-3",
@@ -631,6 +680,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Se muitos holders resgatarem ao mesmo tempo, a stablecoin pode nao ter liquidez imediata se as reservas estao em titulos de longo prazo — similar a uma corrida bancaria.",
+        category: "crypto",
       },
       {
         id: "sc-4",
@@ -651,6 +701,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Algoritmica sem reservas e incompativel com os requisitos de seguranca e estabilidade de um banco central.",
           3: "USDC e denominado em dolar e infraestrutura americana. Para BRL seria necessario emissor brasileiro regulado pelo BCB.",
         },
+        category: "crypto",
       },
     ],
   },
@@ -669,6 +720,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Um robo de trading automatizado", "Protocolo que usa pools de liquidez em vez de order books", "Uma exchange centralizada automatizada", "Um tipo de stablecoin"],
         correctIndex: 1,
         explanation: "AMMs como Uniswap usam pools de liquidez e formulas matematicas (x*y=k) para precificar ativos, permitindo trocas sem order book tradicional.",
+        category: "crypto",
       },
       {
         id: "dp-2",
@@ -679,6 +731,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto. Impermanent loss acontece quando o preco dos ativos no pool muda em relacao ao momento do deposito. Quanto maior a divergencia de preco, maior a perda comparada ao hold.",
         wrongExplanations: { 1: "Impermanent loss e real e mensuravel. Se voce deposita ETH+USDC em um pool e o preco do ETH sobe 100%, voce teria mais valor fazendo hold do que no pool." },
+        category: "crypto",
       },
       {
         id: "dp-3",
@@ -693,6 +746,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Flash loans permitem pegar emprestimo sem colateral desde que o valor seja devolvido na mesma transacao blockchain. Usados para arbitragem, liquidacoes e reestruturacao de posicoes.",
+        category: "crypto",
       },
       {
         id: "dp-4",
@@ -713,6 +767,7 @@ export const QUIZZES: PageQuiz[] = [
           1: "Jupiter/Solana tem taxas baixas mas o off-ramp para BRL ainda seria necessario e a liquidez de tokens BRL e limitada.",
           3: "Com US$2M/mes pagando 2.5% de spread, a economia potencial de ~US$30-40K/mes com DeFi justifica a implementacao.",
         },
+        category: "crypto",
       },
     ],
   },
@@ -731,6 +786,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Criar criptomoedas", "Substituir o numero do cartao por um token seguro emitido pela bandeira", "Autenticar usuarios por biometria", "Comprimir dados de rede"],
         correctIndex: 1,
         explanation: "Network tokenization substitui o PAN (numero real do cartao) por um token unico emitido pela bandeira, reduzindo risco de fraude e simplificando compliance PCI-DSS.",
+        category: "produto",
       },
       {
         id: "kf-2",
@@ -741,6 +797,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. O 3DS 2.0 suporta autenticacao frictionless — o emissor pode aprovar silenciosamente baseado em dados de risco (device, historico, geolocalizacao) sem exigir interacao do portador.",
         wrongExplanations: { 0: "3DS 2.0 foi redesenhado para reduzir friccao. O emissor pode aprovar sem challenge se os dados de risco indicarem baixo risco. Isso melhora conversao." },
+        category: "produto",
       },
       {
         id: "kf-3",
@@ -755,6 +812,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Account Updater recebe automaticamente novos dados (numero, validade) quando um cartao e renovado ou substituido, evitando recusas em cobranças recorrentes (assinaturas, mensalidades).",
+        category: "produto",
       },
       {
         id: "kf-4",
@@ -775,6 +833,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Pix recorrente ainda tem baixa adocao em B2B e exigiria migracao complexa de 15 mil assinantes.",
           3: "Email tem taxa de abertura de ~20-30%. Resolver 60% de churn com acao manual do cliente e ineficiente comparado a automacao.",
         },
+        category: "produto",
       },
     ],
   },
@@ -793,6 +852,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Para aumentar receita do adquirente", "Para mitigar risco de fraude e lavagem de dinheiro", "Para reduzir custos de rede", "Por limitacao tecnica dos sistemas"],
         correctIndex: 1,
         explanation: "Limites de valor sao controles de risco que ajudam a prevenir fraude, lavagem de dinheiro e uso nao autorizado de instrumentos de pagamento.",
+        category: "regulacao",
       },
       {
         id: "br-2",
@@ -803,6 +863,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. O MDR e pago pelo comerciante (merchant) ao adquirente. E descontado do valor da venda antes de ser repassado. O consumidor paga o preco cheio do produto.",
         wrongExplanations: { 0: "O MDR e descontado do valor recebido pelo merchant. Se a venda e R$100 e MDR e 3%, o merchant recebe R$97. O consumidor nao paga taxa adicional." },
+        category: "regulacao",
       },
       {
         id: "br-3",
@@ -817,6 +878,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Interchange e a taxa que flui do adquirente para o emissor em cada transacao. No Brasil, o BCB regulou tetos de interchange para debito em 0.5% e para pre-pagos em 0.7%.",
+        category: "regulacao",
       },
       {
         id: "br-4",
@@ -837,6 +899,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Taxa fixa de R$1 em ticket de R$150 e apenas 0.67%, nao cobre o custo real de cartao credito que pode chegar a 4-5% em parcelado.",
           3: "Taxa de conveniencia ao comprador reduz conversao e pode violar regras das bandeiras que proibem surcharge em cartao de credito.",
         },
+        category: "regulacao",
       },
     ],
   },
@@ -855,6 +918,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Revisao manual de pedidos", "Regras de velocidade e triagem pre-autorizacao", "Chargeback", "Bloqueio de cartao pelo banco"],
         correctIndex: 1,
         explanation: "Regras de velocidade, device fingerprinting e analise comportamental formam a primeira barreira — antes da transacao ser enviada ao emissor.",
+        category: "fraude",
       },
       {
         id: "fm-2",
@@ -865,6 +929,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto. Friendly fraud ocorre quando o titular faz a compra mas depois abre chargeback alegando nao reconhecer. Representa parcela significativa dos chargebacks no e-commerce brasileiro.",
         wrongExplanations: { 1: "Friendly fraud e exatamente isso — fraude 'amigavel' onde o comprador real contesta sua propria compra. E diferente de fraude com cartao roubado." },
+        category: "fraude",
       },
       {
         id: "fm-3",
@@ -879,6 +944,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Velocity check monitora padroes como numero de transacoes por cartao em 1 hora, tentativas por IP em 24h, etc. Padroes anormais indicam possivel ataque ou teste de cartao.",
+        category: "fraude",
       },
       {
         id: "fm-4",
@@ -899,6 +965,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "Recusar cartoes de outro estado bloquearia viajantes, presentes e compras corporativas — alto indice de falsos positivos.",
           3: "Desabilitar 3DS removeria uma camada de protecao e transferiria liability de volta ao merchant. O problema nao e o 3DS em si.",
         },
+        category: "fraude",
       },
     ],
   },
@@ -917,6 +984,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Impressao digital biometrica do usuario", "Identificacao unica do dispositivo baseada em seus atributos tecnicos", "Senha do aparelho celular", "Certificado digital instalado"],
         correctIndex: 1,
         explanation: "Device fingerprinting cria um identificador unico combinando atributos do dispositivo (browser, OS, resolucao, plugins, timezone) para detectar dispositivos associados a fraude.",
+        category: "fraude",
       },
       {
         id: "fsg-2",
@@ -927,6 +995,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. IPs podem ser compartilhados (NAT, coworking, celular), mascarados por VPN/proxy, ou dinamicos. IP e um sinal util mas nunca suficiente sozinho — deve ser combinado com outros indicadores.",
         wrongExplanations: { 0: "IP e facilmente manipulavel com VPN e pode ser compartilhado por milhares de usuarios. Nenhum sinal isolado e suficiente para identificar fraude de forma confiavel." },
+        category: "fraude",
       },
       {
         id: "fsg-3",
@@ -941,6 +1010,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "BIN attack e quando fraudadores testam numeros de cartao sequenciais (mesmo BIN/primeiros 6 digitos) em alta velocidade para encontrar numeros validos. Velocity check por BIN detecta isso.",
+        category: "fraude",
       },
       {
         id: "fsg-4",
@@ -961,6 +1031,7 @@ export const QUIZZES: PageQuiz[] = [
           1: "Device novo e email recente sao importantes, mas a analise deve considerar TODOS os sinais em contexto. Omitir VPN e endereco de drop seria falha.",
           3: "Nome diferente pode ter explicacao inocente (presente, cartao corporativo). Nenhum sinal unico deve ser considerado definitivo sem contexto.",
         },
+        category: "fraude",
       },
     ],
   },
@@ -979,6 +1050,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["7 dias", "30 dias", "120 dias", "1 ano"],
         correctIndex: 2,
         explanation: "A maioria das bandeiras permite ao portador abrir um chargeback em ate 120 dias apos a transacao, embora prazos variem por tipo de disputa e bandeira.",
+        category: "fraude",
       },
       {
         id: "cl-2",
@@ -989,6 +1061,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 0,
         explanation: "Correto na pratica. Mesmo vencendo o representment, o merchant arca com custo operacional de documentacao e tempo. Alem disso, ha taxa de chargeback cobrada pelo adquirente que geralmente nao e devolvida.",
         wrongExplanations: { 1: "Mesmo vencendo a disputa, o merchant paga taxa de chargeback (R$15-50 por caso) e custo operacional de coleta de evidencias. O processo nunca e gratuito." },
+        category: "fraude",
       },
       {
         id: "cl-3",
@@ -1003,6 +1076,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Representment e quando o merchant contesta o chargeback enviando evidencias (comprovante de entrega, logs de acesso, politica aceita) para reverter a decisao em seu favor.",
+        category: "fraude",
       },
       {
         id: "cl-4",
@@ -1023,6 +1097,7 @@ export const QUIZZES: PageQuiz[] = [
           1: "Melhorar descriptor ajuda mas sozinho nao basta para sair do threshold de 1.2%. Precisa de abordagem multi-camada.",
           2: "Reembolso automatico reduz taxa de chargeback mas custa R$179K/mes (1.2% de 500K x R$29.90) e incentiva abuso.",
         },
+        category: "fraude",
       },
       {
         id: "cl-5",
@@ -1037,6 +1112,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 2,
         explanation: "O custo real de um chargeback vai muito além do valor da transação. Inclui: valor (R$100) + taxa de chargeback do adquirente (R$15-50) + custo operacional de análise e documentação (R$40-100) + tempo da equipe. Sem multa de programa de monitoramento, o custo total fica entre R$250-350. Com multa (VDMP/ECM), pode chegar a R$675+.",
+        category: "fraude",
       },
       {
         id: "cl-6",
@@ -1051,6 +1127,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "O VDMP da Visa requer AMBOS os critérios: chargeback rate ≥ 0.9% E ≥ 100 disputas/mês. Atualmente: rate 0.85% (abaixo) e 95 disputas (abaixo). Com crescimento de 0.05%/mês no rate e proporcional em volume, em 1 mês terá ~0.90% e ~100 disputas, atingindo ambos os thresholds simultaneamente.",
+        category: "fraude",
       },
       {
         id: "cl-7",
@@ -1060,6 +1137,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Verdadeiro", "Falso"],
         correctIndex: 1,
         explanation: "Falso. O CE 3.0 aplica-se EXCLUSIVAMENTE a chargebacks com reason code 10.4 (Fraud - Card Absent Environment). Para outros reason codes como 13.1 (não reconheço), 13.3 (não recebi) ou 13.6 (diferente do descrito), o merchant deve usar estratégias de defesa convencionais com as evidências específicas de cada código.",
+        category: "fraude",
       },
     ],
   },
@@ -1078,6 +1156,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Taxa de fraude", "Taxa de autorizacao (aprovacao)", "Tempo de liquidacao", "Custo por transacao"],
         correctIndex: 1,
         explanation: "A taxa de autorizacao e a metrica raiz — indica que percentual das tentativas de pagamento sao aprovadas pelo emissor, sendo o indicador mais direto da saude do funil.",
+        category: "produto",
       },
       {
         id: "mt-2",
@@ -1088,6 +1167,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. A queda pode ser causada por fatores externos: emissor com problema, mudanca de regras da bandeira, queda de energia no data center do emissor, ou aumento de transacoes fraudulentas pelos seus clientes.",
         wrongExplanations: { 0: "Muitas causas de queda na taxa de autorizacao sao externas ao seu sistema: problemas no emissor, mudancas de regras de bandeira, fraude de terceiros, etc." },
+        category: "produto",
       },
       {
         id: "mt-3",
@@ -1108,6 +1188,7 @@ export const QUIZZES: PageQuiz[] = [
           1: "Mastercard via Cielo esta normal (91%). O problema e na rota especifica Rede-Mastercard, nao na Mastercard em geral.",
           3: "Pausar todas as transacoes causaria perda total de receita. A acao correta e redirecionar apenas o trafego afetado.",
         },
+        category: "produto",
       },
     ],
   },
@@ -1131,6 +1212,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 1,
         explanation: "Monitorar por BIN permite identificar quando um emissor especifico esta recusando mais que o normal, possibilitando acao direcionada como contato com o emissor ou ajuste de routing.",
+        category: "produto",
       },
       {
         id: "pd-2",
@@ -1141,6 +1223,7 @@ export const QUIZZES: PageQuiz[] = [
         correctIndex: 1,
         explanation: "Falso. Nem todos os indicadores precisam de tempo real. Taxa de autorizacao e fraude sim, mas metricas como receita mensal, custo por transacao e NPS podem ser atualizadas em intervalos maiores.",
         wrongExplanations: { 0: "Tempo real para tudo consome recursos desnecessarios. Indicadores operacionais (auth rate) precisam de tempo real; indicadores estrategicos (receita mensal) podem ser batch." },
+        category: "produto",
       },
       {
         id: "pd-3",
@@ -1161,6 +1244,7 @@ export const QUIZZES: PageQuiz[] = [
           2: "0.3% de aumento em fraude confirmada ao longo de 1 dia e preocupante mas nao urgente como latencia 6x que afeta todas as transacoes AGORA.",
           3: "Em incident response, priorizar o alerta que pode ser causa raiz dos demais e mais eficaz do que tratar todos igualmente.",
         },
+        category: "produto",
       },
     ],
   },
@@ -1184,6 +1268,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 2,
         explanation: "O log de autenticação 3DS com liability shift é a evidência mais forte porque demonstra que o portador foi autenticado pelo emissor, transferindo a responsabilidade da fraude para o emissor. Em muitos casos, chargebacks com 3DS + liability shift são automaticamente revertidos. CE 3.0 com device matching é comparável em efetividade.",
+        category: "fraude",
       },
       {
         id: "cbd-2",
@@ -1198,6 +1283,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 2,
         explanation: "Reason code 13.1 significa que o portador não reconhece a cobrança na fatura. A causa raiz é geralmente um descriptor confuso (ex: 'PAG*INTERMEDIARIO' ao invés de 'LOJA EXEMPLO*PED123'). Otimizar o soft descriptor resolve a causa raiz. 3DS ajuda com liability shift mas não resolve o não-reconhecimento. Fraud scoring não se aplica — o portador é legítimo.",
+        category: "fraude",
       },
       {
         id: "cbd-3",
@@ -1207,6 +1293,7 @@ export const QUIZZES: PageQuiz[] = [
         options: ["Verdadeiro", "Falso"],
         correctIndex: 1,
         explanation: "Falso. Serviços como Verifi CDRN e Ethoca Alerts cobram por alerta, tipicamente R$5-15 por alerta recebido. Porém, o ROI é positivo: o custo de um alerta é muito menor que o custo total de um chargeback (R$250-675). Um merchant precisa deflectir apenas 3-5% dos alertas para ter break-even.",
+        category: "fraude",
       },
       {
         id: "cbd-4",
@@ -1221,6 +1308,7 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 2,
         explanation: "No 4º mês do VDMP, as multas da Visa escalam significativamente. Meses 1-4 têm multas progressivas de $50-$10.000/mês. A partir do 5º mês, multas podem chegar a $25.000/mês. Além da multa, a Visa exige: plano de remediação em 10 dias, revisão de compliance pelo adquirente, e possível restrição de processamento se o rate não cair.",
+        category: "fraude",
       },
       {
         id: "cbd-5",
@@ -1235,6 +1323,885 @@ export const QUIZZES: PageQuiz[] = [
         ],
         correctIndex: 0,
         explanation: "O fluxo correto é: 1) Receber o alerta/notificação, 2) Classificar o reason code para entender o tipo de disputa, 3) Avaliar se vale a pena contestar (fight) ou aceitar (accept) baseado no valor, evidências disponíveis e win rate histórico, 4) Coletar evidências específicas para o reason code, 5) Submeter o representment dentro do prazo, 6) Acompanhar o resultado, 7) Documentar o aprendizado para melhorar a prevenção futura.",
+        category: "fraude",
+      },
+    ],
+  },
+  // ────────────────────────────────────────────────────────────────
+  // Quiz Hub — 44 new expert-level questions
+  // ────────────────────────────────────────────────────────────────
+  {
+    pageRoute: "/quiz",
+    questions: [
+      // ── Fundamentos (4) ──
+      {
+        id: "qh-fund-1",
+        question: "Qual estrategia deve ser adotada primeiro?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um PSP processa 1M transacoes/mes. 60% cartao, 30% PIX, 10% boleto. O modulo de settlement fica offline por 2 horas durante o pico noturno.",
+        options: [
+          "Migrar todo o settlement para cloud imediatamente",
+          "Implementar fila de settlement com retry e reconciliacao automatica pos-recovery",
+          "Pausar transacoes de cartao durante a janela de indisponibilidade",
+          "Dobrar a capacidade do servidor de settlement",
+        ],
+        correctIndex: 1,
+        explanation: "Uma fila resiliente com retry garante que nenhuma transacao seja perdida durante o downtime. A reconciliacao automatica pos-recovery corrige divergencias sem intervencao manual.",
+        wrongExplanations: {
+          0: "Migracao para cloud e projeto de longo prazo e nao resolve o problema imediato de 2h de downtime.",
+          2: "Pausar transacoes de cartao durante 2h causaria perda massiva de receita — 60% do volume.",
+          3: "Dobrar capacidade nao resolve se o problema e indisponibilidade do modulo, nao performance.",
+        },
+        category: "fundamentos",
+      },
+      {
+        id: "qh-fund-2",
+        question: "Qual e a diferenca fundamental entre um gateway e um orquestrador de pagamentos?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Gateway processa pagamentos, orquestrador apenas roteia",
+          "Gateway conecta a um unico adquirente, orquestrador gerencia multiplos provedores com logica inteligente de roteamento",
+          "Sao a mesma coisa com nomes diferentes",
+          "Orquestrador e mais barato que gateway",
+        ],
+        correctIndex: 1,
+        explanation: "O gateway e o ponto de conexao tecnica com o adquirente. O orquestrador adiciona logica de roteamento inteligente, cascade entre provedores, retry e otimizacao de taxa de aprovacao.",
+        wrongExplanations: {
+          0: "Ambos processam pagamentos, mas o orquestrador faz mais do que apenas rotear — ele otimiza custo, aprovacao e resiliencia.",
+          2: "Sao categorias distintas. Um orquestrador pode incluir funcoes de gateway, mas o inverso nao e verdadeiro.",
+          3: "Custo depende do provedor, nao da categoria. Orquestradores geralmente custam mais por oferecerem mais valor.",
+        },
+        category: "fundamentos",
+      },
+      {
+        id: "qh-fund-3",
+        question: "Qual modelo deve adotar?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Uma fintech quer processar pagamentos sem ser regulada como instituicao de pagamento pelo Banco Central. O volume esperado e R$5M/mes.",
+        options: [
+          "Operar como sub-adquirente sob o registro de um adquirente certificado",
+          "Obter licenca de instituicao de pagamento antes de comecar",
+          "Ignorar a regulacao e comecar a operar diretamente",
+          "Usar apenas Pix sem intermediario",
+        ],
+        correctIndex: 0,
+        explanation: "Como sub-adquirente (facilitador de pagamentos), a fintech opera sob o registro do adquirente, que assume a responsabilidade regulatoria. Modelo comum para fintechs em fase inicial.",
+        wrongExplanations: {
+          1: "Licenca de IP exige capital minimo, compliance extenso e meses de processo. Desproporcional para inicio de operacao.",
+          2: "Operar sem regulacao e ilegal e sujeita a multas e encerramento da operacao pelo BCB.",
+          3: "Pix sem intermediario exige ser participante do SPI, o que requer ser instituicao regulada.",
+        },
+        category: "fundamentos",
+      },
+      {
+        id: "qh-fund-4",
+        question: "Quantas camadas tem o stack de pagamentos tipico (da experiencia a liquidacao)?",
+        type: "multiple-choice",
+        difficulty: "easy",
+        options: ["3 camadas", "5 camadas", "7 camadas", "10 camadas"],
+        correctIndex: 1,
+        explanation: "O stack tipico tem 5 camadas: Experiencia (checkout), Gateway/Processamento, Rede (bandeiras), Clearing (compensacao) e Settlement (liquidacao).",
+        category: "fundamentos",
+      },
+
+      // ── Autorizacao (5) ──
+      {
+        id: "qh-auth-1",
+        question: "Qual estrategia combinada maximizaria a aprovacao?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um e-commerce tem taxa de autorizacao de 68% em transacoes internacionais. BIN analysis mostra 40% dos declines sao soft declines. O merchant usa apenas um adquirente local.",
+        options: [
+          "Adicionar 3DS em todas as transacoes internacionais",
+          "Implementar retry inteligente em soft declines + cascade para adquirente internacional + network tokenization",
+          "Bloquear transacoes internacionais e focar no mercado local",
+          "Aumentar o valor minimo de transacao para reduzir volume de recusas",
+        ],
+        correctIndex: 1,
+        explanation: "Retry captura soft declines reversiveis. Cascade para adquirente internacional melhora routing. Network tokenization aumenta auth rate em 2-5% por fornecer dados mais ricos ao emissor.",
+        wrongExplanations: {
+          0: "3DS melhora liability mas pode reduzir conversao em mercados sem SCA obrigatorio. Nao resolve soft declines.",
+          2: "Bloquear internacionais elimina receita potencial. O problema e otimizacao, nao viabilidade.",
+          3: "Valor minimo nao muda a taxa de autorizacao — apenas reduz volume total sem resolver a causa.",
+        },
+        category: "autorizacao",
+      },
+      {
+        id: "qh-auth-2",
+        question: "O que isso indica sobre o perfil dos clientes e qual feature pode mitigar?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um merchant recebe decline code '51' (insufficient funds) em 30% das recusas. O ticket medio e R$450 e a maioria dos clientes usa cartao de credito.",
+        options: [
+          "Clientes sao fraudadores — aumentar fraud scoring",
+          "Clientes atingem limite do cartao — oferecer parcelamento e retry em horarios de renovacao de limite",
+          "Problema no adquirente — trocar de processador",
+          "Desabilitar cartao de credito e migrar para Pix",
+        ],
+        correctIndex: 1,
+        explanation: "Code 51 indica saldo/limite insuficiente. Parcelamento reduz o valor por fatura. Retry em inicio de ciclo (quando limite renova) captura aprovacoes. Indica base de clientes com limite apertado.",
+        wrongExplanations: {
+          0: "Code 51 e saldo insuficiente, nao fraude. Tratar clientes legitimos como fraudadores reduz a base de clientes.",
+          2: "O decline vem do emissor, nao do adquirente. Trocar processador nao muda a decisao do banco emissor.",
+          3: "Desabilitar cartao eliminaria 70% das transacoes aprovadas. O problema e especifico dos 30% recusados.",
+        },
+        category: "autorizacao",
+      },
+      {
+        id: "qh-auth-3",
+        question: "Qual a diferenca entre pre-authorization e incremental authorization?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Pre-auth bloqueia o valor total, incremental adiciona valores a uma autorizacao existente",
+          "Pre-auth e para cartao de debito, incremental para credito",
+          "Sao a mesma operacao com nomes diferentes",
+          "Incremental e mais rapido que pre-auth",
+        ],
+        correctIndex: 0,
+        explanation: "Pre-authorization reserva um valor estimado (ex: hotel reserva R$500). Incremental authorization permite adicionar valores apos a pre-auth (ex: frigobar +R$50) sem nova autorizacao completa.",
+        wrongExplanations: {
+          1: "Ambos funcionam com cartao de credito. Pre-auth em debito e raro e depende do emissor.",
+          2: "Sao operacoes distintas no fluxo de autorizacao com mensagens ISO diferentes.",
+          3: "Velocidade depende do emissor, nao do tipo de autorizacao.",
+        },
+        category: "autorizacao",
+      },
+      {
+        id: "qh-auth-4",
+        question: "Em que cenario um stand-in processing (STIP) e ativado e quais sao os riscos?",
+        type: "multiple-choice",
+        difficulty: "hard",
+        options: [
+          "Quando o merchant solicita manualmente — sem riscos",
+          "Quando o emissor esta indisponivel — risco de aprovacoes que o emissor recusaria",
+          "Quando a bandeira esta em manutencao — risco de timeout",
+          "Quando o adquirente perde conexao — risco de duplicidade",
+        ],
+        correctIndex: 1,
+        explanation: "STIP e ativado quando o emissor nao responde no tempo limite. A bandeira aprova com base em parametros pre-definidos. O risco e aprovar transacoes que o emissor recusaria (fraude, limite excedido).",
+        wrongExplanations: {
+          0: "STIP e automatico, nao manual. E sempre ha risco — a decisao e tomada sem consultar o emissor.",
+          2: "Se a bandeira esta em manutencao, a transacao falha completamente. STIP depende da bandeira estar operacional.",
+          3: "STIP e ativado pela indisponibilidade do emissor, nao do adquirente.",
+        },
+        category: "autorizacao",
+      },
+      {
+        id: "qh-auth-5",
+        question: "O que e um soft decline vs hard decline e por que a distincao e crucial para retry logic?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Soft e temporario e pode ser retentado; hard e permanente e retry seria desperdicio",
+          "Soft e para valores baixos; hard para valores altos",
+          "Soft e do adquirente; hard e do emissor",
+          "Nao ha diferenca pratica — ambos devem ser retentados",
+        ],
+        correctIndex: 0,
+        explanation: "Soft declines (timeout, emissor temporariamente indisponivel) podem ser revertidos com retry. Hard declines (cartao cancelado, fraude confirmada) sao definitivos — retentar gera custo sem beneficio.",
+        wrongExplanations: {
+          1: "A distincao nao e por valor, mas pela natureza da recusa — temporaria vs permanente.",
+          2: "Ambos os tipos podem vir do emissor. A origem nao define se e soft ou hard.",
+          3: "Retentar hard declines gera custo de processamento e pode prejudicar a reputacao do merchant com a bandeira.",
+        },
+        category: "autorizacao",
+      },
+
+      // ── Liquidacao (4) ──
+      {
+        id: "qh-liq-1",
+        question: "Qual e o impacto financeiro para o seller?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um marketplace processa R$10M/mes com 500 sellers. Settlement e D+30 para cartao. Um seller que fatura R$100K/mes quer antecipar recebiveis com desagio de 1.8%/mes.",
+        options: [
+          "O seller perde R$1.800 por mes em desagio",
+          "O seller ganha R$100K imediatamente sem custo",
+          "O seller paga R$1.800 de desagio mas ganha 30 dias de capital de giro — net positivo se o custo de capital proprio for maior que 1.8%/mes",
+          "O impacto e neutro porque o marketplace absorve o custo",
+        ],
+        correctIndex: 2,
+        explanation: "Antecipacao custa R$1.800/mes (1.8% de R$100K). Se o seller usa esse capital para gerar retorno acima de 1.8%/mes (ex: estoque, investimento), e net positivo. A decisao depende do custo de oportunidade.",
+        wrongExplanations: {
+          0: "Perda nominal de R$1.800 ignora o beneficio de ter o capital 30 dias antes. O custo de oportunidade pode superar o desagio.",
+          1: "Antecipacao nunca e gratis — o desagio e o custo do valor do dinheiro no tempo.",
+          3: "O marketplace ganha com o desagio — e uma fonte de receita, nao um custo absorvido.",
+        },
+        category: "liquidacao",
+      },
+      {
+        id: "qh-liq-2",
+        question: "Explique a diferenca entre gross settlement e net settlement e quando cada um e mais eficiente.",
+        type: "multiple-choice",
+        difficulty: "hard",
+        options: [
+          "Gross e para valores altos com necessidade de finalidade imediata; net e para alto volume com contrapartes recorrentes",
+          "Gross e mais barato que net em todos os cenarios",
+          "Net e mais seguro porque consolida as transacoes",
+          "Nao ha diferenca pratica — sao intercambiaveis",
+        ],
+        correctIndex: 0,
+        explanation: "Gross settlement (RTGS) liquida individualmente — ideal para transferencias de alto valor que precisam de finalidade imediata. Net settlement compensa obrigacoes antes — eficiente quando ha alto volume bilateral.",
+        wrongExplanations: {
+          1: "Gross exige mais liquidez (cada transacao individual) e pode ser mais caro em tarifas. Net reduz volume de liquidacao.",
+          2: "Net settlement introduz risco de contraparte no periodo entre compensacao e liquidacao. Gross elimina esse risco.",
+          3: "Sao mecanismos fundamentalmente diferentes com trade-offs claros de custo, risco e velocidade.",
+        },
+        category: "liquidacao",
+      },
+      {
+        id: "qh-liq-3",
+        question: "O que e a registradora de recebiveis e qual seu papel no ecossistema de pagamentos brasileiro?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Sistema que registra reclamacoes de consumidores",
+          "Infraestrutura que registra e rastreia recebiveis de cartao, permitindo uso como garantia de credito",
+          "Banco que processa boletos",
+          "Orgao regulador de fintechs",
+        ],
+        correctIndex: 1,
+        explanation: "A registradora (TAG, CERC, CIP) registra os recebiveis de cartao de cada merchant, criando transparencia para uso como lastro em operacoes de credito e antecipacao.",
+        wrongExplanations: {
+          0: "Reclamacoes sao tratadas pelo Procon e BCB, nao pela registradora.",
+          2: "Registradoras nao processam pagamentos — apenas registram a existencia e titularidade dos recebiveis.",
+          3: "Regulacao e do BCB. Registradoras sao entidades autorizadas para registro de recebiveis.",
+        },
+        category: "liquidacao",
+      },
+      {
+        id: "qh-liq-4",
+        question: "Quais sao as 3 causas mais provaveis e como investigar cada uma?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um adquirente descobre uma discrepancia de R$50K na reconciliacao diaria entre o arquivo de settlement da bandeira e o ledger interno.",
+        options: [
+          "Fraude interna — acionar auditoria imediatamente",
+          "Transacoes duplicadas no ledger, chargebacks nao processados, e transacoes de timezone diferente nao capturadas — investigar cada via cruzamento de dados",
+          "Erro de software — reiniciar o sistema de reconciliacao",
+          "A bandeira errou o arquivo — solicitar reenvio",
+        ],
+        correctIndex: 1,
+        explanation: "As 3 causas mais comuns: 1) Duplicidade no ledger (cruzar IDs unicos), 2) Chargebacks processados pela bandeira mas nao refletidos (cruzar TCxx reports), 3) Cut-off de timezone diferente (verificar janela de processamento).",
+        wrongExplanations: {
+          0: "Fraude interna e possivel mas rara. Investigar causas operacionais primeiro e mais eficiente e provavel.",
+          2: "Reiniciar nao resolve discrepancias existentes e pode agravar o problema se houver transacoes em processamento.",
+          3: "Assumir erro da bandeira sem investigar internamente e negligente. A maioria das discrepancias e interna.",
+        },
+        category: "liquidacao",
+      },
+
+      // ── Fraude (5) ──
+      {
+        id: "qh-fraud-1",
+        question: "Qual plano de acao em 90 dias reduziria o rate abaixo de 0.9%?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um merchant de delivery tem chargeback rate de 1.3% (acima do VDMP). 70% sao reason code 13.1 (merchandise not received). A empresa ja usa 3DS.",
+        options: [
+          "Aumentar fraud scoring para recusar mais transacoes",
+          "Implementar proof of delivery com foto + GPS, notificacoes proativas de entrega, e portal de resolucao pre-chargeback",
+          "Parar de aceitar cartao e migrar para PIX",
+          "Oferecer reembolso automatico em toda reclamacao",
+        ],
+        correctIndex: 1,
+        explanation: "13.1 e 'nao recebi'. Proof of delivery com evidencia forte + notificacao proativa resolve a causa raiz. Portal de resolucao desvia disputas antes de virarem chargeback formal.",
+        wrongExplanations: {
+          0: "O problema nao e fraude — e entrega. Fraud scoring nao reduz chargebacks de 'nao recebi' de clientes legitimos.",
+          2: "Migrar para PIX eliminaria chargebacks mas reduziria drasticamente a conversao em delivery.",
+          3: "Reembolso automatico incentiva abuso e custa mais que resolver a causa raiz das reclamacoes.",
+        },
+        category: "fraude",
+      },
+      {
+        id: "qh-fraud-2",
+        question: "Qual e a diferenca operacional entre Verifi CDRN e Ethoca Alerts? Em que cenario cada um e mais eficaz?",
+        type: "multiple-choice",
+        difficulty: "hard",
+        options: [
+          "CDRN intercepta antes do chargeback formal via Visa; Ethoca alerta via Mastercard e emissores — CDRN melhor para Visa-heavy, Ethoca para multi-bandeira",
+          "Sao servicos identicos de empresas diferentes",
+          "CDRN e gratis para merchants; Ethoca e pago",
+          "CDRN previne fraude; Ethoca previne chargebacks",
+        ],
+        correctIndex: 0,
+        explanation: "CDRN (Verifi/Visa) intercepta disputas na rede Visa antes de virar chargeback. Ethoca (Mastercard) recebe alertas de emissores multi-bandeira. Idealmente, usar ambos para cobertura maxima.",
+        wrongExplanations: {
+          1: "Tem integracoes, cobertura de bandeira e mecanismos diferentes. Sao complementares, nao substitutos.",
+          2: "Ambos cobram por alerta. O custo por alerta e menor que o custo de um chargeback.",
+          3: "Ambos previnem chargebacks, nao fraude diretamente. A fraude ja ocorreu — eles evitam que vire disputa formal.",
+        },
+        category: "fraude",
+      },
+      {
+        id: "qh-fraud-3",
+        question: "O que isso indica?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um banco emissor detecta um aumento de 300% em TC40 reports de um MID especifico, mas os chargebacks nao aumentaram proporcionalmente.",
+        options: [
+          "Os TC40 sao falsos positivos — ignorar",
+          "Fraude confirmada mas portadores ainda nao contestaram — wave de chargebacks esta a caminho em 30-90 dias",
+          "O sistema de deteccao esta com defeito",
+          "O merchant esta reembolsando antes do chargeback",
+        ],
+        correctIndex: 1,
+        explanation: "TC40 sao reports de fraude confirmada pelo emissor. Se chargebacks nao acompanham, e porque portadores ainda nao foram notificados ou nao contestaram. Historicamente, chargebacks seguem TC40 com delay de 30-90 dias.",
+        wrongExplanations: {
+          0: "TC40 sao fraude confirmada pelo emissor, nao falsos positivos. Ignorar seria negligencia grave.",
+          2: "Aumento de 300% em TC40 de um MID especifico indica problema no merchant, nao no sistema de deteccao.",
+          3: "Possivel parcialmente, mas aumento de 300% em TC40 sem reembolsos proporcionais indica fraude real nao tratada.",
+        },
+        category: "fraude",
+      },
+      {
+        id: "qh-fraud-4",
+        question: "O que e Compelling Evidence 3.0 e para qual reason code ele se aplica?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Evidencia fotografica para qualquer chargeback",
+          "Framework da Visa que usa device fingerprint e dados historicos para defender chargebacks de fraude CNP (reason code 10.4)",
+          "Sistema de pontuacao de risco da Mastercard",
+          "Requisito PCI para armazenamento de dados",
+        ],
+        correctIndex: 1,
+        explanation: "CE 3.0 da Visa permite defender chargebacks 10.4 (fraude CNP) provando que o mesmo device/IP fez transacoes anteriores nao disputadas. Se match em 2+ data points, o chargeback e revertido automaticamente.",
+        wrongExplanations: {
+          0: "CE 3.0 usa dados digitais (device, IP), nao fotos. E exclusivo para reason code 10.4.",
+          2: "CE 3.0 e programa da Visa, nao Mastercard. Mastercard tem seu proprio programa de defesa.",
+          3: "CE 3.0 nao tem relacao com PCI. E um mecanismo de defesa contra chargebacks.",
+        },
+        category: "fraude",
+      },
+      {
+        id: "qh-fraud-5",
+        question: "Qual combinacao de features reduziria chargebacks sem impactar a receita?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Uma empresa SaaS cobra R$49.90/mes de 200K assinantes. 0.8% de chargeback rate com 60% reason code 13.2 (cancelled recurring). Portadores alegam que cancelaram mas continuaram sendo cobrados.",
+        options: [
+          "Implementar 3DS em todas as cobranças recorrentes",
+          "Cancellation confirmation page + email de pre-cobranca 7 dias antes + link facil de cancelamento + CDRN/Ethoca alerts",
+          "Parar de cobrar clientes que reclamam",
+          "Reduzir o preco para R$29.90 para diminuir reclamacoes",
+        ],
+        correctIndex: 1,
+        explanation: "O problema e friccao no cancelamento. Facilitar cancelamento + email previo + portal de reconhecimento previne 13.2. CDRN/Ethoca intercepta disputas antes de virar chargeback.",
+        wrongExplanations: {
+          0: "3DS em recorrente adiciona friccao sem resolver o problema de cancelamento. Pode aumentar churn involuntario.",
+          2: "Parar de cobrar sem resolver o processo incentiva abuso e reduz receita desnecessariamente.",
+          3: "O preco nao e o problema — e a dificuldade de cancelar. Reduzir preco diminui receita sem resolver a causa.",
+        },
+        category: "fraude",
+      },
+
+      // ── Infraestrutura (4) ──
+      {
+        id: "qh-infra-1",
+        question: "Qual e a diferenca entre ISO 8583 e ISO 20022 e por que a industria esta migrando?",
+        type: "multiple-choice",
+        difficulty: "hard",
+        options: [
+          "ISO 8583 usa campos binarios fixos; ISO 20022 usa XML/JSON rico — migracao para suportar dados mais detalhados e interoperabilidade global",
+          "ISO 20022 e mais rapido que ISO 8583",
+          "ISO 8583 e para cartoes, ISO 20022 e para PIX — nao ha migracao",
+          "Sao protocolos intercambiaveis sem diferenca pratica",
+        ],
+        correctIndex: 0,
+        explanation: "ISO 8583 e bitmap-based com campos limitados. ISO 20022 (XML) suporta dados ricos (nome do beneficiario, proposito do pagamento) e padrao global. SWIFT, Pix e SEPA ja usam 20022.",
+        wrongExplanations: {
+          1: "Velocidade depende da implementacao, nao do protocolo. ISO 20022 pode ate ser mais lento por mensagens maiores.",
+          2: "ISO 20022 e usado em muitos contextos alem do PIX. A migracao de ISO 8583 para 20022 e tendencia global em cartoes tambem.",
+          3: "Sao fundamentalmente diferentes em estrutura, capacidade de dados e flexibilidade.",
+        },
+        category: "infraestrutura",
+      },
+      {
+        id: "qh-infra-2",
+        question: "Quais sao os 4 componentes tecnicos essenciais e em que ordem devem ser implementados?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Uma bandeira regional quer implementar tokenizacao de rede para seus cartoes.",
+        options: [
+          "Token vault, lifecycle management, cryptogram generation, issuer integration — nessa ordem",
+          "Website novo, app mobile, marketing, parcerias",
+          "Firewall, antivirus, backup, monitoring",
+          "Database, API, frontend, deploy",
+        ],
+        correctIndex: 0,
+        explanation: "Token vault armazena mapeamento PAN-token. Lifecycle management gerencia provisioning/de-provisioning. Cryptogram generation cria provas de posse. Issuer integration conecta com emissores para validacao.",
+        wrongExplanations: {
+          1: "Marketing e UX sao importantes mas nao sao componentes tecnicos de tokenizacao de rede.",
+          2: "Seguranca generica nao e tokenizacao. Tokenizacao tem componentes especificos do ecossistema de pagamentos.",
+          3: "Componentes genericos de software nao refletem a arquitetura especifica necessaria para tokenizacao de rede.",
+        },
+        category: "infraestrutura",
+      },
+      {
+        id: "qh-infra-3",
+        question: "O que e o SPI (Sistema de Pagamentos Instantaneos) e como ele se relaciona com o PIX?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "SPI e o app do PIX para celular",
+          "SPI e a infraestrutura do BCB que processa e liquida transacoes PIX em tempo real",
+          "SPI e o nome antigo do PIX",
+          "SPI e um sistema privado operado pelos bancos",
+        ],
+        correctIndex: 1,
+        explanation: "O SPI e a infraestrutura centralizada do Banco Central que processa e liquida transacoes PIX em RTGS. O PIX e o produto/arranjo; o SPI e o 'motor' que o faz funcionar.",
+        wrongExplanations: {
+          0: "SPI e infraestrutura backend, nao um app. Os apps sao dos bancos/fintechs que se conectam ao SPI.",
+          2: "SPI e PIX coexistem — sao coisas diferentes. PIX e o arranjo de pagamento; SPI e a infraestrutura.",
+          3: "SPI e operado pelo Banco Central, nao pelos bancos. Isso garante neutralidade e disponibilidade.",
+        },
+        category: "infraestrutura",
+      },
+      {
+        id: "qh-infra-4",
+        question: "Quais sao as 3 areas mais provaveis de gargalo?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um processador de pagamentos processa 10K TPS em pico. A latencia P99 e de 3.2 segundos (acima do SLA de 2s).",
+        options: [
+          "Database queries nao otimizadas, conexoes de rede com emissores saturadas, e fila de processamento sem escala horizontal",
+          "O problema e apenas de bandwidth de internet",
+          "Servidores web insuficientes — adicionar mais maquinas resolve",
+          "O SLA de 2s e irrealista para 10K TPS — renegociar",
+        ],
+        correctIndex: 0,
+        explanation: "Em processamento de pagamentos, os gargalos tipicos sao: 1) DB (queries lentas em alto volume), 2) Network I/O (conexoes com emissores/bandeiras saturadas), 3) Processing queue (fila sem auto-scaling).",
+        wrongExplanations: {
+          1: "Bandwidth puro raramente e o gargalo — mensagens de pagamento sao pequenas (<1KB). O problema e latencia, nao throughput.",
+          2: "Mais maquinas web nao resolve se o gargalo esta no database ou nas conexoes externas.",
+          3: "2s P99 para pagamentos e padrao da industria. Emissores esperam resposta rapida; timeout excessivo gera STIP.",
+        },
+        category: "infraestrutura",
+      },
+
+      // ── Produto (5) ──
+      {
+        id: "qh-prod-1",
+        question: "Quais features precisam ser adaptadas e quais novas sao necessarias?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Voce e PM de pagamentos em um e-commerce que quer expandir de Brasil para Mexico e Colombia.",
+        options: [
+          "Apenas traduzir o checkout para espanhol",
+          "Adicionar metodos locais (OXXO/SPEI no Mexico, PSE/Nequi na Colombia), adaptar anti-fraude para BINs locais, compliance fiscal local, e moeda/parcelamento local",
+          "Usar o mesmo setup brasileiro com cartoes internacionais",
+          "Contratar um parceiro local e delegar 100% dos pagamentos",
+        ],
+        correctIndex: 1,
+        explanation: "Expansao LATAM exige: metodos de pagamento locais (cada pais tem os seus), regras antifraude adaptadas, compliance tributario local, moedas locais e modalidades de parcelamento especificas.",
+        wrongExplanations: {
+          0: "Traduzir o checkout e necessario mas insuficiente. Sem metodos locais, a conversao sera muito baixa.",
+          2: "Cartoes internacionais tem taxa de aprovacao baixa e custo alto em cross-border. Metodos locais sao essenciais.",
+          3: "Delegar 100% reduz controle sobre experiencia e margem. O ideal e ter parceiro com integracao propria.",
+        },
+        category: "produto",
+      },
+      {
+        id: "qh-prod-2",
+        question: "Quais 3 estrategias combinadas teriam maior impacto?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um marketplace quer reduzir o MDR efetivo de 3.2% para abaixo de 2.5%. Volume: R$50M/mes. 70% cartao credito, 30% debito/PIX.",
+        options: [
+          "Negociar MDR menor com o adquirente atual",
+          "Migrar para IC++ pricing, implementar local acquiring com routing inteligente, e incentivar migracao de credito para PIX com desconto",
+          "Passar o custo do MDR ao comprador como taxa",
+          "Reduzir o volume processado para negociar melhor taxa",
+        ],
+        correctIndex: 1,
+        explanation: "IC++ revela interchange real (mais transparente). Local acquiring otimiza rota de menor custo. Migrar volume para PIX (custo ~0.5%) reduz MDR medio. Combinacao ataca os 3 componentes do custo.",
+        wrongExplanations: {
+          0: "Negociar sozinho e limitado. Sem mudar a estrutura (IC++, routing, mix de metodos), a reducao maxima e pequena.",
+          2: "Surcharge em cartao de credito pode violar regras das bandeiras e reduz conversao significativamente.",
+          3: "Reduzir volume piora o poder de negociacao, nao melhora. Volume alto e alavanca de negociacao.",
+        },
+        category: "produto",
+      },
+      {
+        id: "qh-prod-3",
+        question: "O que e IC++ (Interchange Plus Plus) e por que e mais transparente que pricing bundled?",
+        type: "multiple-choice",
+        difficulty: "hard",
+        options: [
+          "IC++ separa interchange, taxa da bandeira e markup do adquirente — permite ao merchant ver e otimizar cada componente individualmente",
+          "IC++ e um desconto progressivo por volume",
+          "IC++ e um modelo de pricing da Visa exclusivamente",
+          "IC++ e mais caro que bundled mas mais rapido",
+        ],
+        correctIndex: 0,
+        explanation: "IC++ decompoe o MDR em: Interchange (vai ao emissor) + Scheme fee (vai a bandeira) + Acquirer markup. Merchant ve exatamente quanto paga a quem e pode otimizar (ex: routing para menor interchange).",
+        wrongExplanations: {
+          1: "IC++ nao e desconto por volume — e um modelo de transparencia de pricing. Volume pode negociar o markup, mas a estrutura e fixa.",
+          2: "IC++ e modelo de mercado usado por qualquer adquirente, nao exclusivo de bandeira.",
+          3: "IC++ frequentemente e mais barato para merchants de alto volume por permitir otimizacao do mix de interchange.",
+        },
+        category: "produto",
+      },
+      {
+        id: "qh-prod-4",
+        question: "Qual e o impacto do parcelado lojista vs parcelado emissor no interchange e no fluxo de caixa do merchant?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Nao ha diferenca — parcelamento e sempre igual",
+          "Parcelado lojista: merchant financia e recebe em parcelas; parcelado emissor: emissor financia, merchant recebe a vista, mas interchange e maior",
+          "Parcelado emissor e sempre mais barato para o merchant",
+          "Parcelado lojista nao existe mais no Brasil",
+        ],
+        correctIndex: 1,
+        explanation: "No parcelado emissor, o banco financia o cliente e o merchant recebe o valor integral rapidamente, mas o interchange e significativamente maior. No parcelado lojista, o merchant recebe parcelado (D+30, D+60...) mas o interchange e menor.",
+        wrongExplanations: {
+          0: "Sao modalidades diferentes com impacto significativo em custo e fluxo de caixa.",
+          2: "Depende. Parcelado lojista tem interchange menor mas impacta fluxo de caixa. A melhor opcao depende do custo de capital do merchant.",
+          3: "Parcelado lojista e amplamente utilizado no Brasil, especialmente em marketplaces.",
+        },
+        category: "produto",
+      },
+      {
+        id: "qh-prod-5",
+        question: "Qual estrutura regulatoria e mais adequada e por que?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Uma fintech quer lancar um produto de credito usando recebiveis de cartao como lastro.",
+        options: [
+          "Operar como SCD (Sociedade de Credito Direto) usando recebiveis proprios como garantia",
+          "Criar um FIDC (Fundo de Investimento em Direitos Creditorios) para securitizar recebiveis de terceiros e distribuir cotas",
+          "Emprestar diretamente sem regulacao usando capital proprio",
+          "Usar SCD para originacao e FIDC para funding — combinacao que permite escala com custo de capital otimizado",
+        ],
+        correctIndex: 3,
+        explanation: "SCD origina o credito com regulacao adequada. FIDC securitiza os recebiveis para captar funding de investidores a custo menor. A combinacao permite escalar sem limitar ao capital proprio da fintech.",
+        wrongExplanations: {
+          0: "SCD sozinha limita a escala ao capital proprio da empresa. Sem FIDC, o funding e restrito.",
+          1: "FIDC sozinho nao origina credito — precisa de um originador regulado (SCD, SEP ou banco).",
+          2: "Emprestar sem regulacao e ilegal no Brasil. A atividade de credito exige autorizacao do BCB.",
+        },
+        category: "produto",
+      },
+
+      // ── Crypto (3) ──
+      {
+        id: "qh-crypto-1",
+        question: "Quais sao os 3 maiores desafios regulatorios e tecnicos?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Uma exchange quer permitir pagamentos em stablecoin para merchants no Brasil.",
+        options: [
+          "Nao ha desafios — stablecoins ja sao regulamentadas",
+          "Compliance cambial (stablecoin USD = operacao de cambio), tributacao de ganho de capital em cada transacao, e latencia de confirmacao na blockchain vs experiencia de checkout",
+          "Apenas o desafio tecnico de integracao com wallets",
+          "O unico desafio e convencer merchants a aceitar",
+        ],
+        correctIndex: 1,
+        explanation: "1) BCB pode classificar stablecoin USD como operacao cambial (exige licenca). 2) Cada transacao pode gerar evento tributavel (ganho/perda de capital). 3) Tempo de confirmacao blockchain vs expectativa de checkout instantaneo.",
+        wrongExplanations: {
+          0: "Marco Legal dos Criptoativos (Lei 14.478) existe mas regulamentacao especifica de pagamentos com stablecoins ainda esta em desenvolvimento.",
+          2: "Integracao tecnica e o menor dos desafios. Compliance regulatorio e tributario sao os maiores obstaculos.",
+          3: "Merchants precisam de incentivo economico (custo menor, liquidacao mais rapida) e seguranca juridica para aceitar.",
+        },
+        category: "crypto",
+      },
+      {
+        id: "qh-crypto-2",
+        question: "O que e MEV (Maximal Extractable Value) e como ele pode afetar pagamentos on-chain?",
+        type: "multiple-choice",
+        difficulty: "hard",
+        options: [
+          "MEV e uma taxa fixa de mineracao",
+          "MEV e o valor que validadores podem extrair reordenando transacoes — em pagamentos, pode causar front-running e sandwich attacks que alteram o preco de swaps",
+          "MEV e uma metrica de performance de blockchain",
+          "MEV nao afeta pagamentos, apenas DeFi",
+        ],
+        correctIndex: 1,
+        explanation: "MEV permite que validadores reordenem transacoes para lucro. Em pagamentos com swap (ex: pagar em ETH por produto em USDC), um atacante pode fazer sandwich attack, comprando antes e vendendo depois, aumentando o custo.",
+        wrongExplanations: {
+          0: "MEV nao e taxa fixa — e valor variavel que depende das oportunidades de reordenacao em cada bloco.",
+          2: "MEV e um problema economico/de seguranca, nao uma metrica de performance.",
+          3: "MEV afeta qualquer transacao on-chain que envolva swap de ativos, incluindo pagamentos.",
+        },
+        category: "crypto",
+      },
+      {
+        id: "qh-crypto-3",
+        question: "Qual a diferenca entre uma stablecoin algoritmica e uma com lastro em fiat?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Nao ha diferenca — ambas mantem paridade 1:1",
+          "Algoritmica usa mecanismos de oferta/demanda para manter paridade; lastreada mantem reservas reais em moeda fiat ou equivalentes",
+          "Lastreada e descentralizada; algoritmica e centralizada",
+          "Algoritmica e mais segura por nao depender de reservas",
+        ],
+        correctIndex: 1,
+        explanation: "Stablecoin lastreada (USDT, USDC) mantem reservas reais. Algoritmica (ex: UST) usa mecanismos de mint/burn e arbitragem. O colapso do UST/Luna mostrou que algoritmica tem riscos significativos de depegging.",
+        wrongExplanations: {
+          0: "O mecanismo de manter paridade e fundamentalmente diferente e com riscos distintos.",
+          2: "USDT/USDC sao lastreadas E centralizadas. Descentralizacao nao define o tipo de lastro.",
+          3: "O colapso do UST/Luna demonstrou que algoritmica sem reservas e significativamente mais arriscada.",
+        },
+        category: "crypto",
+      },
+
+      // ── Regulacao (4) ──
+      {
+        id: "qh-reg-1",
+        question: "Qual e o custo mensal estimado e qual programa deve ser priorizado?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Um merchant e notificado que entrou no VDMP (Visa) e ECM (Mastercard) simultaneamente. O chargeback rate e 1.1% com 150 disputas/mes.",
+        options: [
+          "Sem custo adicional — ambos sao apenas monitoramento",
+          "VDMP primeiro: multas comecam em $50/mes e escalam rapidamente; ECM tem periodo de graca maior. Custo combinado pode chegar a $10K+/mes apos 4 meses",
+          "ECM primeiro porque Mastercard e mais rigida",
+          "Ignorar ambos e focar em vendas",
+        ],
+        correctIndex: 1,
+        explanation: "VDMP da Visa escala multas mais rapidamente (a partir do mes 1). ECM da Mastercard tem periodo de observacao inicial. Priorizar VDMP reduz custo imediato. Custo combinado pode ultrapassar $10K/mes se nao resolvido.",
+        wrongExplanations: {
+          0: "Ambos os programas aplicam multas financeiras reais que escalam mensalmente. Nao sao apenas monitoramento.",
+          2: "Visa (VDMP) tem escalacao de multas mais agressiva nos primeiros meses. ECM tem periodo de graca inicial.",
+          3: "Ignorar pode levar a multas de $75K+/mes e eventual encerramento do MID. Risco existencial para o negocio.",
+        },
+        category: "regulacao",
+      },
+      {
+        id: "qh-reg-2",
+        question: "Quais sao as diferencas entre PCI DSS v3.2.1 e v4.0 e como elas impactam merchants?",
+        type: "multiple-choice",
+        difficulty: "hard",
+        options: [
+          "v4.0 adiciona requisitos de MFA obrigatorio, customized approach para validacao, e monitoramento continuo — merchants tem ate marco 2025 para migrar",
+          "Nao ha diferencas significativas — apenas numeracao",
+          "v4.0 e mais simples e menos restritiva",
+          "v4.0 elimina a necessidade de scan trimestral",
+        ],
+        correctIndex: 0,
+        explanation: "PCI DSS v4.0 traz: MFA para todos os acessos ao CDE, customized approach (flexibilidade na implementacao), testes de seguranca mais frequentes, e foco em seguranca continua vs compliance pontual.",
+        wrongExplanations: {
+          1: "v4.0 e a maior atualizacao do PCI DSS em anos, com mudancas significativas em autenticacao, monitoramento e flexibilidade.",
+          2: "v4.0 e mais rigorosa em varios aspectos, especialmente MFA e monitoramento continuo.",
+          3: "Scans trimestrais continuam obrigatorios. v4.0 adiciona mais requisitos de monitoramento, nao remove.",
+        },
+        category: "regulacao",
+      },
+      {
+        id: "qh-reg-3",
+        question: "O que e SCA (Strong Customer Authentication) e em quais regioes e obrigatorio?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Autenticacao biometrica obrigatoria globalmente",
+          "Autenticacao de dois fatores em pagamentos online obrigatoria na Europa (PSD2) e no UK — exige 2 de 3: algo que o usuario sabe, tem ou e",
+          "Sistema de scoring de credito americano",
+          "Protocolo de criptografia para cartoes chip",
+        ],
+        correctIndex: 1,
+        explanation: "SCA e parte da PSD2 europeia: exige 2 fatores de autenticacao (conhecimento + posse + inerencia) em pagamentos online. Obrigatorio na EEA e UK. Brasil nao tem SCA obrigatorio, mas 3DS 2.0 e similar.",
+        wrongExplanations: {
+          0: "SCA nao e apenas biometria e nao e global. E multi-fator e obrigatoria em regioes especificas.",
+          2: "SCA e europeu. Score de credito americano e FICO — conceitos completamente diferentes.",
+          3: "SCA e para autenticacao de pagamentos online, nao criptografia de chip.",
+        },
+        category: "regulacao",
+      },
+      {
+        id: "qh-reg-4",
+        question: "Quais licencas, regulacoes e infraestrutura tecnica sao necessarias?",
+        type: "scenario",
+        difficulty: "hard",
+        scenario: "Uma empresa quer operar como sub-acquirer (facilitador de pagamentos) no Brasil.",
+        options: [
+          "Nenhuma licenca — basta integrar com um adquirente",
+          "Registro no BCB como instituicao de pagamento, contrato com adquirente certificado, compliance PCI-DSS, KYC/AML de sub-merchants, e sistema de split de pagamentos",
+          "Apenas CNPJ e conta bancaria",
+          "Licenca de banco comercial do BCB",
+        ],
+        correctIndex: 1,
+        explanation: "Sub-acquirer precisa: 1) Registro no BCB (Res. 80/2021), 2) Contrato com adquirente, 3) PCI-DSS (se processa dados de cartao), 4) KYC/AML dos sub-merchants, 5) Infraestrutura de split e settlement.",
+        wrongExplanations: {
+          0: "Desde a Circular 3.682/2013, facilitadores precisam de registro no BCB. Operar sem e irregular.",
+          2: "CNPJ e conta sao necessarios mas insuficientes. Regulacao especifica de pagamentos e obrigatoria.",
+          3: "Licenca de banco e desproporcional. Sub-acquirer precisa de registro como instituicao de pagamento, nao licenca bancaria completa.",
+        },
+        category: "regulacao",
+      },
+
+      // ── Extra hard questions for depth ──
+      {
+        id: "qh-extra-1",
+        question: "Qual e o impacto de network tokenization na taxa de autorizacao?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Nenhum impacto mensuravel",
+          "Aumento tipico de 2-5% na taxa de autorizacao por fornecer dados mais ricos e atualizados ao emissor",
+          "Reducao na taxa de autorizacao por adicionar complexidade",
+          "Impacto apenas em transacoes internacionais",
+        ],
+        correctIndex: 1,
+        explanation: "Network tokens sao atualizados automaticamente quando o cartao e renovado, eliminando recusas por cartao expirado. Alem disso, fornecem cryptograms que aumentam a confianca do emissor.",
+        wrongExplanations: {
+          0: "Estudos de Visa e Mastercard mostram aumento de 2-5% consistente com network tokenization.",
+          2: "A complexidade e abstraida pelo token service provider. O emissor recebe dados melhores, nao piores.",
+          3: "O impacto e em todas as transacoes, especialmente recorrentes (onde cartao expirado e causa comum de recusa).",
+        },
+        category: "autorizacao",
+      },
+      {
+        id: "qh-extra-2",
+        question: "Por que a taxa de interchange e diferente entre debito e credito no Brasil?",
+        type: "multiple-choice",
+        difficulty: "easy",
+        options: [
+          "Nao ha diferenca — interchange e igual",
+          "Credito tem interchange maior porque o emissor financia o portador; debito tem teto regulado pelo BCB",
+          "Debito e mais caro porque e mais rapido",
+          "A diferenca e apenas por preferencia das bandeiras",
+        ],
+        correctIndex: 1,
+        explanation: "Em credito, o emissor assume risco de inadimplencia e financia o portador — interchange maior compensa esse risco. Em debito, BCB regulou teto de 0.5% (Circ. 3.887/2018) por ser dinheiro disponivel.",
+        category: "fundamentos",
+      },
+      {
+        id: "qh-extra-3",
+        question: "O que e BIN (Bank Identification Number) e para que e usado?",
+        type: "multiple-choice",
+        difficulty: "easy",
+        options: [
+          "Codigo de barras do boleto",
+          "Primeiros 6-8 digitos do cartao que identificam emissor, tipo de cartao e pais de emissao",
+          "Numero da agencia bancaria",
+          "Identificador de transacao unico",
+        ],
+        correctIndex: 1,
+        explanation: "O BIN identifica o emissor (ex: Itau, Nubank), tipo (credito/debito), bandeira, nivel (Gold/Platinum) e pais. E essencial para routing, fraud scoring e analytics.",
+        category: "fundamentos",
+      },
+      {
+        id: "qh-extra-4",
+        question: "O que significa liability shift no contexto de 3D Secure?",
+        type: "multiple-choice",
+        difficulty: "easy",
+        options: [
+          "O merchant paga menos impostos",
+          "A responsabilidade por fraude transfere do merchant para o emissor quando 3DS e autenticado com sucesso",
+          "O consumidor assume a responsabilidade",
+          "A bandeira paga o chargeback",
+        ],
+        correctIndex: 1,
+        explanation: "Com 3DS autenticado, se houver chargeback por fraude, o emissor (nao o merchant) arca com o custo. Isso e liability shift — incentivo para merchants implementarem 3DS.",
+        category: "autorizacao",
+      },
+      {
+        id: "qh-extra-5",
+        question: "O que e acquirer BIN table e qual sua importancia no processamento?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Tabela de precos do adquirente",
+          "Tabela que mapeia BINs para emissores e determina routing, interchange e regras de processamento aplicaveis",
+          "Lista de cartoes bloqueados",
+          "Registro de transacoes historicas",
+        ],
+        correctIndex: 1,
+        explanation: "A BIN table e mantida pelas bandeiras e usada pelo adquirente para identificar o emissor, determinar interchange aplicavel, regras de roteamento e features disponiveis (tokenizacao, 3DS, etc).",
+        wrongExplanations: {
+          0: "BIN table e tecnica, nao comercial. Precos sao definidos em contrato, nao na BIN table.",
+          2: "Listas de bloqueio sao parte de fraud prevention, nao da BIN table.",
+          3: "Historico de transacoes e armazenado em sistemas de reporting, nao na BIN table.",
+        },
+        category: "infraestrutura",
+      },
+      {
+        id: "qh-extra-6",
+        question: "Uma transacao aprovada e capturada pode ser revertida pelo emissor sem chargeback?",
+        type: "true-false",
+        difficulty: "medium",
+        options: ["Verdadeiro", "Falso"],
+        correctIndex: 0,
+        explanation: "Verdadeiro. O emissor pode reverter via retrieval request (request for information) antes do chargeback formal. Alem disso, alertas CDRN/Ethoca permitem resolucao sem chargeback. Existem tambem reversais automaticas em duplicidade.",
+        wrongExplanations: { 1: "Existem mecanismos pre-chargeback como retrieval requests e alertas de fraude que permitem resolucao sem disputa formal." },
+        category: "fraude",
+      },
+      {
+        id: "qh-extra-7",
+        question: "O que e tokenizacao de comercio (merchant tokenization) e como difere de network tokenization?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Sao a mesma coisa",
+          "Merchant tokenization e gerida pelo PSP/merchant (token interno); network tokenization e emitida pela bandeira e reconhecida por todo o ecossistema",
+          "Network tokenization e mais insegura",
+          "Merchant tokenization substitui completamente network tokenization",
+        ],
+        correctIndex: 1,
+        explanation: "Merchant token e interno (PCI scope reduzido mas limitado aquele merchant). Network token e emitido pela bandeira, reconhecido por emissores globalmente, e atualizado automaticamente quando cartao muda.",
+        wrongExplanations: {
+          0: "Sao escopos fundamentalmente diferentes. Merchant token e local; network token e global.",
+          2: "Network tokenization e mais segura por incluir cryptogram de dominio e atualizacao automatica.",
+          3: "Sao complementares. Merchant token reduz PCI scope; network token melhora autorizacao.",
+        },
+        category: "autorizacao",
+      },
+      {
+        id: "qh-extra-8",
+        question: "O que e o conceito de 'payment orchestration' e por que esta crescendo?",
+        type: "multiple-choice",
+        difficulty: "easy",
+        options: [
+          "Apenas um termo de marketing para gateway",
+          "Camada que gerencia multiplos provedores de pagamento com routing inteligente, retry, cascade e otimizacao de custo/aprovacao",
+          "Sistema de musica para lojas",
+          "Processo manual de reconciliacao",
+        ],
+        correctIndex: 1,
+        explanation: "Payment orchestration abstrai a complexidade de multiplos PSPs/adquirentes, adicionando logica de negocio para maximizar aprovacao, minimizar custo e garantir resiliencia automaticamente.",
+        category: "produto",
+      },
+      {
+        id: "qh-extra-9",
+        question: "O que e um ARN (Acquirer Reference Number) e para que serve?",
+        type: "multiple-choice",
+        difficulty: "medium",
+        options: [
+          "Numero de telefone do adquirente",
+          "Identificador unico de uma transacao atribuido pelo adquirente, usado para rastreamento em disputas e reconciliacao cross-party",
+          "Codigo de autorizacao do emissor",
+          "Numero de serie do terminal POS",
+        ],
+        correctIndex: 1,
+        explanation: "O ARN e um identificador de 23 digitos que permite rastrear uma transacao entre adquirente, bandeira e emissor. Essencial para resolver disputas, rastrear settlement e reconciliar entre partes.",
+        wrongExplanations: {
+          0: "ARN e identificador de transacao, nao informacao de contato.",
+          2: "O codigo de autorizacao e emitido pelo emissor. ARN e do adquirente — sao identificadores diferentes.",
+          3: "O numero de serie do POS e um identificador de hardware, nao de transacao.",
+        },
+        category: "infraestrutura",
+      },
+      {
+        id: "qh-extra-10",
+        question: "Qual e a relacao entre MDR, interchange e acquirer markup?",
+        type: "multiple-choice",
+        difficulty: "easy",
+        options: [
+          "Sao taxas independentes somadas na fatura",
+          "MDR = interchange + scheme fee + acquirer markup — e a taxa total paga pelo merchant",
+          "MDR e interchange sao a mesma coisa",
+          "Acquirer markup e sempre maior que interchange",
+        ],
+        correctIndex: 1,
+        explanation: "MDR e a taxa total que o merchant paga. Ela e composta por: interchange (vai ao emissor) + scheme fee (vai a bandeira) + markup do adquirente. No modelo IC++, cada componente e visivel.",
+        category: "regulacao",
       },
     ],
   },
@@ -1242,4 +2209,16 @@ export const QUIZZES: PageQuiz[] = [
 
 export function getQuizForPage(route: string): PageQuiz | null {
   return QUIZZES.find((q) => q.pageRoute === route) || null;
+}
+
+export function getQuestionsByCategory(category: QuizCategory): QuizQuestion[] {
+  return QUIZZES.flatMap(q => q.questions).filter(q => q.category === category);
+}
+
+export function getQuestionsByDifficulty(difficulty: Difficulty): QuizQuestion[] {
+  return QUIZZES.flatMap(q => q.questions).filter(q => q.difficulty === difficulty);
+}
+
+export function getAllQuestions(): QuizQuestion[] {
+  return QUIZZES.flatMap(q => q.questions);
 }
