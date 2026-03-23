@@ -26,6 +26,8 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Fluxos de Transação", href: "/explore/transaction-flows", icon: "🔄" },
       { name: "Mapa do Ecossistema", href: "/explore/ecosystem-map", icon: "🌐" },
       { name: "Sistema Financeiro", href: "/explore/financial-system", icon: "🌍" },
+      { name: "Card-Present & POS", href: "/knowledge/card-present-pos", icon: "🖥️" },
+      { name: "Emerging Payments", href: "/knowledge/emerging-payments", icon: "🚀" },
     ],
   },
   {
@@ -35,6 +37,9 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Sistemas de Liquidação", href: "/infrastructure/settlement-systems", icon: "⚙️" },
       { name: "Liquidez & Tesouraria", href: "/infrastructure/liquidity-treasury", icon: "💰" },
       { name: "Settlement & Clearing", href: "/knowledge/settlement-clearing", icon: "🔁" },
+      { name: "HSM & Criptografia", href: "/knowledge/hsm-cryptography", icon: "🔐" },
+      { name: "Event Architecture", href: "/knowledge/event-architecture", icon: "📡" },
+      { name: "ISO 20022 & SWIFT", href: "/knowledge/iso20022-swift", icon: "📨" },
     ],
   },
   {
@@ -67,6 +72,7 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Matriz Regulatória", href: "/knowledge/regulatory-matrix", icon: "⚖️" },
       { name: "Operational Excellence", href: "/knowledge/operational-excellence", icon: "🛡️" },
       { name: "Embedded Finance", href: "/knowledge/embedded-finance", icon: "🏗️" },
+      { name: "Legacy & Migracao", href: "/knowledge/legacy-migration", icon: "🔄" },
     ],
   },
   {
