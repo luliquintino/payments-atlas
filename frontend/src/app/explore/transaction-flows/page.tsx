@@ -5,6 +5,8 @@ import Link from "next/link";
 import { getQuizForPage } from "@/data/quizzes";
 import PageQuiz from "@/components/ui/PageQuiz";
 import { useGameProgress } from "@/hooks/useGameProgress";
+import FlowDiagram from "@/components/ui/FlowDiagram";
+import type { FlowStep as FlowDiagramStep } from "@/components/ui/FlowDiagram";
 
 /**
  * Fluxos de Transacao — Catalogo interativo de 8 fluxos de pagamento comuns.
@@ -526,6 +528,25 @@ const transactionFlows: TransactionFlow[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// Card Authorization Sequence Diagram Data
+// ---------------------------------------------------------------------------
+
+const cardAuthActors = ["Cliente", "Merchant", "PSP/Gateway", "Adquirente", "Bandeira", "Emissor"];
+
+const cardAuthFlow: FlowDiagramStep[] = [
+  { from: "Cliente", to: "Merchant", label: "Inicia pagamento", detail: "Cliente insere dados do cartao ou usa wallet digital no checkout do merchant", type: "request" },
+  { from: "Merchant", to: "PSP/Gateway", label: "Envia transacao", detail: "Merchant envia dados da transacao ao PSP via API (amount, card token, merchant_id, idempotency_key)", type: "request" },
+  { from: "PSP/Gateway", to: "Adquirente", label: "Roteia ao adquirente", detail: "Smart routing seleciona o melhor adquirente baseado em custo, taxa de sucesso e latencia. Mensagem ISO 8583 (0100)", type: "request" },
+  { from: "Adquirente", to: "Bandeira", label: "Encaminha a bandeira", detail: "Adquirente formata mensagem ISO 8583 e envia via rede da bandeira (VisaNet, Banknet)", type: "request" },
+  { from: "Bandeira", to: "Emissor", label: "Solicita autorizacao", detail: "Bandeira roteia ao emissor do cartao. Emissor verifica: saldo, limite, fraude, geolocalizacao, status do cartao", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Resposta (aprovado/negado)", detail: "Emissor retorna codigo de resposta (00=aprovado, 05=nao autorizado, 51=saldo insuficiente, etc.)", type: "response" },
+  { from: "Bandeira", to: "Adquirente", label: "Repassa resposta", detail: "Bandeira repassa resposta do emissor ao adquirente com authorization code", type: "response" },
+  { from: "Adquirente", to: "PSP/Gateway", label: "Retorna resultado", detail: "Adquirente envia resposta ao PSP com status, auth code, e response code", type: "response" },
+  { from: "PSP/Gateway", to: "Merchant", label: "Webhook de resultado", detail: "PSP notifica merchant via webhook com status final. Merchant atualiza pedido", type: "response" },
+  { from: "Merchant", to: "Cliente", label: "Exibe confirmacao", detail: "Checkout exibe confirmacao de pagamento aprovado ou mensagem de erro", type: "response" },
+];
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -584,6 +605,15 @@ export default function TransactionFlowsPage() {
           <li>Diferenças entre fluxos domésticos e cross-border</li>
         </ul>
       </div>
+
+      {/* ================================================================= */}
+      {/* SEQUENCE DIAGRAM — Card Authorization Flow                        */}
+      {/* ================================================================= */}
+      <FlowDiagram
+        title="Fluxo de Autorizacao de Cartao — Diagrama de Sequencia"
+        actors={cardAuthActors}
+        steps={cardAuthFlow}
+      />
 
       {/* ================================================================= */}
       {/* STATS — Phase 2                                                   */}

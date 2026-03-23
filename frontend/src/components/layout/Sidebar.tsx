@@ -12,88 +12,6 @@ interface NavItem {
   icon: string;
 }
 
-interface ExplorarCategory {
-  label: string;
-  items: NavItem[];
-}
-
-const explorarCategories: ExplorarCategory[] = [
-  {
-    label: "Pagamentos",
-    items: [
-      { name: "Mapa de Pagamentos", href: "/explore/payments-map", icon: "🗺️" },
-      { name: "Trilhos de Pagamento", href: "/explore/payment-rails", icon: "🛤️" },
-      { name: "Fluxos de Transação", href: "/explore/transaction-flows", icon: "🔄" },
-      { name: "Mapa do Ecossistema", href: "/explore/ecosystem-map", icon: "🌐" },
-      { name: "Sistema Financeiro", href: "/explore/financial-system", icon: "🌍" },
-      { name: "Card-Present & POS", href: "/knowledge/card-present-pos", icon: "🖥️" },
-      { name: "Emerging Payments", href: "/knowledge/emerging-payments", icon: "🚀" },
-    ],
-  },
-  {
-    label: "Infraestrutura",
-    items: [
-      { name: "Sistemas Bancários", href: "/infrastructure/banking-systems", icon: "🏛️" },
-      { name: "Sistemas de Liquidação", href: "/infrastructure/settlement-systems", icon: "⚙️" },
-      { name: "Liquidez & Tesouraria", href: "/infrastructure/liquidity-treasury", icon: "💰" },
-      { name: "Settlement & Clearing", href: "/knowledge/settlement-clearing", icon: "🔁" },
-      { name: "HSM & Criptografia", href: "/knowledge/hsm-cryptography", icon: "🔐" },
-      { name: "Event Architecture", href: "/knowledge/event-architecture", icon: "📡" },
-      { name: "ISO 20022 & SWIFT", href: "/knowledge/iso20022-swift", icon: "📨" },
-    ],
-  },
-  {
-    label: "Crypto & Web3",
-    items: [
-      { name: "Mapa Blockchain", href: "/crypto/blockchain-map", icon: "🔗" },
-      { name: "Sistemas de Stablecoin", href: "/crypto/stablecoin-systems", icon: "🪙" },
-      { name: "Protocolos DeFi", href: "/crypto/defi-protocols", icon: "🌀" },
-      { name: "Crypto Avançado: L2 & Bridges", href: "/crypto/advanced-crypto", icon: "⚡" },
-    ],
-  },
-  {
-    label: "Knowledge Base",
-    items: [
-      { name: "Feature Discovery", href: "/knowledge/feature-discovery", icon: "🔍" },
-      { name: "Base de Features", href: "/knowledge/features", icon: "📦" },
-      { name: "Regras de Negócio", href: "/knowledge/business-rules", icon: "📋" },
-      { name: "Grafo de Dependências", href: "/knowledge/dependency-graph", icon: "🔗" },
-      { name: "Taxonomia", href: "/knowledge/taxonomy", icon: "🏷️" },
-      { name: "Glossário", href: "/glossary", icon: "📖" },
-      { name: "Regras de Bandeiras", href: "/knowledge/brand-rules", icon: "🏦" },
-      { name: "Chargeback: Guia Completo", href: "/knowledge/chargeback-deep-dive", icon: "⚖️" },
-      { name: "Antecipação de Recebíveis", href: "/knowledge/antecipacao-recebiveis", icon: "💰" },
-      { name: "Parcelamento", href: "/knowledge/parcelamento", icon: "📊" },
-      { name: "Crédito Estruturado", href: "/knowledge/credito-estruturado", icon: "🏦" },
-      { name: "PCI Compliance", href: "/knowledge/pci-compliance", icon: "🔒" },
-      { name: "Cross-Border Payments", href: "/knowledge/cross-border", icon: "🌍" },
-      { name: "Webhook Patterns", href: "/knowledge/webhook-patterns", icon: "🔔" },
-      { name: "Arquitetura PayFac", href: "/knowledge/payfac-architecture", icon: "🏗️" },
-      { name: "Matriz Regulatória", href: "/knowledge/regulatory-matrix", icon: "⚖️" },
-      { name: "Operational Excellence", href: "/knowledge/operational-excellence", icon: "🛡️" },
-      { name: "Embedded Finance", href: "/knowledge/embedded-finance", icon: "🏗️" },
-      { name: "Legacy & Migracao", href: "/knowledge/legacy-migration", icon: "🔄" },
-    ],
-  },
-  {
-    label: "Fraude & Risco",
-    items: [
-      { name: "Mapa de Fraude", href: "/fraud/fraud-map", icon: "🛡️" },
-      { name: "Sinais de Fraude", href: "/fraud/fraud-signals", icon: "📡" },
-      { name: "Ciclo de Chargeback", href: "/fraud/chargeback-lifecycle", icon: "⚖️" },
-      { name: "Fraude Avançada & ML", href: "/knowledge/advanced-fraud-ml", icon: "🤖" },
-    ],
-  },
-  {
-    label: "Diagnóstico",
-    items: [
-      { name: "Conta Comigo", href: "/diagnostics/conta-comigo", icon: "🩺" },
-      { name: "Árvore de Métricas", href: "/diagnostics/metrics-tree", icon: "📊" },
-      { name: "Biblioteca de Problemas", href: "/diagnostics/problem-library", icon: "⚠️" },
-    ],
-  },
-];
-
 const ferramentasItems: NavItem[] = [
   { name: "Simulador", href: "/simulation/payment-simulator", icon: "🧪" },
   { name: "Consultor de Arquitetura", href: "/simulation/architecture-advisor", icon: "🏗️" },
@@ -103,13 +21,6 @@ const ferramentasItems: NavItem[] = [
   { name: "Analisador de Docs", href: "/tools/document-analyzer", icon: "📄" },
 ];
 
-// Check if pathname matches any item in the explorar categories
-function isInExplorar(pathname: string): boolean {
-  return explorarCategories.some((cat) =>
-    cat.items.some((item) => pathname.startsWith(item.href))
-  );
-}
-
 function isInFerramentas(pathname: string): boolean {
   return ferramentasItems.some((item) => pathname.startsWith(item.href));
 }
@@ -117,7 +28,6 @@ function isInFerramentas(pathname: string): boolean {
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [explorarOpen, setExplorarOpen] = useState(false);
   const [ferramentasOpen, setFerramentasOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const { xp, streak } = useGameProgress();
@@ -144,7 +54,6 @@ export function Sidebar() {
 
   // Auto-expand if currently in a sub-section
   useEffect(() => {
-    if (isInExplorar(pathname)) setExplorarOpen(true);
     if (isInFerramentas(pathname)) setFerramentasOpen(true);
   }, [pathname]);
 
@@ -301,7 +210,7 @@ export function Sidebar() {
           </div>
         </Link>
 
-        {/* Navigation — 5 main items */}
+        {/* Navigation — 6 main items */}
         <nav
           className="flex-1 overflow-y-auto"
           style={{ padding: "0.5rem 0.625rem" }}
@@ -333,7 +242,7 @@ export function Sidebar() {
             <span>Trilhas</span>
           </Link>
 
-          {/* 2.5 Quiz */}
+          {/* 3. Quiz */}
           <Link
             href="/quiz"
             style={{ ...linkStyle("/quiz"), marginTop: "0.125rem" }}
@@ -345,95 +254,19 @@ export function Sidebar() {
             <span>Quiz</span>
           </Link>
 
-          {/* 3. Explorar (expandable) */}
-          <div style={{ marginTop: "0.125rem" }}>
-            <button
-              onClick={() => setExplorarOpen(!explorarOpen)}
-              className="w-full flex items-center transition-colors"
-              style={{
-                padding: "0.5rem 0.75rem",
-                borderRadius: "0.5rem",
-                fontSize: "0.875rem",
-                gap: "0.625rem",
-                color: isInExplorar(pathname) ? "var(--primary)" : "var(--foreground)",
-                fontWeight: isInExplorar(pathname) ? 600 : 400,
-                background: isInExplorar(pathname) && !explorarOpen ? "var(--primary-bg)" : "transparent",
-              }}
-              onMouseEnter={(e) => {
-                if (!isInExplorar(pathname) || explorarOpen) {
-                  e.currentTarget.style.background = "var(--surface-hover)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background =
-                  isInExplorar(pathname) && !explorarOpen ? "var(--primary-bg)" : "transparent";
-              }}
-            >
-              <span style={{ fontSize: "1rem", width: "1.25rem", textAlign: "center", flexShrink: 0 }}>
-                🧭
-              </span>
-              <span className="flex-1 text-left">Explorar</span>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                className={`transition-transform duration-200 ${explorarOpen ? "" : "-rotate-90"}`}
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
+          {/* 4. Explorar — simple link to hub page */}
+          <Link
+            href="/explore"
+            style={{ ...linkStyle("/explore"), marginTop: "0.125rem" }}
+            {...hoverProps("/explore")}
+          >
+            <span style={{ fontSize: "1rem", width: "1.25rem", textAlign: "center", flexShrink: 0 }}>
+              🧭
+            </span>
+            <span>Explorar</span>
+          </Link>
 
-            {explorarOpen && (
-              <div style={{ marginTop: "0.25rem" }}>
-                {explorarCategories.map((cat) => (
-                  <div key={cat.label} style={{ marginBottom: "0.375rem" }}>
-                    <div
-                      style={{
-                        padding: "0.25rem 0.75rem 0.25rem 2.5rem",
-                        fontSize: "0.625rem",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                        color: "var(--text-muted)",
-                      }}
-                    >
-                      {cat.label}
-                    </div>
-                    {cat.items.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        title={item.name}
-                        style={{
-                          ...linkStyle(item.href),
-                          paddingLeft: "2.5rem",
-                          fontSize: "0.8125rem",
-                        }}
-                        {...hoverProps(item.href)}
-                      >
-                        <span
-                          style={{
-                            fontSize: "0.875rem",
-                            width: "1.125rem",
-                            textAlign: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {item.icon}
-                        </span>
-                        <span className="truncate">{item.name}</span>
-                      </Link>
-                    ))}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 4. Ferramentas (expandable) */}
+          {/* 5. Ferramentas (expandable) */}
           <div style={{ marginTop: "0.125rem" }}>
             <button
               onClick={() => setFerramentasOpen(!ferramentasOpen)}
@@ -510,7 +343,7 @@ export function Sidebar() {
             )}
           </div>
 
-          {/* 5. Buscar */}
+          {/* 6. Buscar */}
           <Link
             href="/search"
             style={{ ...linkStyle("/search"), marginTop: "0.125rem" }}

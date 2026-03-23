@@ -6,6 +6,8 @@ import { getQuizForPage } from "@/data/quizzes";
 import PageQuiz from "@/components/ui/PageQuiz";
 import { useGameProgress } from "@/hooks/useGameProgress";
 import { chargebackLifecycle } from "@/data/fraud-data";
+import FlowDiagram from "@/components/ui/FlowDiagram";
+import type { FlowStep as FlowDiagramStep } from "@/components/ui/FlowDiagram";
 
 /**
  * Ciclo de Chargeback — Timeline vertical do ciclo de vida completo de um
@@ -15,6 +17,23 @@ import { chargebackLifecycle } from "@/data/fraud-data";
  * dicas para o lojista. Design de timeline com círculos numerados e linhas
  * conectoras, similar à página de transaction-flows.
  */
+
+// ---------------------------------------------------------------------------
+// Chargeback Sequence Diagram Data
+// ---------------------------------------------------------------------------
+
+const chargebackActors = ["Portador", "Emissor", "Bandeira", "Adquirente", "Merchant"];
+
+const chargebackFlow: FlowDiagramStep[] = [
+  { from: "Portador", to: "Emissor", label: "Disputa a transacao", detail: "Portador contata banco emissor alegando fraude, nao reconhecimento ou produto nao entregue. Prazo: ate 120 dias da transacao", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Abre chargeback", detail: "Emissor avalia a disputa e abre um chargeback formal via rede da bandeira. Debito provisorio ao adquirente. Reason code atribuido (ex: Visa 10.4 - Fraud)", type: "request" },
+  { from: "Bandeira", to: "Adquirente", label: "Notifica chargeback", detail: "Bandeira transmite o chargeback ao adquirente via arquivo de clearing (TC105 Visa / IPM Mastercard)", type: "request" },
+  { from: "Adquirente", to: "Merchant", label: "Repassa ao merchant", detail: "Adquirente notifica merchant e debita o valor da transacao + taxa de chargeback (R$15-50 por disputa)", type: "request" },
+  { from: "Merchant", to: "Adquirente", label: "Envia evidencias (representment)", detail: "Merchant tem 30 dias (Visa) ou 45 dias (Mastercard) para enviar compelling evidence: comprovante de entrega, logs de 3DS, IP, device fingerprint", type: "response" },
+  { from: "Adquirente", to: "Bandeira", label: "Submete representment", detail: "Adquirente formata o representment com evidencias e submete a bandeira", type: "response" },
+  { from: "Bandeira", to: "Emissor", label: "Avalia evidencias", detail: "Emissor recebe evidencias e decide: aceitar (merchant vence) ou escalar para pre-arbitragem", type: "response" },
+  { from: "Emissor", to: "Bandeira", label: "Aceita ou escala", detail: "Se aceita: chargeback revertido, merchant recebe de volta. Se escala: vai para pre-arbitragem com custos de $500+ (Visa) ou $300+ (Mastercard)", type: "async" },
+];
 
 // ---------------------------------------------------------------------------
 // Componente
@@ -69,6 +88,13 @@ export default function ChargebackLifecyclePage() {
           <li>Estratégias de representment</li>
         </ul>
       </div>
+
+      {/* ---- Sequence Diagram ---- */}
+      <FlowDiagram
+        title="Ciclo de Chargeback — Diagrama de Sequencia"
+        actors={chargebackActors}
+        steps={chargebackFlow}
+      />
 
       {/* ---- Stats ---- */}
       <div className="animate-fade-in stagger-1" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
