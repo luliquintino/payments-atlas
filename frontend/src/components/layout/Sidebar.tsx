@@ -66,6 +66,7 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Arquitetura PayFac", href: "/knowledge/payfac-architecture", icon: "🏗️" },
       { name: "Matriz Regulatória", href: "/knowledge/regulatory-matrix", icon: "⚖️" },
       { name: "Operational Excellence", href: "/knowledge/operational-excellence", icon: "🛡️" },
+      { name: "Embedded Finance", href: "/knowledge/embedded-finance", icon: "🏗️" },
     ],
   },
   {
