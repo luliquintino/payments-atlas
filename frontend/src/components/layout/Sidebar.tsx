@@ -6,29 +6,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useGameProgress } from "@/hooks/useGameProgress";
 import MobileHeader from "./MobileHeader";
 
-interface NavItem {
-  name: string;
-  href: string;
-  icon: string;
-}
-
-const ferramentasItems: NavItem[] = [
-  { name: "Simulador", href: "/simulation/payment-simulator", icon: "🧪" },
-  { name: "Consultor de Arquitetura", href: "/simulation/architecture-advisor", icon: "🏗️" },
-  { name: "Dashboard", href: "/observability/payments-dashboard", icon: "📈" },
-  { name: "Explorador de Eventos", href: "/observability/event-explorer", icon: "📋" },
-  { name: "Consultor AI", href: "/ai/payments-advisor", icon: "🤖" },
-  { name: "Analisador de Docs", href: "/tools/document-analyzer", icon: "📄" },
-];
-
-function isInFerramentas(pathname: string): boolean {
-  return ferramentasItems.some((item) => pathname.startsWith(item.href));
-}
-
 export function Sidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [ferramentasOpen, setFerramentasOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const { xp, streak } = useGameProgress();
 
@@ -51,11 +31,6 @@ export function Sidebar() {
       localStorage.setItem("pks-theme", "light");
     }
   };
-
-  // Auto-expand if currently in a sub-section
-  useEffect(() => {
-    if (isInFerramentas(pathname)) setFerramentasOpen(true);
-  }, [pathname]);
 
   // Close mobile sidebar on navigation
   useEffect(() => {
@@ -266,82 +241,17 @@ export function Sidebar() {
             <span>Explorar</span>
           </Link>
 
-          {/* 5. Ferramentas (expandable) */}
-          <div style={{ marginTop: "0.125rem" }}>
-            <button
-              onClick={() => setFerramentasOpen(!ferramentasOpen)}
-              className="w-full flex items-center transition-colors"
-              style={{
-                padding: "0.5rem 0.75rem",
-                borderRadius: "0.5rem",
-                fontSize: "0.875rem",
-                gap: "0.625rem",
-                color: isInFerramentas(pathname) ? "var(--primary)" : "var(--foreground)",
-                fontWeight: isInFerramentas(pathname) ? 600 : 400,
-                background:
-                  isInFerramentas(pathname) && !ferramentasOpen
-                    ? "var(--primary-bg)"
-                    : "transparent",
-              }}
-              onMouseEnter={(e) => {
-                if (!isInFerramentas(pathname) || ferramentasOpen) {
-                  e.currentTarget.style.background = "var(--surface-hover)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background =
-                  isInFerramentas(pathname) && !ferramentasOpen
-                    ? "var(--primary-bg)"
-                    : "transparent";
-              }}
-            >
-              <span style={{ fontSize: "1rem", width: "1.25rem", textAlign: "center", flexShrink: 0 }}>
-                🔧
-              </span>
-              <span className="flex-1 text-left">Ferramentas</span>
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                className={`transition-transform duration-200 ${ferramentasOpen ? "" : "-rotate-90"}`}
-              >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
-
-            {ferramentasOpen && (
-              <div style={{ marginTop: "0.25rem" }}>
-                {ferramentasItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={item.name}
-                    style={{
-                      ...linkStyle(item.href),
-                      paddingLeft: "2.5rem",
-                      fontSize: "0.8125rem",
-                    }}
-                    {...hoverProps(item.href)}
-                  >
-                    <span
-                      style={{
-                        fontSize: "0.875rem",
-                        width: "1.125rem",
-                        textAlign: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {item.icon}
-                    </span>
-                    <span className="truncate">{item.name}</span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* 5. Ferramentas — simple link to hub */}
+          <Link
+            href="/tools"
+            style={{ ...linkStyle("/tools"), marginTop: "0.125rem" }}
+            {...hoverProps("/tools")}
+          >
+            <span style={{ fontSize: "1rem", width: "1.25rem", textAlign: "center", flexShrink: 0 }}>
+              🔧
+            </span>
+            <span>Ferramentas</span>
+          </Link>
 
           {/* 6. Buscar */}
           <Link

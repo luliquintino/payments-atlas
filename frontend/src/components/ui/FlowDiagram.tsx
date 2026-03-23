@@ -32,9 +32,9 @@ const TOP_PAD = 20;
 const STEP_HEIGHT = 52;
 const LIFELINE_START = TOP_PAD + ACTOR_BOX_H + 10;
 const ARROW_COLORS: Record<string, string> = {
-  request: "#3b82f6",
-  response: "#22c55e",
-  async: "#f59e0b",
+  request: "#818CF8",
+  response: "#34D399",
+  async: "#FBBF24",
 };
 
 // ---------------------------------------------------------------------------
@@ -111,6 +111,7 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
         key={idx}
         onClick={() => handleStepClick(idx)}
         style={{ cursor: "pointer", opacity, transition: "opacity 0.3s" }}
+        filter={isActive ? "url(#glow)" : undefined}
       >
         {/* Clickable hit area */}
         <rect
@@ -125,9 +126,9 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
         <circle
           cx={Math.min(x1, x2) - 18}
           cy={y}
-          r={11}
-          fill={isActive || isSelected ? color : "var(--surface)"}
-          stroke={color}
+          r={12}
+          fill={isActive || isSelected ? color : "var(--primary)"}
+          stroke={isActive || isSelected ? color : "var(--primary)"}
           strokeWidth={1.5}
         />
         <text
@@ -136,7 +137,7 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
           textAnchor="middle"
           fontSize={10}
           fontWeight={700}
-          fill={isActive || isSelected ? "white" : color}
+          fill="white"
         >
           {idx + 1}
         </text>
@@ -153,6 +154,17 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
           markerEnd={`url(#arrow-${step.type || "request"})`}
         />
 
+        {/* Label background */}
+        <rect
+          x={(x1 + x2) / 2 - step.label.length * 3.2 - 8}
+          y={y - 20}
+          width={step.label.length * 6.4 + 16}
+          height={18}
+          rx={4}
+          fill="var(--surface)"
+          stroke="var(--border)"
+          strokeWidth={1}
+        />
         {/* Label */}
         <text
           x={(x1 + x2) / 2}
@@ -243,7 +255,7 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           style={{ minWidth: svgWidth, display: "block" }}
         >
-          {/* Defs: arrow markers */}
+          {/* Defs: arrow markers + glow filter */}
           <defs>
             {(["request", "response", "async"] as const).map((type) => (
               <marker
@@ -261,6 +273,13 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
                 />
               </marker>
             ))}
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
 
           {/* Actor boxes */}
@@ -275,8 +294,9 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
                   width={ACTOR_BOX_W}
                   height={ACTOR_BOX_H}
                   rx={8}
-                  fill="var(--primary)"
-                  opacity={0.9}
+                  fill="var(--primary-bg)"
+                  stroke="var(--primary)"
+                  strokeWidth={2}
                 />
                 <text
                   x={cx}
@@ -284,7 +304,7 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
                   textAnchor="middle"
                   fontSize={11}
                   fontWeight={700}
-                  fill="white"
+                  fill="var(--foreground)"
                 >
                   {actor}
                 </text>
@@ -298,6 +318,7 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
                   stroke="var(--border)"
                   strokeWidth={1}
                   strokeDasharray="4,4"
+                  opacity={0.7}
                 />
               </g>
             );
@@ -378,10 +399,20 @@ export default function FlowDiagram({ title, actors, steps }: FlowDiagramProps) 
               display: "flex",
               alignItems: "center",
               gap: "0.375rem",
-              fontSize: "0.6875rem",
-              color: "var(--text-muted)",
+              fontSize: "0.75rem",
+              color: "var(--foreground)",
             }}
           >
+            <span
+              style={{
+                display: "inline-block",
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                background: ARROW_COLORS[type],
+                flexShrink: 0,
+              }}
+            />
             <svg width="24" height="8">
               <line
                 x1="0"

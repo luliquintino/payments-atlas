@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   QUIZ_THEMES,
   getStandaloneQuestionsByDifficulty,
@@ -65,6 +65,20 @@ function formatTime(ms: number): string {
 // ---------------------------------------------------------------------------
 // Difficulty options
 // ---------------------------------------------------------------------------
+const TIMER_DURATIONS: Record<Difficulty | "mixed", number> = {
+  easy: 60,
+  medium: 45,
+  hard: 30,
+  mixed: 45,
+};
+
+function getTimerColor(timeLeft: number, duration: number): string {
+  const pct = duration > 0 ? timeLeft / duration : 1;
+  if (pct > 0.6) return "#10b981";
+  if (pct > 0.3) return "#f59e0b";
+  return "#ef4444";
+}
+
 const DIFFICULTY_OPTIONS: { value: Difficulty | "mixed"; label: string; desc: string; xp: string }[] = [
   { value: "easy", label: "Facil", desc: "Conceitos basicos e definicoes", xp: "+3 XP" },
   { value: "medium", label: "Medio", desc: "Aplicacao pratica e cenarios", xp: "+5 XP" },
@@ -91,6 +105,64 @@ export default function QuizPage() {
     endTime: 0,
   });
 
+  // --- Timer state ---
+  const [timerEnabled, setTimerEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const stored = localStorage.getItem("pks-quiz-timer");
+    return stored === null ? true : stored === "true";
+  });
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [timerDuration, setTimerDuration] = useState<number>(45);
+  const timerAutoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Persist timer preference
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("pks-quiz-timer", String(timerEnabled));
+    }
+  }, [timerEnabled]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (screen !== "quiz" || !timerEnabled || quiz.answered) return;
+    if (timeLeft <= 0) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [screen, timerEnabled, quiz.answered, timeLeft]);
+
+  // Auto-mark wrong when timer hits 0
+  useEffect(() => {
+    if (screen !== "quiz" || !timerEnabled || quiz.answered) return;
+    if (timeLeft !== 0) return;
+    // Timer just hit 0 — mark as wrong
+    const q = quiz.questions[quiz.currentIndex];
+    if (!q) return;
+    setQuiz((prev) => ({
+      ...prev,
+      selectedOption: -1,
+      answered: true,
+      answers: [...prev.answers, { questionId: q.id, selected: -1, correct: false }],
+    }));
+    // Auto-advance after 2s
+    timerAutoAdvanceRef.current = setTimeout(() => {
+      nextQuestion();
+    }, 2000);
+    return () => {
+      if (timerAutoAdvanceRef.current) clearTimeout(timerAutoAdvanceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, screen, timerEnabled, quiz.answered]);
+
   // --- Theme selection ---
   const selectTheme = useCallback((theme: QuizTheme) => {
     setQuiz(prev => ({ ...prev, theme }));
@@ -101,6 +173,9 @@ export default function QuizPage() {
   const selectDifficulty = useCallback((difficulty: Difficulty | "mixed") => {
     if (!quiz.theme) return;
     const questions = pickQuestions(quiz.theme.id, difficulty);
+    const dur = TIMER_DURATIONS[difficulty];
+    setTimerDuration(dur);
+    setTimeLeft(dur);
     setQuiz(prev => ({
       ...prev,
       difficulty,
@@ -130,7 +205,12 @@ export default function QuizPage() {
 
   // --- Next question or results ---
   const nextQuestion = useCallback(() => {
+    if (timerAutoAdvanceRef.current) {
+      clearTimeout(timerAutoAdvanceRef.current);
+      timerAutoAdvanceRef.current = null;
+    }
     if (quiz.currentIndex < quiz.questions.length - 1) {
+      setTimeLeft(timerDuration);
       setQuiz(prev => ({
         ...prev,
         currentIndex: prev.currentIndex + 1,
@@ -156,7 +236,7 @@ export default function QuizPage() {
       });
       setScreen("results");
     }
-  }, [quiz.currentIndex, quiz.questions.length, recordQuiz]);
+  }, [quiz.currentIndex, quiz.questions.length, recordQuiz, timerDuration]);
 
   // --- Reset ---
   const goToThemes = useCallback(() => {
@@ -300,9 +380,37 @@ export default function QuizPage() {
             <span style={{ fontSize: "2rem" }}>{quiz.theme.icon}</span>
             <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--foreground)" }}>{quiz.theme.name}</h1>
           </div>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "2rem", fontSize: "0.9rem" }}>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem", fontSize: "0.9rem" }}>
             Escolha o nivel de dificuldade. Voce tera 20 perguntas.
           </p>
+          <label
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              cursor: "pointer",
+              marginBottom: "1.5rem",
+              padding: "0.5rem 1rem",
+              borderRadius: "0.5rem",
+              background: timerEnabled ? "var(--primary-bg)" : "var(--surface)",
+              border: `1px solid ${timerEnabled ? "var(--primary)" : "var(--border)"}`,
+              fontSize: "0.875rem",
+              color: "var(--foreground)",
+              transition: "all 0.2s",
+              userSelect: "none",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={timerEnabled}
+              onChange={(e) => setTimerEnabled(e.target.checked)}
+              style={{ accentColor: "var(--primary)", width: 16, height: 16, cursor: "pointer" }}
+            />
+            <span>&#9201;&#65039; Timer</span>
+            <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+              (facil 60s, medio 45s, dificil 30s)
+            </span>
+          </label>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem" }}>
             {DIFFICULTY_OPTIONS.map(opt => (
               <button
@@ -388,6 +496,52 @@ export default function QuizPage() {
               />
             </div>
           </div>
+
+          {/* Timer bar */}
+          {timerEnabled && (
+            <div style={{ marginBottom: "1rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: "0.35rem",
+                }}
+              >
+                <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                  &#9201;&#65039; Tempo restante
+                </span>
+                <span
+                  style={{
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    fontVariantNumeric: "tabular-nums",
+                    color: getTimerColor(timeLeft, timerDuration),
+                  }}
+                >
+                  {timeLeft}s
+                </span>
+              </div>
+              <div
+                style={{
+                  height: 8,
+                  background: "var(--border)",
+                  borderRadius: 4,
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${timerDuration > 0 ? (timeLeft / timerDuration) * 100 : 0}%`,
+                    background: getTimerColor(timeLeft, timerDuration),
+                    borderRadius: 4,
+                    transition: "width 1s linear, background 0.5s ease",
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Question */}
           <div

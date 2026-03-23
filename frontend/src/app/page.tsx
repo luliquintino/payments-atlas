@@ -2,11 +2,13 @@
 
 import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useGameProgress } from "@/hooks/useGameProgress";
 import { useTrailProgress } from "@/hooks/useTrailProgress";
 import { LEARNING_TRAILS } from "@/data/learning-trails";
 import { BADGES } from "@/data/badges";
 import { getLevelProgress } from "@/data/levels";
+import { CONTENT_MAP } from "@/data/content-map";
 
 interface PksUser {
   name: string;
@@ -19,8 +21,10 @@ interface PksUser {
 export default function Home() {
   const { xp, badges, streak, quizScores, pagesVisited, level, levelProgress } = useGameProgress();
   const { progress, setActiveTrail, getTrailProgress } = useTrailProgress();
+  const router = useRouter();
 
   const [pksUser, setPksUser] = useState<PksUser | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     try {
@@ -31,7 +35,21 @@ export default function Home() {
     } catch {
       // ignore parse errors
     }
+    // Onboarding: show only for first-time visitors
+    const onboardingDone = localStorage.getItem("pks-onboarding-done");
+    if (!onboardingDone) {
+      const pages = JSON.parse(localStorage.getItem("pks-pages-visited") || "[]");
+      if (pages.length <= 1) {
+        setShowOnboarding(true);
+      }
+    }
   }, []);
+
+  const dismissOnboarding = (href?: string) => {
+    localStorage.setItem("pks-onboarding-done", "true");
+    setShowOnboarding(false);
+    if (href) router.push(href);
+  };
 
   const completedTrails = LEARNING_TRAILS.filter((t) =>
     t.pages.every((p) => pagesVisited.includes(p.path))
@@ -47,6 +65,9 @@ export default function Home() {
 
   const earnedBadges = BADGES.filter((b) => badges.includes(b.id));
   const lockedBadges = BADGES.filter((b) => !badges.includes(b.id));
+
+  const totalPages = Object.keys(CONTENT_MAP).length;
+  const totalTrails = LEARNING_TRAILS.length;
 
   const isFirstVisit = pagesVisited.length === 0;
 
@@ -69,6 +90,194 @@ export default function Home() {
 
   return (
     <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 1rem" }}>
+
+      {/* ── Onboarding Overlay ─────────────────────────────── */}
+      {showOnboarding && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 500,
+              width: "100%",
+              background: "var(--surface)",
+              borderRadius: 20,
+              padding: "40px",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>
+              &#128075;
+            </div>
+            <h2
+              style={{
+                fontSize: "1.5rem",
+                fontWeight: 700,
+                color: "var(--foreground)",
+                marginBottom: "0.75rem",
+              }}
+            >
+              Bem-vindo ao Payments Atlas!
+            </h2>
+            <p
+              style={{
+                fontSize: "0.95rem",
+                color: "var(--text-secondary)",
+                lineHeight: 1.55,
+                marginBottom: "2rem",
+              }}
+            >
+              A plataforma mais completa para aprender sistemas de pagamento
+              — do checkout a liquidacao.
+            </p>
+
+            <p
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                color: "var(--text-secondary)",
+                marginBottom: "1rem",
+                textTransform: "uppercase" as const,
+                letterSpacing: "0.05em",
+              }}
+            >
+              Como quer comecar?
+            </p>
+
+            {/* Two option cards side by side */}
+            <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.75rem" }}>
+              <button
+                onClick={() => dismissOnboarding("/trilhas")}
+                style={{
+                  flex: 1,
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                  padding: "1.25rem 1rem",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--primary)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>
+                  &#128506;&#65039;
+                </div>
+                <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--foreground)", marginBottom: "0.25rem" }}>
+                  Trilha Guiada
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                  Passo a passo do zero ao avancado
+                </div>
+              </button>
+
+              <button
+                onClick={() => dismissOnboarding("/explore")}
+                style={{
+                  flex: 1,
+                  background: "var(--background)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 12,
+                  padding: "1.25rem 1rem",
+                  cursor: "pointer",
+                  textAlign: "center",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--primary)";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border)";
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>
+                  &#129517;
+                </div>
+                <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--foreground)", marginBottom: "0.25rem" }}>
+                  Explorar Livre
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                  Navegue por 78+ paginas no seu proprio ritmo
+                </div>
+              </button>
+            </div>
+
+            {/* Quiz option — full width */}
+            <button
+              onClick={() => dismissOnboarding("/quiz")}
+              style={{
+                width: "100%",
+                background: "var(--background)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                padding: "1rem 1.25rem",
+                cursor: "pointer",
+                textAlign: "left",
+                display: "flex",
+                alignItems: "center",
+                gap: "0.75rem",
+                transition: "all 0.2s",
+                marginBottom: "1.25rem",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--primary)";
+                e.currentTarget.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.transform = "translateY(0)";
+              }}
+            >
+              <span style={{ fontSize: "1.5rem", flexShrink: 0 }}>&#129504;</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--foreground)", marginBottom: "0.15rem" }}>
+                  Testar meu nivel
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", lineHeight: 1.4 }}>
+                  Quiz rapido para descobrir por onde comecar
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => dismissOnboarding()}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--text-secondary)",
+                fontSize: "0.8rem",
+                cursor: "pointer",
+                padding: "0.25rem 0.5rem",
+                textDecoration: "underline",
+                textUnderlineOffset: "2px",
+              }}
+            >
+              Pular
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── 1. Header ──────────────────────────────────────── */}
       <section
@@ -360,8 +569,8 @@ export default function Home() {
           }}
         >
           {[
-            { label: "Páginas", value: `${pagesVisited.length}/30`, icon: "📄" },
-            { label: "Trilhas", value: `${completedTrails}/${LEARNING_TRAILS.length}`, icon: "🛤️" },
+            { label: "Páginas", value: `${pagesVisited.length}/${totalPages}`, icon: "📄" },
+            { label: "Trilhas", value: `${completedTrails}/${totalTrails}`, icon: "🛤️" },
             { label: "Badges", value: `${badges.length}/13`, icon: "🏅" },
             { label: "Quiz Avg", value: `${quizAvg}%`, icon: "🎯" },
           ].map((s) => (
