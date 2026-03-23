@@ -34,6 +34,7 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Sistemas Bancários", href: "/infrastructure/banking-systems", icon: "🏛️" },
       { name: "Sistemas de Liquidação", href: "/infrastructure/settlement-systems", icon: "⚙️" },
       { name: "Liquidez & Tesouraria", href: "/infrastructure/liquidity-treasury", icon: "💰" },
+      { name: "Settlement & Clearing", href: "/knowledge/settlement-clearing", icon: "🔁" },
     ],
   },
   {
@@ -42,6 +43,7 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Mapa Blockchain", href: "/crypto/blockchain-map", icon: "🔗" },
       { name: "Sistemas de Stablecoin", href: "/crypto/stablecoin-systems", icon: "🪙" },
       { name: "Protocolos DeFi", href: "/crypto/defi-protocols", icon: "🌀" },
+      { name: "Crypto Avançado: L2 & Bridges", href: "/crypto/advanced-crypto", icon: "⚡" },
     ],
   },
   {
@@ -58,6 +60,12 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Antecipação de Recebíveis", href: "/knowledge/antecipacao-recebiveis", icon: "💰" },
       { name: "Parcelamento", href: "/knowledge/parcelamento", icon: "📊" },
       { name: "Crédito Estruturado", href: "/knowledge/credito-estruturado", icon: "🏦" },
+      { name: "PCI Compliance", href: "/knowledge/pci-compliance", icon: "🔒" },
+      { name: "Cross-Border Payments", href: "/knowledge/cross-border", icon: "🌍" },
+      { name: "Webhook Patterns", href: "/knowledge/webhook-patterns", icon: "🔔" },
+      { name: "Arquitetura PayFac", href: "/knowledge/payfac-architecture", icon: "🏗️" },
+      { name: "Matriz Regulatória", href: "/knowledge/regulatory-matrix", icon: "⚖️" },
+      { name: "Operational Excellence", href: "/knowledge/operational-excellence", icon: "🛡️" },
     ],
   },
   {
@@ -66,6 +74,7 @@ const explorarCategories: ExplorarCategory[] = [
       { name: "Mapa de Fraude", href: "/fraud/fraud-map", icon: "🛡️" },
       { name: "Sinais de Fraude", href: "/fraud/fraud-signals", icon: "📡" },
       { name: "Ciclo de Chargeback", href: "/fraud/chargeback-lifecycle", icon: "⚖️" },
+      { name: "Fraude Avançada & ML", href: "/knowledge/advanced-fraud-ml", icon: "🤖" },
     ],
   },
   {
@@ -317,6 +326,18 @@ export function Sidebar() {
             <span>Trilhas</span>
           </Link>
 
+          {/* 2.5 Quiz */}
+          <Link
+            href="/quiz"
+            style={{ ...linkStyle("/quiz"), marginTop: "0.125rem" }}
+            {...hoverProps("/quiz")}
+          >
+            <span style={{ fontSize: "1rem", width: "1.25rem", textAlign: "center", flexShrink: 0 }}>
+              🧠
+            </span>
+            <span>Quiz</span>
+          </Link>
+
           {/* 3. Explorar (expandable) */}
           <div style={{ marginTop: "0.125rem" }}>
             <button
@@ -482,19 +503,7 @@ export function Sidebar() {
             )}
           </div>
 
-          {/* 5. Quiz */}
-          <Link
-            href="/quiz"
-            style={linkStyle("/quiz")}
-            {...hoverProps("/quiz")}
-          >
-            <span style={{ fontSize: "1.125rem", width: "1.5rem", textAlign: "center" }}>
-              🧠
-            </span>
-            <span>Quiz</span>
-          </Link>
-
-          {/* 6. Buscar */}
+          {/* 5. Buscar */}
           <Link
             href="/search"
             style={{ ...linkStyle("/search"), marginTop: "0.125rem" }}

@@ -152,6 +152,7 @@ function buildIndex(): SearchResult[] {
     { name: "Antecipação de Recebíveis", description: "Deságio, mesa de antecipação, registradoras e regulação", href: "/knowledge/antecipacao-recebiveis" },
     { name: "Parcelamento", description: "Parcelado emissor vs lojista, interchange, chargeback em parcelas", href: "/knowledge/parcelamento" },
     { name: "Crédito Estruturado", description: "SCD, FIDC, cessão de recebíveis e credit as a service", href: "/knowledge/credito-estruturado" },
+    { name: "Quiz de Pagamentos", description: "Teste seus conhecimentos com 300+ perguntas em 10 temas de pagamentos", href: "/quiz" },
   ];
 
   pages.forEach((p, i) => {
