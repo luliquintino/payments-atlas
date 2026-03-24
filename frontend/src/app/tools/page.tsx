@@ -18,13 +18,6 @@ const tools = [
     color: "#8b5cf6",
   },
   {
-    name: "Dashboard",
-    href: "/observability/payments-dashboard",
-    icon: "📈",
-    description: "Monitore métricas e KPIs de pagamentos em tempo real",
-    color: "#06b6d4",
-  },
-  {
     name: "Explorador de Eventos",
     href: "/observability/event-explorer",
     icon: "📋",
@@ -44,6 +37,41 @@ const tools = [
     icon: "📄",
     description: "Analise documentação técnica de pagamentos",
     color: "#ef4444",
+  },
+  {
+    name: "Calculadora de MDR",
+    href: "/tools/mdr-calculator",
+    icon: "📊",
+    description: "Calcule taxas MDR e compare custos entre adquirentes",
+    color: "#0ea5e9",
+  },
+  {
+    name: "Simulador P&L",
+    href: "/tools/psp-pnl",
+    icon: "💰",
+    description: "Simule o P&L de um PSP com diferentes cenários de receita",
+    color: "#16a34a",
+  },
+  {
+    name: "Calculadora de Chargeback",
+    href: "/tools/chargeback-calculator",
+    icon: "⚖️",
+    description: "Calcule impacto financeiro de chargebacks e disputas",
+    color: "#dc2626",
+  },
+  {
+    name: "Comparador de PSPs",
+    href: "/tools/psp-comparator",
+    icon: "🏢",
+    description: "Compare PSPs lado a lado em features, preço e cobertura",
+    color: "#7c3aed",
+  },
+  {
+    name: "Checklist de Integração",
+    href: "/tools/integration-checklist",
+    icon: "✅",
+    description: "Checklist completo para integração com gateways de pagamento",
+    color: "#059669",
   },
 ];
 

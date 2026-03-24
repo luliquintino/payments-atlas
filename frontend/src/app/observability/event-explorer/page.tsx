@@ -485,7 +485,6 @@ export default function EventExplorerPage() {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem", marginTop: "1.5rem" }}>
         {[
-          { name: "Dashboard de Pagamentos", href: "/observability/payments-dashboard", icon: "📊" },
           { name: "Arvore de Metricas", href: "/diagnostics/metrics-tree", icon: "🌳" },
           { name: "Biblioteca de Problemas", href: "/diagnostics/problem-library", icon: "📚" },
         ].map((p) => (

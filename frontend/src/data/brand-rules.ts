@@ -1037,4 +1037,124 @@ export const BRAND_RULES: BrandRule[] = [
     source: "Hipercard - Programa de Seguranca",
     lastUpdated: "2024-08",
   },
+
+  // =========================================================================
+  // 2025 UPDATES
+  // =========================================================================
+
+  // --- Visa 2025 ---
+  {
+    id: "visa-vts-mandate-2025",
+    brand: "visa",
+    category: "tokenization",
+    title: "VTS Mandate - Tokenizacao obrigatoria para e-commerce Q3 2025",
+    description: "Visa Token Service passa a ser obrigatorio para todas as transacoes e-commerce a partir do terceiro trimestre de 2025.",
+    details: [
+      "Todas as transacoes e-commerce devem usar tokens VTS a partir de Q3 2025",
+      "PAN nao pode mais ser armazenado diretamente por merchants e-commerce",
+      "Tokens sao domain-restricted, vinculados ao merchant e canal especifico",
+      "Lifecycle management automatico garante continuidade em reemissao de cartao",
+      "Reducao significativa de escopo PCI para merchants que adotam VTS",
+      "Periodo de transicao: merchants devem iniciar migracao ate Q1 2025",
+    ],
+    severity: "critical",
+    source: "Visa Business News March 2025",
+    lastUpdated: "2025-03-01",
+  },
+  {
+    id: "visa-account-updater-2025",
+    brand: "visa",
+    category: "recurring",
+    title: "VAU - Visa Account Updater obrigatorio para recorrencia",
+    description: "Enrollment mandatorio no Visa Account Updater para todos os merchants com transacoes recorrentes.",
+    details: [
+      "Todos os merchants com cobranca recorrente devem estar cadastrados no VAU",
+      "VAU atualiza automaticamente dados de cartao (PAN, validade) em credenciais armazenadas",
+      "Reduz declinios por cartao expirado ou reemitido em assinaturas",
+      "Integracao via API ou batch file com adquirente/processador",
+      "Obrigatorio reportar taxa de atualizacao e sucesso ao adquirente",
+      "Merchants devem implementar logica de retry apos atualizacao VAU",
+    ],
+    severity: "important",
+    source: "Visa Core Rules 2025",
+    lastUpdated: "2025-01-15",
+  },
+
+  // --- Mastercard 2025 ---
+  {
+    id: "mc-mdes-mandate-2025",
+    brand: "mastercard",
+    category: "tokenization",
+    title: "MDES Mandate - Tokenizacao obrigatoria para e-commerce outubro 2025",
+    description: "Mastercard Digital Enablement Service passa a ser mandatorio para todas as transacoes e-commerce a partir de outubro de 2025.",
+    details: [
+      "Todas as transacoes e-commerce devem usar tokens MDES a partir de outubro 2025",
+      "Armazenamento direto de PAN nao sera mais aceito para e-commerce",
+      "MDES fornece tokens vinculados ao dominio do merchant",
+      "Atualizacao automatica de credenciais em caso de reemissao",
+      "Merchants devem migrar credenciais existentes para tokens ate a data limite",
+      "Programa de incentivo: reducao de interchange para transacoes tokenizadas",
+    ],
+    severity: "critical",
+    source: "Mastercard API Update 2025",
+    lastUpdated: "2025-02-01",
+  },
+  {
+    id: "mc-click-to-pay-2025",
+    brand: "mastercard",
+    category: "authorization",
+    title: "Click to Pay - Mandato para top 500 merchants",
+    description: "Expansao do Click to Pay com obrigatoriedade para os 500 maiores merchants por volume.",
+    details: [
+      "Top 500 merchants por volume devem oferecer Click to Pay como opcao de checkout",
+      "Padrao EMVCo unificado entre Visa, Mastercard, Amex e Discover",
+      "Consumidor se registra uma vez e paga com um clique em qualquer merchant habilitado",
+      "Elimina necessidade de digitar dados do cartao em cada compra",
+      "SRC (Secure Remote Commerce) como infraestrutura subjacente",
+      "Mastercard incentiva adocao com taxas reduzidas no primeiro ano",
+    ],
+    severity: "important",
+    source: "EMVCo/Mastercard 2025",
+    lastUpdated: "2025-01-20",
+  },
+
+  // --- Elo 2025 ---
+  {
+    id: "elo-tokenization-2025",
+    brand: "elo",
+    category: "tokenization",
+    title: "Elo Tokenizacao - Mandato para comercio digital no Brasil H2 2025",
+    description: "Elo exige tokenizacao para todas as transacoes de comercio digital no Brasil a partir do segundo semestre de 2025.",
+    details: [
+      "Mandato de tokenizacao para todo comercio digital Elo a partir de H2 2025",
+      "Alinhamento com movimentos similares de Visa (VTS) e Mastercard (MDES)",
+      "Tokens Elo vinculados ao merchant e canal especifico",
+      "Integracao via adquirentes e processadores parceiros no Brasil",
+      "Reducao de fraude em transacoes card-not-present como objetivo principal",
+      "Merchants devem iniciar processo de migracao com adquirente ate Q2 2025",
+    ],
+    severity: "important",
+    source: "Elo Regulamento 2025",
+    lastUpdated: "2025-02-15",
+  },
+
+  // --- PCI 2025 ---
+  {
+    id: "pci-dss-v4-0-1-enforcement",
+    brand: "visa",
+    category: "compliance",
+    title: "PCI DSS v4.0.1 - Enforcement completo em 31 de marco de 2025",
+    description: "Enforcement completo do PCI DSS v4.0.1 a partir de 31 de marco de 2025. Todas as exemptions anteriores de SAQ foram removidas.",
+    details: [
+      "Enforcement completo do PCI DSS v4.0.1 em 31 de marco de 2025",
+      "Todas as exemptions anteriores de SAQ foram eliminadas",
+      "MFA obrigatorio para todos os acessos ao CDE (Cardholder Data Environment)",
+      "Scripts de terceiros devem ser monitorados e inventariados",
+      "Inventario completo de componentes de software obrigatorio",
+      "Targeted Risk Analysis obrigatoria para controles com abordagem flexivel",
+    ],
+    severity: "critical",
+    source: "PCI SSC March 2025",
+    lastUpdated: "2025-03-31",
+  },
 ];

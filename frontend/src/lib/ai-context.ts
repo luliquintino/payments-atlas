@@ -14,20 +14,24 @@ import { RULES } from "@/data/business-rules";
 // ---------------------------------------------------------------------------
 
 export function buildKnowledgeContext(): string {
-  // Features: first 40, name + description + business rules
-  const featuresContext = FEATURES_REGISTRY.slice(0, 40)
+  // Features: ALL, name + short description (first 80 chars)
+  const featuresContext = FEATURES_REGISTRY
     .map((f) => {
-      let entry = `- ${f.name}: ${f.description}`;
-      if (f.businessRules && f.businessRules.length > 0) {
-        entry += ` | Regras: ${f.businessRules.join("; ")}`;
-      }
-      return entry;
+      const shortDesc = f.description.length > 80
+        ? f.description.slice(0, 80) + "…"
+        : f.description;
+      return `- ${f.name}: ${shortDesc}`;
     })
     .join("\n");
 
-  // Glossary: first 60, term + definition
-  const glossaryContext = GLOSSARY_TERMS.slice(0, 60)
-    .map((t) => `- ${t.term}: ${t.definition}`)
+  // Glossary: ALL, term + definition (first 100 chars)
+  const glossaryContext = GLOSSARY_TERMS
+    .map((t) => {
+      const shortDef = t.definition.length > 100
+        ? t.definition.slice(0, 100) + "…"
+        : t.definition;
+      return `- ${t.term}: ${shortDef}`;
+    })
     .join("\n");
 
   // Business rules: first 30, name + description (condition + expected_behavior)
@@ -48,7 +52,28 @@ ${glossaryContext}
 ## Regras de Negócio
 ${rulesContext}
 
-Use this knowledge to provide accurate, detailed answers about payment systems, features, architecture, compliance, and best practices. When relevant, reference specific features, terms, or rules from the knowledge base. Format your answers with markdown (bold, lists, tables) for readability.`;
+## Programas de Monitoramento de Bandeiras
+- Visa VDMP: chargeback rate > 0.9% + 100 disputes/mês → multas $50-$25K/mês
+- Mastercard ECM: > 1.0% + 100 chargebacks (alerta). ECP: > 1.5% + 100 (penalidade)
+- PCI DSS v4.0.1: enforcement completo desde março 2025
+
+## Páginas Especializadas Disponíveis
+- Antecipação de Recebíveis: Mesa de antecipação, registradoras, cálculo de deságio
+- Parcelamento: Parcelado emissor vs lojista, impacto no interchange e chargeback
+- Crédito Estruturado: SCD, FIDC, cessão de créditos, securitização
+- Chargeback Deep Dive: Reason codes, defesa por cenário, programas de monitoramento
+- PCI Compliance: SAQ selection matrix, v4.0.1 mudanças, preparação de auditoria
+- Cross-Border: Correspondent banking, FX hedging, estratégias de local acquiring
+- PayFac Architecture: Sub-merchant onboarding, split engine, regulação brasileira
+- Regulatory Matrix: Comparação Brasil/Europa/EUA, LGPD vs GDPR
+- Advanced Fraud ML: Graph analysis, behavioral biometrics, multi-signal scoring
+- Settlement & Clearing: RTGS, DNS, ACH, PIX SPI, clearing de cartões
+- Crypto Avançado: Layer 2, bridges, CBDC/Drex, stablecoin risk
+- Operational Excellence: DR, chaos engineering, incident response, observability
+
+Use this knowledge to provide accurate, detailed answers about payment systems, features, architecture, compliance, and best practices. When relevant, reference specific features, terms, or rules from the knowledge base. Format your answers with markdown (bold, lists, tables) for readability.
+
+Conhecimento atualizado até Q1 2025. Inclui mandatos 2025 de Visa VTS, Mastercard MDES, PCI DSS v4.0.1, Pix Automático e Drex.`;
 }
 
 // ---------------------------------------------------------------------------

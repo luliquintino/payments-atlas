@@ -42,7 +42,6 @@ export const LEARNING_TRAILS: LearningTrail[] = [
     color: "#f59e0b",
     colorBg: "rgba(245,158,11,0.1)",
     pages: [
-      { path: "/observability/payments-dashboard", title: "Dashboard", description: "Metricas-chave e tendencias", icon: "📈" },
       { path: "/diagnostics/metrics-tree", title: "Arvore de Metricas", description: "Hierarquia de KPIs de pagamento", icon: "📊" },
       { path: "/diagnostics/conta-comigo", title: "Conta Comigo", description: "Diagnostico inteligente do seu setup", icon: "🩺" },
       { path: "/diagnostics/problem-library", title: "Biblioteca de Problemas", description: "Catalogo de problemas e solucoes", icon: "⚠️" },

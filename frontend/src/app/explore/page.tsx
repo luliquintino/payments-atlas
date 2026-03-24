@@ -139,7 +139,6 @@ const categories: Category[] = [
     pages: [
       { name: "Simulador de Pagamentos", href: "/simulation/payment-simulator", tags: [] },
       { name: "Consultor de Arquitetura", href: "/simulation/architecture-advisor", tags: [] },
-      { name: "Dashboard de Pagamentos", href: "/observability/payments-dashboard", tags: [] },
       { name: "Explorador de Eventos", href: "/observability/event-explorer", tags: [] },
       { name: "Consultor AI", href: "/ai/payments-advisor", tags: [] },
       { name: "Analisador de Documentos", href: "/tools/document-analyzer", tags: ["novo"] },

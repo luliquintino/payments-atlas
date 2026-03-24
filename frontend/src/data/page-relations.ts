@@ -58,7 +58,6 @@ export const PAGE_RELATIONS: Record<string, RelatedPage[]> = {
   ],
   "/diagnostics/metrics-tree": [
     { name: "Conta Comigo", description: "Diagnóstico completo", href: "/diagnostics/conta-comigo", emoji: "🩺" },
-    { name: "Dashboard", description: "Métricas em tempo real", href: "/observability/payments-dashboard", emoji: "📈" },
     { name: "Biblioteca de Problemas", description: "Causas de degradação", href: "/diagnostics/problem-library", emoji: "⚠️" },
   ],
   "/simulation/payment-simulator": [
@@ -74,21 +73,16 @@ export const PAGE_RELATIONS: Record<string, RelatedPage[]> = {
   "/fraud/fraud-signals": [
     { name: "Mapa de Fraude", description: "Pipeline de detecção", href: "/fraud/fraud-map", emoji: "🛡️" },
     { name: "Scoring de Fraude", description: "Feature de scoring", href: "/knowledge/features/fraud-scoring", emoji: "📦" },
-    { name: "Dashboard", description: "Métricas de fraude", href: "/observability/payments-dashboard", emoji: "📈" },
+    { name: "Explorador de Eventos", description: "Eventos de pagamento", href: "/observability/event-explorer", emoji: "📋" },
   ],
   "/fraud/chargeback-lifecycle": [
     { name: "Mapa de Fraude", description: "De onde vêm chargebacks", href: "/fraud/fraud-map", emoji: "🛡️" },
     { name: "Biblioteca de Problemas", description: "Problemas de chargeback", href: "/diagnostics/problem-library", emoji: "⚠️" },
     { name: "Chargeback Management", description: "Feature de gestão", href: "/knowledge/features/chargeback-management", emoji: "📦" },
   ],
-  "/observability/payments-dashboard": [
-    { name: "Explorador de Eventos", description: "Timeline de eventos", href: "/observability/event-explorer", emoji: "📋" },
-    { name: "Árvore de Métricas", description: "Decomponha métricas", href: "/diagnostics/metrics-tree", emoji: "📊" },
-    { name: "Conta Comigo", description: "Diagnóstico de métricas", href: "/diagnostics/conta-comigo", emoji: "🩺" },
-  ],
   "/observability/event-explorer": [
-    { name: "Dashboard", description: "Visão geral de métricas", href: "/observability/payments-dashboard", emoji: "📈" },
     { name: "Fluxos de Transação", description: "Veja o fluxo completo", href: "/explore/transaction-flows", emoji: "🔄" },
+    { name: "Árvore de Métricas", description: "Decomponha métricas", href: "/diagnostics/metrics-tree", emoji: "📊" },
     { name: "Webhooks", description: "Feature de notificações", href: "/knowledge/features/webhooks", emoji: "📦" },
   ],
 

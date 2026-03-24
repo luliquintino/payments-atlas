@@ -1194,10 +1194,10 @@ export const QUIZZES: PageQuiz[] = [
   },
 
   // ────────────────────────────────────────────────────────────────
-  // payments-dashboard (3 questions)
+  // observability metrics (3 questions)
   // ────────────────────────────────────────────────────────────────
   {
-    pageRoute: "/observability/payments-dashboard",
+    pageRoute: "/observability/event-explorer",
     questions: [
       {
         id: "pd-1",

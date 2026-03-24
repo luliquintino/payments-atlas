@@ -37,7 +37,6 @@ const SEGMENT_LABELS: Record<string, string> = {
   "fraud-map": "Mapa de Fraude",
   "fraud-signals": "Sinais de Fraude",
   "chargeback-lifecycle": "Ciclo de Chargeback",
-  "payments-dashboard": "Dashboard",
   "event-explorer": "Explorador de Eventos",
   infrastructure: "Infraestrutura Financeira",
   crypto: "Crypto & Web3",

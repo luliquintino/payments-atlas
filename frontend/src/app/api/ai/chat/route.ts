@@ -20,8 +20,8 @@ export async function POST(request: Request) {
   const client = new Anthropic({ apiKey });
 
   const stream = await client.messages.stream({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 2000,
+    model: "claude-sonnet-4-6",
+    max_tokens: 4000,
     system: systemPrompt,
     messages: [{ role: "user", content: message }],
   });

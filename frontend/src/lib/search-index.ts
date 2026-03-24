@@ -139,7 +139,6 @@ function buildIndex(): SearchResult[] {
     { name: "Mapa de Fraude", description: "Tipos de fraude e vetores de ataque", href: "/fraud/fraud-map" },
     { name: "Sinais de Fraude", description: "Sinais e indicadores de atividade fraudulenta", href: "/fraud/fraud-signals" },
     { name: "Ciclo de Chargeback", description: "Fluxo completo de disputas e chargebacks", href: "/fraud/chargeback-lifecycle" },
-    { name: "Dashboard", description: "Painel de observabilidade de pagamentos", href: "/observability/payments-dashboard" },
     { name: "Explorador de Eventos", description: "Navegação por eventos de pagamento", href: "/observability/event-explorer" },
     { name: "Simulador", description: "Simule transações de pagamento", href: "/simulation/payment-simulator" },
     { name: "Consultor de Arquitetura", description: "Recomendações de arquitetura de pagamentos", href: "/simulation/architecture-advisor" },

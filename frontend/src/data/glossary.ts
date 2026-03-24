@@ -1418,6 +1418,143 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     category: "crypto",
     relatedTerms: ["amm", "defi", "impermanent-loss"],
   },
+
+  // --- 2025 Updates ---
+  {
+    id: "pix-automatico",
+    term: "Pix Automático",
+    definition:
+      "Modalidade do Pix que permite débito automático recorrente, similar ao débito automático bancário. Lançado pelo BCB em junho de 2025, permite que empresas debitem automaticamente a conta do pagador em datas pré-acordadas, ideal para assinaturas, mensalidades e contas recorrentes.",
+    aliases: ["pix automático", "pix recorrente", "débito automático pix"],
+    category: "pix",
+    relatedTerms: ["pix", "pix-garantido", "request-to-pay"],
+  },
+  {
+    id: "pix-garantido",
+    term: "Pix Garantido",
+    definition:
+      "Funcionalidade do Pix que permite parcelamento com garantia de pagamento pelo PSP do pagador. O recebedor recebe o valor integral à vista, enquanto o pagador parcela. Similar ao cartão de crédito mas usando infraestrutura Pix.",
+    aliases: ["pix garantido", "pix parcelado", "pix crédito"],
+    category: "pix",
+    relatedTerms: ["pix", "pix-automatico", "bnpl-regulation"],
+  },
+  {
+    id: "drex",
+    term: "Drex (Real Digital)",
+    definition:
+      "Moeda digital de banco central (CBDC) brasileira emitida pelo Banco Central do Brasil. Baseada em tecnologia DLT (Distributed Ledger Technology), permite liquidação instantânea de ativos tokenizados, contratos inteligentes e interoperabilidade com o sistema financeiro tradicional. Piloto iniciado em 2024, com lançamento previsto para 2025.",
+    aliases: ["drex", "real digital", "CBDC brasileira", "moeda digital BCB"],
+    category: "crypto",
+    relatedTerms: ["real-digital", "tokenized-deposits", "blockchain"],
+  },
+  {
+    id: "itp",
+    term: "ITP (Iniciador de Transação de Pagamento)",
+    definition:
+      "Instituição regulada pelo BCB no âmbito do Open Finance que pode iniciar transações de pagamento em nome do cliente, sem ser detentora da conta. Permite que fintechs e apps iniciem Pix ou transferências diretamente da conta bancária do usuário via APIs padronizadas.",
+    aliases: ["ITP", "iniciador de transação", "payment initiation service", "PISP"],
+    category: "regulation",
+    relatedTerms: ["open-finance-fase-4", "pix", "a2a-payments"],
+  },
+  {
+    id: "pci-dss-v4-0-1",
+    term: "PCI DSS v4.0.1",
+    definition:
+      "Versão atualizada do padrão de segurança de dados da indústria de cartões. Enforcement completo em 31 de março de 2025, eliminando período de transição. Principais mudanças: MFA obrigatório para todos os acessos ao CDE, scripts de terceiros monitorados, inventário de componentes de software, e targeted risk analysis para controles flexíveis.",
+    aliases: ["PCI DSS 4.0.1", "PCI v4", "PCI DSS v4", "PCI 4.0.1"],
+    category: "security",
+    relatedTerms: ["pci-dss", "tokenization"],
+  },
+  {
+    id: "click-to-pay",
+    term: "Click to Pay",
+    definition:
+      "Padrão de checkout padronizado pela EMVCo que unifica a experiência de pagamento online entre Visa, Mastercard, Amex e Discover. O consumidor se registra uma vez e paga com um clique em qualquer merchant habilitado, sem digitar dados do cartão. Substitui o guest checkout com cards on file.",
+    aliases: ["click to pay", "CTP", "SRC", "secure remote commerce"],
+    category: "tecnologia",
+    relatedTerms: ["tokenization", "3ds"],
+  },
+  {
+    id: "tap-to-pay",
+    term: "Tap to Pay (SoftPOS)",
+    definition:
+      "Tecnologia que transforma smartphones em terminais de pagamento contactless (NFC), eliminando a necessidade de maquininhas físicas. O merchant recebe pagamentos por aproximação diretamente no celular. Habilitado por Apple, Google e Samsung em parceria com adquirentes.",
+    aliases: ["tap to pay", "SoftPOS", "soft POS", "NFC payment", "contactless no celular"],
+    category: "tecnologia",
+    relatedTerms: ["nfc", "pos", "acquirer"],
+  },
+  {
+    id: "a2a-payments",
+    term: "A2A Payments (Account-to-Account)",
+    definition:
+      "Transferências bancárias diretas entre contas sem intermediação de redes de cartão. Inclui Pix no Brasil, SEPA Instant na Europa, FedNow nos EUA, e UPI na Índia. Custo significativamente menor que cartão, liquidação instantânea, sem interchange.",
+    aliases: ["A2A", "account to account", "transferência direta", "bank transfer"],
+    category: "processing",
+    relatedTerms: ["pix", "interchange", "request-to-pay"],
+  },
+  {
+    id: "request-to-pay",
+    term: "Request to Pay (R2P)",
+    definition:
+      "Mensagem padronizada que permite ao recebedor solicitar pagamento ao pagador, que pode aprovar, recusar ou negociar. Implementado sobre infraestrutura de instant payments (Pix Cobrança no Brasil, SEPA R2P na Europa). Ideal para B2B e cobranças recorrentes.",
+    aliases: ["R2P", "request to pay", "solicitação de pagamento", "pix cobrança"],
+    category: "processing",
+    relatedTerms: ["pix", "a2a-payments", "pix-automatico"],
+  },
+  {
+    id: "bnpl-regulation",
+    term: "Regulação de BNPL",
+    definition:
+      "Enquadramento regulatório de serviços Buy Now Pay Later. No Brasil, BNPL se enquadra como operação de crédito (Resolução BCB 4.656). Na Europa, incluído na Consumer Credit Directive revisada (2023). Nos EUA, sob supervisão do CFPB desde 2024. Exige análise de crédito, transparência de custos e reporting.",
+    aliases: ["BNPL regulation", "regulação buy now pay later", "compre agora pague depois"],
+    category: "regulation",
+    relatedTerms: ["embedded-lending", "pix-garantido"],
+  },
+  {
+    id: "embedded-lending",
+    term: "Embedded Lending",
+    definition:
+      "Oferta de crédito integrada em plataformas não-financeiras (e-commerce, SaaS, marketplaces). O crédito é oferecido no ponto de necessidade do cliente, com underwriting automatizado via APIs de instituições financeiras parceiras (SCDs, FIDCs). Modelo BaaS (Banking as a Service).",
+    aliases: ["embedded lending", "crédito embarcado", "lending as a service"],
+    category: "credito",
+    relatedTerms: ["bnpl-regulation", "baas"],
+  },
+  {
+    id: "tokenized-deposits",
+    term: "Depósitos Tokenizados",
+    definition:
+      "Representação digital de depósitos bancários em blockchain/DLT, mantendo lastro 1:1 com depósito real. Diferente de stablecoins (emitidas por empresas cripto), depósitos tokenizados são emitidos por bancos regulados. Pilar central do Drex e de iniciativas de CBDC wholesale.",
+    aliases: ["tokenized deposits", "depósitos tokenizados", "deposit tokens"],
+    category: "crypto",
+    relatedTerms: ["drex", "real-digital", "stablecoin"],
+  },
+  {
+    id: "real-digital",
+    term: "Real Digital",
+    definition:
+      "Nome original da CBDC brasileira, posteriormente renomeada para Drex. Projeto do Banco Central do Brasil para criar representação digital da moeda nacional em infraestrutura DLT, com foco em liquidação de ativos tokenizados e programabilidade.",
+    aliases: ["real digital", "CBDC Brasil", "moeda digital brasileira"],
+    category: "crypto",
+    relatedTerms: ["drex", "tokenized-deposits", "blockchain"],
+  },
+  {
+    id: "pix-por-aproximacao",
+    term: "Pix por Aproximação",
+    definition:
+      "Modalidade do Pix que permite pagamento via NFC (Near Field Communication) sem necessidade de escanear QR code. Em piloto pelo BCB desde 2025, funciona aproximando o celular do terminal. Combina a velocidade do contactless com o custo zero do Pix.",
+    aliases: ["pix NFC", "pix contactless", "pix por aproximação", "pix tap"],
+    category: "pix",
+    relatedTerms: ["pix", "nfc", "tap-to-pay"],
+  },
+  {
+    id: "open-finance-fase-4",
+    term: "Open Finance Fase 4",
+    definition:
+      "Quarta fase do Open Finance Brasil que inclui compartilhamento de dados de investimentos, seguros, previdência e câmbio. Expande o escopo além de banking e pagamentos, criando um ecossistema financeiro aberto completo. Implementação progressiva ao longo de 2024-2025.",
+    aliases: ["open finance fase 4", "open finance phase 4", "open banking fase 4"],
+    category: "regulation",
+    relatedTerms: ["itp", "pix"],
+  },
 ];
 
 // ---------------------------------------------------------------------------

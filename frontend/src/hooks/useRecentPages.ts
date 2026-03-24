@@ -30,7 +30,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/fraud/fraud-map": "Mapa de Fraude",
   "/fraud/fraud-signals": "Sinais de Fraude",
   "/fraud/chargeback-lifecycle": "Ciclo de Chargeback",
-  "/observability/payments-dashboard": "Dashboard de Pagamentos",
   "/observability/event-explorer": "Explorador de Eventos",
 };
 
