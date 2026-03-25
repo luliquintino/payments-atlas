@@ -1,144 +1,298 @@
 "use client";
 
-import { useState, useMemo, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useState, useMemo, useCallback, Suspense } from "react";
 
 // ---------------------------------------------------------------------------
-// Type definitions
+// Types
 // ---------------------------------------------------------------------------
 
-interface Feature {
+interface FeatureToggle {
   id: string;
   name: string;
-  category: FeatureCategory;
-  dependencies: string[];
-  impact: MetricImpact;
+  description: string;
+  impact: RadarImpact;
 }
 
-type FeatureCategory =
-  | "Autenticação"
-  | "Tokenização"
-  | "Roteamento"
-  | "Fraude"
-  | "Recuperação"
-  | "Processamento";
-
-interface MetricImpact {
-  authorizationRate: number;
-  conversionRate: number;
-  fraudRate: number;
-  chargebackRate: number;
-  settlementTime: number;
-  processingCost: number;
+interface RadarImpact {
+  authRate: number;
+  custo: number;
+  fraude: number;
+  velocidade: number;
+  conversao: number;
+  compliance: number;
 }
 
-interface MetricDefinition {
-  key: keyof MetricImpact;
+type RadarAxis = keyof RadarImpact;
+
+interface SavedScenario {
+  name: string;
+  features: Set<string>;
+  radar: RadarImpact;
+}
+
+interface Preset {
+  id: string;
   label: string;
-  unit: string;
-  baseline: number;
-  lowerIsBetter: boolean;
+  description: string;
+  features: string[];
 }
 
 // ---------------------------------------------------------------------------
-// Feature catalogue
+// Constants
 // ---------------------------------------------------------------------------
 
-const FEATURES: Feature[] = [
-  { id: "3d-secure", name: "3D Secure", category: "Autenticação", dependencies: [], impact: { authorizationRate: -1.5, conversionRate: -2.0, fraudRate: -3.0, chargebackRate: -2.5, settlementTime: 0, processingCost: 0.3 } },
-  { id: "biometric-auth", name: "Biometric Auth", category: "Autenticação", dependencies: ["3d-secure"], impact: { authorizationRate: 1.0, conversionRate: 1.5, fraudRate: -2.0, chargebackRate: -1.0, settlementTime: 0, processingCost: 0.5 } },
-  { id: "network-tokens", name: "Network Tokens", category: "Tokenização", dependencies: [], impact: { authorizationRate: 3.5, conversionRate: 2.0, fraudRate: -1.5, chargebackRate: -0.5, settlementTime: 0, processingCost: -0.2 } },
-  { id: "pci-vault", name: "PCI Vault", category: "Tokenização", dependencies: [], impact: { authorizationRate: 1.0, conversionRate: 0.5, fraudRate: -1.0, chargebackRate: -0.5, settlementTime: 0, processingCost: 0.4 } },
-  { id: "smart-routing", name: "Smart Routing", category: "Roteamento", dependencies: [], impact: { authorizationRate: 4.0, conversionRate: 3.0, fraudRate: 0, chargebackRate: 0, settlementTime: -5, processingCost: -1.0 } },
-  { id: "cascade-routing", name: "Cascade Routing", category: "Roteamento", dependencies: ["smart-routing"], impact: { authorizationRate: 2.5, conversionRate: 2.0, fraudRate: 0, chargebackRate: 0, settlementTime: 2, processingCost: 0.3 } },
-  { id: "fraud-scoring", name: "Fraud Scoring", category: "Fraude", dependencies: [], impact: { authorizationRate: -0.5, conversionRate: -0.5, fraudRate: -4.0, chargebackRate: -3.0, settlementTime: 0, processingCost: 0.6 } },
-  { id: "velocity-checks", name: "Velocity Checks", category: "Fraude", dependencies: ["fraud-scoring"], impact: { authorizationRate: -0.3, conversionRate: -0.3, fraudRate: -2.0, chargebackRate: -1.5, settlementTime: 0, processingCost: 0.2 } },
-  { id: "device-fingerprint", name: "Device Fingerprint", category: "Fraude", dependencies: [], impact: { authorizationRate: 0, conversionRate: 0, fraudRate: -2.5, chargebackRate: -1.0, settlementTime: 0, processingCost: 0.3 } },
-  { id: "retry-logic", name: "Retry Logic", category: "Recuperação", dependencies: [], impact: { authorizationRate: 2.0, conversionRate: 1.5, fraudRate: 0, chargebackRate: 0, settlementTime: 1, processingCost: 0.1 } },
-  { id: "account-updater", name: "Account Updater", category: "Recuperação", dependencies: ["network-tokens"], impact: { authorizationRate: 3.0, conversionRate: 2.5, fraudRate: 0, chargebackRate: -0.5, settlementTime: 0, processingCost: 0.3 } },
-  { id: "bin-lookup", name: "BIN Lookup", category: "Processamento", dependencies: [], impact: { authorizationRate: 1.0, conversionRate: 0.5, fraudRate: -1.0, chargebackRate: -0.5, settlementTime: -2, processingCost: 0.1 } },
-  { id: "currency-conversion", name: "Currency Conversion", category: "Processamento", dependencies: ["bin-lookup"], impact: { authorizationRate: 1.5, conversionRate: 2.0, fraudRate: 0, chargebackRate: 0, settlementTime: 3, processingCost: 0.8 } },
+const RADAR_AXES: { key: RadarAxis; label: string }[] = [
+  { key: "authRate", label: "Auth Rate" },
+  { key: "custo", label: "Custo" },
+  { key: "fraude", label: "Fraude" },
+  { key: "velocidade", label: "Velocidade" },
+  { key: "conversao", label: "Conversão" },
+  { key: "compliance", label: "Compliance" },
 ];
 
-const METRICS: MetricDefinition[] = [
-  { key: "authorizationRate", label: "Taxa de Autorização", unit: "%", baseline: 78, lowerIsBetter: false },
-  { key: "conversionRate", label: "Taxa de Conversão", unit: "%", baseline: 65, lowerIsBetter: false },
-  { key: "fraudRate", label: "Taxa de Fraude", unit: "%", baseline: 4.5, lowerIsBetter: true },
-  { key: "chargebackRate", label: "Taxa de Chargeback", unit: "%", baseline: 1.8, lowerIsBetter: true },
-  { key: "settlementTime", label: "Tempo de Liquidação", unit: "hrs", baseline: 48, lowerIsBetter: true },
-  { key: "processingCost", label: "Custo de Processamento", unit: "%", baseline: 2.9, lowerIsBetter: true },
-];
-
-// ---------------------------------------------------------------------------
-// Category metadata — inline-style-friendly colours
-// ---------------------------------------------------------------------------
-
-const CATEGORY_META: Record<FeatureCategory, { color: string; lightBg: string; icon: string }> = {
-  "Autenticação": { color: "#8b5cf6", lightBg: "rgba(139,92,246,0.08)", icon: "🛡️" },
-  "Tokenização": { color: "#06b6d4", lightBg: "rgba(6,182,212,0.08)", icon: "🔑" },
-  "Roteamento": { color: "#d97706", lightBg: "rgba(217,119,6,0.08)", icon: "🔀" },
-  "Fraude": { color: "#dc2626", lightBg: "rgba(220,38,38,0.08)", icon: "🚨" },
-  "Recuperação": { color: "#059669", lightBg: "rgba(5,150,105,0.08)", icon: "🔄" },
-  "Processamento": { color: "#2563eb", lightBg: "rgba(37,99,235,0.08)", icon: "⚡" },
+const BASELINE: RadarImpact = {
+  authRate: 50,
+  custo: 50,
+  fraude: 50,
+  velocidade: 50,
+  conversao: 50,
+  compliance: 50,
 };
+
+const FEATURES: FeatureToggle[] = [
+  {
+    id: "smart-routing",
+    name: "Smart Routing",
+    description: "Roteamento inteligente entre adquirentes",
+    impact: { authRate: 12, custo: 8, fraude: 2, velocidade: 6, conversao: 10, compliance: 3 },
+  },
+  {
+    id: "3ds2",
+    name: "3DS2",
+    description: "Autenticação 3D Secure 2.0",
+    impact: { authRate: -4, custo: 2, fraude: 15, velocidade: -3, conversao: -5, compliance: 12 },
+  },
+  {
+    id: "network-tokens",
+    name: "Network Tokens",
+    description: "Tokenização via bandeira",
+    impact: { authRate: 10, custo: 4, fraude: 6, velocidade: 3, conversao: 8, compliance: 8 },
+  },
+  {
+    id: "retry-logic",
+    name: "Retry Logic",
+    description: "Retentativas automáticas inteligentes",
+    impact: { authRate: 7, custo: -2, fraude: 0, velocidade: -4, conversao: 6, compliance: 1 },
+  },
+  {
+    id: "cascading",
+    name: "Cascading",
+    description: "Cascateamento entre adquirentes",
+    impact: { authRate: 9, custo: -3, fraude: 1, velocidade: -5, conversao: 8, compliance: 2 },
+  },
+  {
+    id: "account-updater",
+    name: "Account Updater",
+    description: "Atualização automática de cartões",
+    impact: { authRate: 8, custo: 3, fraude: 2, velocidade: 2, conversao: 7, compliance: 4 },
+  },
+  {
+    id: "fraud-scoring",
+    name: "Fraud Scoring",
+    description: "Análise de risco em tempo real",
+    impact: { authRate: -2, custo: -1, fraude: 18, velocidade: -2, conversao: -3, compliance: 10 },
+  },
+  {
+    id: "bin-lookup",
+    name: "BIN Lookup",
+    description: "Identificação do emissor do cartão",
+    impact: { authRate: 3, custo: 2, fraude: 5, velocidade: 4, conversao: 2, compliance: 6 },
+  },
+  {
+    id: "dcc",
+    name: "DCC",
+    description: "Conversão dinâmica de moeda",
+    impact: { authRate: 2, custo: -4, fraude: 0, velocidade: -1, conversao: 5, compliance: 3 },
+  },
+  {
+    id: "split-payments",
+    name: "Split Payments",
+    description: "Divisão de pagamentos (marketplace)",
+    impact: { authRate: 0, custo: -3, fraude: 3, velocidade: -3, conversao: 4, compliance: 7 },
+  },
+];
+
+const PRESETS: Preset[] = [
+  {
+    id: "ecommerce-br",
+    label: "E-commerce BR",
+    description: "Otimizado para e-commerce brasileiro",
+    features: ["smart-routing", "3ds2", "fraud-scoring", "retry-logic", "bin-lookup"],
+  },
+  {
+    id: "marketplace-latam",
+    label: "Marketplace LATAM",
+    description: "Para marketplaces na América Latina",
+    features: ["smart-routing", "cascading", "split-payments", "fraud-scoring", "dcc"],
+  },
+  {
+    id: "saas-global",
+    label: "SaaS Global",
+    description: "Recorrência global com alta conversão",
+    features: ["network-tokens", "account-updater", "retry-logic", "smart-routing", "bin-lookup"],
+  },
+  {
+    id: "varejo-fisico",
+    label: "Varejo Físico",
+    description: "Otimizado para ponto de venda",
+    features: ["smart-routing", "bin-lookup", "3ds2", "fraud-scoring"],
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function groupByCategory(features: Feature[]): Record<FeatureCategory, Feature[]> {
-  const groups: Partial<Record<FeatureCategory, Feature[]>> = {};
-  for (const f of features) {
-    (groups[f.category] ??= []).push(f);
-  }
-  return groups as Record<FeatureCategory, Feature[]>;
-}
-
-function calculateMetrics(activeIds: Set<string>): Record<keyof MetricImpact, number> {
-  const result: Record<string, number> = {};
-  for (const m of METRICS) {
-    let value = m.baseline;
-    for (const f of FEATURES) {
-      if (activeIds.has(f.id)) value += f.impact[m.key];
+function computeRadar(activeIds: Set<string>): RadarImpact {
+  const result = { ...BASELINE };
+  for (const f of FEATURES) {
+    if (activeIds.has(f.id)) {
+      for (const axis of RADAR_AXES) {
+        result[axis.key] = Math.min(100, Math.max(0, result[axis.key] + f.impact[axis.key]));
+      }
     }
-    if (m.unit === "%") value = Math.max(0, Math.min(100, value));
-    if (m.key === "settlementTime") value = Math.max(1, value);
-    result[m.key] = parseFloat(value.toFixed(2));
   }
-  return result as Record<keyof MetricImpact, number>;
+  return result;
 }
 
-function getMissingDeps(activeIds: Set<string>, proposedIds: Set<string>): { featureId: string; missing: string[] }[] {
-  const allActive = new Set([...activeIds, ...proposedIds]);
-  const warnings: { featureId: string; missing: string[] }[] = [];
-  for (const id of proposedIds) {
-    const feature = FEATURES.find((f) => f.id === id);
-    if (!feature) continue;
-    const missing = feature.dependencies.filter((dep) => !allActive.has(dep));
-    if (missing.length > 0) warnings.push({ featureId: id, missing });
-  }
-  return warnings;
+function buildImpactSummary(activeIds: Set<string>): string {
+  if (activeIds.size === 0) return "Nenhuma feature ativa. Ative features para ver o impacto.";
+  const names = FEATURES.filter((f) => activeIds.has(f.id)).map((f) => f.name);
+  const radar = computeRadar(activeIds);
+  const authDelta = radar.authRate - BASELINE.authRate;
+  const custoDelta = radar.custo - BASELINE.custo;
+  const parts: string[] = [];
+  if (authDelta !== 0)
+    parts.push(`auth rate ${authDelta > 0 ? "+" : ""}${authDelta.toFixed(1)}%`);
+  if (custoDelta !== 0)
+    parts.push(`custo ${custoDelta > 0 ? "+" : ""}${custoDelta.toFixed(1)}%`);
+  if (parts.length === 0) parts.push("impacto neutro nas métricas principais");
+  return `Ligando ${names.join(" + ")}: ${parts.join(", ")}`;
 }
 
-function getRecommendations(activeIds: Set<string>, proposedIds: Set<string>): string[] {
-  const all = new Set([...activeIds, ...proposedIds]);
-  const recs: string[] = [];
-  if (!all.has("network-tokens") && !all.has("pci-vault"))
-    recs.push("Considere adicionar tokenização (Network Tokens ou PCI Vault) para melhorar as taxas de autorização e reduzir fraudes.");
-  if (!all.has("smart-routing"))
-    recs.push("Smart Routing pode aumentar significativamente as taxas de autorização e conversão ao escolher caminhos ideais de adquirentes.");
-  if (!all.has("fraud-scoring") && !all.has("device-fingerprint"))
-    recs.push("Adicionar uma camada de prevenção a fraudes (Fraud Scoring ou Device Fingerprint) é recomendado para reduzir chargebacks.");
-  if (all.has("3d-secure") && !all.has("biometric-auth"))
-    recs.push("Combine 3D Secure com Biometric Auth para recuperar a queda de conversão causada pela autenticação adicional.");
-  if (all.has("network-tokens") && !all.has("account-updater"))
-    recs.push("Network Tokens habilitam o Account Updater, que reduz significativamente recusas por cartões expirados.");
-  if (all.has("smart-routing") && !all.has("cascade-routing"))
-    recs.push("Cascade Routing complementa o Smart Routing ao retentar autorizações falhas em adquirentes alternativos.");
-  if (recs.length === 0)
-    recs.push("Sua arquitetura de pagamento está completa! Monitore suas métricas e continue iterando.");
-  return recs;
+// ---------------------------------------------------------------------------
+// SVG Radar Chart
+// ---------------------------------------------------------------------------
+
+function RadarChart({
+  data,
+  scenarios,
+  size = 300,
+}: {
+  data: RadarImpact;
+  scenarios: SavedScenario[];
+  size?: number;
+}) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const maxR = size / 2 - 36;
+  const levels = [20, 40, 60, 80, 100];
+  const axisCount = RADAR_AXES.length;
+  const scenarioColors = ["#f59e0b", "#10b981", "#f43f5e"];
+
+  function polarToCart(value: number, index: number): { x: number; y: number } {
+    const angle = (Math.PI * 2 * index) / axisCount - Math.PI / 2;
+    const r = (value / 100) * maxR;
+    return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  }
+
+  function buildPolygonPoints(radarData: RadarImpact): string {
+    return RADAR_AXES.map((axis, i) => {
+      const pt = polarToCart(radarData[axis.key], i);
+      return `${pt.x},${pt.y}`;
+    }).join(" ");
+  }
+
+  return (
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ width: "100%", maxWidth: `${size}px`, height: "auto" }}
+    >
+      {/* Grid rings */}
+      {levels.map((level) => (
+        <polygon
+          key={level}
+          points={RADAR_AXES.map((_, i) => {
+            const pt = polarToCart(level, i);
+            return `${pt.x},${pt.y}`;
+          }).join(" ")}
+          fill="none"
+          stroke="var(--border)"
+          strokeWidth="1"
+          opacity="0.4"
+        />
+      ))}
+      {/* Axis lines */}
+      {RADAR_AXES.map((_, i) => {
+        const pt = polarToCart(100, i);
+        return (
+          <line
+            key={i}
+            x1={cx}
+            y1={cy}
+            x2={pt.x}
+            y2={pt.y}
+            stroke="var(--border)"
+            strokeWidth="1"
+            opacity="0.3"
+          />
+        );
+      })}
+      {/* Saved scenario polygons */}
+      {scenarios.map((sc, si) => (
+        <polygon
+          key={sc.name}
+          points={buildPolygonPoints(sc.radar)}
+          fill={scenarioColors[si % scenarioColors.length]}
+          fillOpacity="0.07"
+          stroke={scenarioColors[si % scenarioColors.length]}
+          strokeWidth="1.5"
+          strokeDasharray="6 3"
+        />
+      ))}
+      {/* Current data polygon */}
+      <polygon
+        points={buildPolygonPoints(data)}
+        fill="var(--primary)"
+        fillOpacity="0.15"
+        stroke="var(--primary)"
+        strokeWidth="2.5"
+      />
+      {/* Current data dots */}
+      {RADAR_AXES.map((axis, i) => {
+        const pt = polarToCart(data[axis.key], i);
+        return <circle key={axis.key} cx={pt.x} cy={pt.y} r="4" fill="var(--primary)" />;
+      })}
+      {/* Axis labels */}
+      {RADAR_AXES.map((axis, i) => {
+        const pt = polarToCart(115, i);
+        return (
+          <text
+            key={axis.key}
+            x={pt.x}
+            y={pt.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="var(--foreground)"
+            fontSize="11"
+            fontWeight="600"
+          >
+            {axis.label}
+          </text>
+        );
+      })}
+    </svg>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -154,1024 +308,595 @@ export default function PaymentSimulatorPageWrapper() {
 }
 
 function PaymentSimulatorPage() {
-  const searchParams = useSearchParams();
-
   const [activeFeatures, setActiveFeatures] = useState<Set<string>>(new Set());
-  const [proposedFeatures, setProposedFeatures] = useState<Set<string>>(new Set());
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showTip, setShowTip] = useState(true);
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
+  const [scenarioName, setScenarioName] = useState("");
 
-  // URL params on mount
-  useEffect(() => {
-    const proposeParam = searchParams.get("propose");
-    const activeParam = searchParams.get("active");
-    const featureIds = FEATURES.map((f) => f.id);
-    if (activeParam) {
-      const ids = activeParam.split(",").filter((id) => featureIds.includes(id));
-      if (ids.length > 0) setActiveFeatures(new Set(ids));
-    }
-    if (proposeParam) {
-      const ids = proposeParam.split(",").filter((id) => featureIds.includes(id));
-      if (ids.length > 0) setProposedFeatures(new Set(ids));
-    }
-  }, [searchParams]);
+  const radar = useMemo(() => computeRadar(activeFeatures), [activeFeatures]);
+  const impactSummary = useMemo(() => buildImpactSummary(activeFeatures), [activeFeatures]);
 
-  // ---- Derived data ----
-  const grouped = useMemo(() => groupByCategory(FEATURES), []);
-  const currentMetrics = useMemo(() => calculateMetrics(activeFeatures), [activeFeatures]);
-  const projectedMetrics = useMemo(
-    () => calculateMetrics(new Set([...activeFeatures, ...proposedFeatures])),
-    [activeFeatures, proposedFeatures],
-  );
-  const missingDeps = useMemo(() => getMissingDeps(activeFeatures, proposedFeatures), [activeFeatures, proposedFeatures]);
-  const recommendations = useMemo(() => getRecommendations(activeFeatures, proposedFeatures), [activeFeatures, proposedFeatures]);
-  const availableFeatures = useMemo(() => FEATURES.filter((f) => !activeFeatures.has(f.id)), [activeFeatures]);
-  const availableGrouped = useMemo(() => {
-    const g: Partial<Record<FeatureCategory, Feature[]>> = {};
-    for (const f of availableFeatures) (g[f.category] ??= []).push(f);
-    return g;
-  }, [availableFeatures]);
+  const applyPreset = useCallback((preset: Preset) => {
+    setActiveFeatures(new Set(preset.features));
+  }, []);
 
-  // Search filter: null = show all, Set = matching IDs
-  const searchMatchIds = useMemo(() => {
-    if (!searchQuery.trim()) return null;
-    const q = searchQuery.toLowerCase();
-    return new Set(
-      FEATURES.filter(
-        (f) => f.name.toLowerCase().includes(q) || f.category.toLowerCase().includes(q),
-      ).map((f) => f.id),
-    );
-  }, [searchQuery]);
-
-  // Stack health score (0–100)
-  const stackScore = useMemo(() => {
-    const m = projectedMetrics;
-    const scores = [
-      m.authorizationRate,
-      m.conversionRate,
-      Math.max(0, 100 - m.fraudRate * 15),
-      Math.max(0, 100 - m.chargebackRate * 25),
-      Math.max(0, 100 - (m.settlementTime / 72) * 100),
-      Math.max(0, 100 - m.processingCost * 15),
-    ];
-    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-  }, [projectedMetrics]);
-
-  const scoreColor =
-    stackScore >= 80 ? "var(--success)" : stackScore >= 60 ? "var(--warning)" : "var(--error)";
-
-  // ---- Handlers ----
-
-  const featureMatchesSearch = (id: string) => !searchMatchIds || searchMatchIds.has(id);
-
-  const toggleActive = (id: string) => {
+  const toggleFeature = useCallback((id: string) => {
     setActiveFeatures((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        setProposedFeatures((p) => { const np = new Set(p); np.delete(id); return np; });
-      } else {
-        next.add(id);
-        setProposedFeatures((p) => { const np = new Set(p); np.delete(id); return np; });
-      }
-      return next;
-    });
-  };
-
-  const toggleProposed = (id: string) => {
-    setProposedFeatures((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+  }, []);
+
+  const saveScenario = useCallback(() => {
+    if (!scenarioName.trim()) return;
+    if (savedScenarios.length >= 3) return;
+    setSavedScenarios((prev) => [
+      ...prev,
+      { name: scenarioName.trim(), features: new Set(activeFeatures), radar: { ...radar } },
+    ]);
+    setScenarioName("");
+  }, [scenarioName, savedScenarios.length, activeFeatures, radar]);
+
+  const removeScenario = useCallback((index: number) => {
+    setSavedScenarios((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const loadScenario = useCallback((sc: SavedScenario) => {
+    setActiveFeatures(new Set(sc.features));
+  }, []);
+
+  // Styles
+  const card: React.CSSProperties = {
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderRadius: "12px",
+    padding: "24px",
   };
 
-  const resetAll = () => {
-    setActiveFeatures(new Set());
-    setProposedFeatures(new Set());
+  const sectionTitle: React.CSSProperties = {
+    fontSize: "14px",
+    fontWeight: 700,
+    color: "var(--foreground)",
+    textTransform: "uppercase" as const,
+    letterSpacing: "0.05em",
+    marginBottom: "16px",
   };
-
-  // ---- Render ----
 
   return (
-    <div style={{ maxWidth: "80rem", margin: "0 auto" }}>
-
-      {/* ===== PAGE HEADER ===== */}
-      <div className="page-header animate-fade-in" style={{ marginBottom: "1.75rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+    <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "0 16px" }}>
+      {/* Header */}
+      <div style={{ marginBottom: "28px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
           <div
             style={{
-              width: "2.5rem",
-              height: "2.5rem",
+              width: "40px",
+              height: "40px",
               borderRadius: "10px",
               background: "linear-gradient(135deg, #2563eb, #8b5cf6)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: "1.25rem",
+              fontSize: "20px",
               color: "#fff",
             }}
           >
-            ⚙
+            {"⚙"}
           </div>
-          <h1 className="page-title">Simulador de Pagamentos</h1>
+          <h1
+            style={{
+              fontSize: "28px",
+              fontWeight: 800,
+              color: "var(--foreground)",
+              lineHeight: 1.2,
+            }}
+          >
+            Simulador de Pagamentos
+          </h1>
         </div>
-        <p className="page-description">
-          Monte sua arquitetura de pagamento, explore o impacto de cada feature e receba
-          recomendações personalizadas para otimizar suas métricas.
+        <p style={{ fontSize: "15px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+          Monte sua arquitetura, ative features e compare cenários. O radar atualiza em
+          tempo real.
         </p>
       </div>
 
-      {/* ===== STATS ROW: Score + 6 Metrics ===== */}
-      <div
-        className="animate-fade-in stagger-1"
-        style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", alignItems: "stretch" }}
-      >
-        {/* Stack Health Score */}
-        <div
-          className="stat-card"
-          style={{
-            padding: "1.25rem 1.5rem",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            minWidth: "130px",
-            flex: "0 0 auto",
-            borderColor: scoreColor,
-          }}
-        >
-          <div
-            style={{
-              fontSize: "0.6875rem",
-              fontWeight: 600,
-              color: "var(--text-muted)",
-              textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              marginBottom: "0.375rem",
-            }}
-          >
-            Health Score
-          </div>
-          <div style={{ fontSize: "2.25rem", fontWeight: 800, color: scoreColor, lineHeight: 1 }}>
-            {stackScore}
-          </div>
-          <div style={{ fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: "0.25rem" }}>
-            de 100
-          </div>
-        </div>
-
-        {/* 6 Baseline Metric Cards */}
-        <div
-          className="grid grid-cols-3 lg:grid-cols-6"
-          style={{ gap: "0.75rem", flex: 1 }}
-        >
-          {METRICS.map((m) => {
-            const val = projectedMetrics[m.key];
-            const delta = parseFloat((val - m.baseline).toFixed(2));
-            const isImproved = m.lowerIsBetter ? delta < 0 : delta > 0;
+      {/* Presets */}
+      <div style={{ ...card, marginBottom: "20px" }}>
+        <div style={sectionTitle}>Presets</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+          {PRESETS.map((p) => {
+            const isActive =
+              p.features.length === activeFeatures.size &&
+              p.features.every((f) => activeFeatures.has(f));
             return (
-              <div key={m.key} className="stat-card" style={{ padding: "0.875rem 0.75rem" }}>
-                <div
-                  style={{
-                    fontSize: "0.6875rem",
-                    color: "var(--text-muted)",
-                    marginBottom: "0.375rem",
-                    lineHeight: 1.3,
-                  }}
-                >
-                  {m.label}
-                </div>
-                <div className="metric-value" style={{ fontSize: "1.125rem" }}>
-                  {val}
-                  {m.unit}
-                </div>
-                {delta !== 0 && (
-                  <div
-                    style={{
-                      fontSize: "0.6875rem",
-                      fontWeight: 600,
-                      color: isImproved ? "var(--success)" : "var(--error)",
-                      marginTop: "0.25rem",
-                    }}
-                  >
-                    {delta > 0 ? "+" : ""}
-                    {delta}
-                    {m.unit}
-                  </div>
-                )}
-              </div>
+              <button
+                key={p.id}
+                onClick={() => applyPreset(p)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "8px",
+                  border: isActive ? "2px solid var(--primary)" : "1px solid var(--border)",
+                  background: isActive ? "var(--primary-bg)" : "var(--background)",
+                  color: isActive ? "var(--primary)" : "var(--foreground)",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+                title={p.description}
+              >
+                {p.label}
+              </button>
             );
           })}
-        </div>
-      </div>
-
-      <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "-12px", marginBottom: "12px", fontStyle: "italic" }}>
-        * Esses números podem ter sofrido alteração com o tempo. Verifique novamente se permanecem atuais.
-      </p>
-
-      {/* ===== TIP ===== */}
-      {showTip && (
-        <div
-          className="animate-fade-in stagger-2"
-          style={{
-            marginBottom: "1.5rem",
-            padding: "1rem 1.25rem",
-            borderRadius: "10px",
-            background: "rgba(37, 99, 235, 0.05)",
-            border: "1px solid rgba(37, 99, 235, 0.12)",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "0.75rem",
-          }}
-        >
-          <span style={{ fontSize: "1.125rem", lineHeight: 1 }}>💡</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: "0.8125rem", marginBottom: "0.25rem" }}>
-              Como usar o simulador
-            </div>
-            <div style={{ fontSize: "0.8125rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
-              <strong>1.</strong> Marque as features ativas na sua stack &nbsp;→&nbsp;{" "}
-              <strong>2.</strong> Adicione features propostas &nbsp;→&nbsp; <strong>3.</strong>{" "}
-              Analise o impacto e siga as recomendações
-            </div>
-          </div>
           <button
-            onClick={() => setShowTip(false)}
+            onClick={() => setActiveFeatures(new Set())}
             style={{
-              color: "var(--text-muted)",
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "1px solid var(--border)",
+              background: "var(--background)",
+              color: "var(--text-secondary)",
+              fontWeight: 600,
+              fontSize: "13px",
               cursor: "pointer",
-              background: "none",
-              border: "none",
-              fontSize: "1.125rem",
-              lineHeight: 1,
-              padding: "0.25rem",
             }}
           >
-            ×
+            Limpar
           </button>
         </div>
-      )}
-
-      {/* ===== SEARCH ===== */}
-      <div className="animate-fade-in stagger-2" style={{ marginBottom: "1.5rem" }}>
-        <div style={{ position: "relative" }}>
-          <span
-            style={{
-              position: "absolute",
-              left: "1rem",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--text-muted)",
-              fontSize: "0.875rem",
-              pointerEvents: "none",
-            }}
-          >
-            🔍
-          </span>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar features por nome ou categoria..."
-            style={{
-              width: "100%",
-              padding: "0.75rem 1rem 0.75rem 2.75rem",
-              borderRadius: "10px",
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              color: "var(--foreground)",
-              fontSize: "0.875rem",
-              outline: "none",
-            }}
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              style={{
-                position: "absolute",
-                right: "0.75rem",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "var(--surface-hover)",
-                border: "none",
-                borderRadius: "50%",
-                width: "1.5rem",
-                height: "1.5rem",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                cursor: "pointer",
-                color: "var(--text-muted)",
-                fontSize: "0.75rem",
-              }}
-            >
-              ×
-            </button>
-          )}
-        </div>
-        {searchMatchIds && (
-          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "0.5rem" }}>
-            {searchMatchIds.size} feature{searchMatchIds.size !== 1 ? "s" : ""} encontrada
-            {searchMatchIds.size !== 1 ? "s" : ""}
-          </div>
-        )}
       </div>
 
-      {/* ===== FEATURE PANELS ===== */}
+      {/* Main grid: Features + Radar */}
       <div
-        className="grid grid-cols-1 lg:grid-cols-2"
-        style={{ gap: "1.5rem", marginBottom: "2rem" }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "20px",
+          marginBottom: "20px",
+        }}
       >
-        {/* ---- LEFT: Sua Arquitetura Atual ---- */}
-        <div className="card-glow animate-fade-in stagger-3" style={{ padding: "1.5rem" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "0.25rem",
-            }}
-          >
-            <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Sua Arquitetura Atual</h2>
-            <div
-              style={{
-                fontSize: "0.75rem",
-                fontWeight: 600,
-                color: "var(--primary-light)",
-                background: "rgba(37, 99, 235, 0.08)",
-                padding: "0.125rem 0.5rem",
-                borderRadius: "9999px",
-              }}
-            >
-              {activeFeatures.size} ativas
-            </div>
-          </div>
-          <p
-            style={{
-              fontSize: "0.8125rem",
-              color: "var(--text-muted)",
-              marginBottom: "1.25rem",
-            }}
-          >
-            Marque as features que já estão na sua stack
-          </p>
-
-          {activeFeatures.size > 0 && (
-            <div style={{ marginBottom: "1rem", display: "flex", justifyContent: "flex-end" }}>
-              <button
-                onClick={resetAll}
-                style={{
-                  fontSize: "0.75rem",
-                  padding: "0.25rem 0.75rem",
-                  borderRadius: "6px",
-                  border: "1px solid var(--border)",
-                  background: "transparent",
-                  color: "var(--text-muted)",
-                  cursor: "pointer",
-                }}
-              >
-                Limpar tudo
-              </button>
-            </div>
-          )}
-
-          <div style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "0.25rem" }}>
-            {(Object.keys(grouped) as FeatureCategory[]).map((cat) => {
-              const meta = CATEGORY_META[cat];
-              const catFeatures = grouped[cat];
-              const anyMatch = catFeatures.some((f) => featureMatchesSearch(f.id));
-              if (searchMatchIds && !anyMatch) return null;
-
+        {/* Feature Toggles */}
+        <div style={card}>
+          <div style={sectionTitle}>Feature Toggles</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {FEATURES.map((f) => {
+              const isOn = activeFeatures.has(f.id);
               return (
                 <div
-                  key={cat}
+                  key={f.id}
                   style={{
-                    marginBottom: "1rem",
-                    transition: "opacity 0.2s",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "10px 14px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--border)",
+                    background: isOn ? "var(--primary-bg)" : "var(--background)",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
                   }}
+                  onClick={() => toggleFeature(f.id)}
                 >
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "0.375rem",
-                      padding: "0.125rem 0.625rem",
-                      borderRadius: "6px",
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                      color: meta.color,
-                      background: meta.lightBg,
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <span style={{ fontSize: "0.8125rem" }}>{meta.icon}</span>
-                    {cat}
+                  <div>
+                    <div
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: isOn ? "var(--primary)" : "var(--foreground)",
+                      }}
+                    >
+                      {f.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "var(--text-secondary)",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {f.description}
+                    </div>
                   </div>
+                  {/* Toggle Switch */}
                   <div
                     style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "0.25rem",
-                      marginLeft: "0.25rem",
+                      width: "44px",
+                      height: "24px",
+                      borderRadius: "12px",
+                      background: isOn ? "var(--primary)" : "var(--border)",
+                      position: "relative",
+                      transition: "background 0.2s ease",
+                      flexShrink: 0,
+                      marginLeft: "12px",
                     }}
                   >
-                    {catFeatures.map((feature) => {
-                      const isMatch = featureMatchesSearch(feature.id);
-                      const isActive = activeFeatures.has(feature.id);
-                      return (
-                        <label
-                          key={feature.id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            cursor: "pointer",
-                            padding: "0.375rem 0.5rem",
-                            borderRadius: "6px",
-                            transition: "all 0.15s",
-                            opacity: isMatch ? 1 : 0.25,
-                            background: isActive ? meta.lightBg : "transparent",
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isActive}
-                            onChange={() => toggleActive(feature.id)}
-                            style={{
-                              width: "1rem",
-                              height: "1rem",
-                              accentColor: meta.color,
-                              cursor: "pointer",
-                            }}
-                          />
-                          <span
-                            style={{
-                              fontSize: "0.8125rem",
-                              fontWeight: isActive ? 600 : 400,
-                            }}
-                          >
-                            {feature.name}
-                          </span>
-                          {feature.dependencies.length > 0 && (
-                            <span
-                              style={{
-                                fontSize: "0.625rem",
-                                color: "var(--text-muted)",
-                                background: "var(--surface-hover)",
-                                padding: "0 0.375rem",
-                                borderRadius: "4px",
-                              }}
-                            >
-                              req:{" "}
-                              {feature.dependencies
-                                .map((d) => FEATURES.find((f) => f.id === d)?.name)
-                                .join(", ")}
-                            </span>
-                          )}
-                        </label>
-                      );
-                    })}
+                    <div
+                      style={{
+                        width: "18px",
+                        height: "18px",
+                        borderRadius: "50%",
+                        background: "#fff",
+                        position: "absolute",
+                        top: "3px",
+                        left: isOn ? "23px" : "3px",
+                        transition: "left 0.2s ease",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                      }}
+                    />
                   </div>
                 </div>
               );
             })}
           </div>
-
-          {/* Active summary chips */}
-          {activeFeatures.size > 0 && (
-            <div
-              style={{
-                marginTop: "1rem",
-                paddingTop: "0.75rem",
-                borderTop: "1px solid var(--border)",
-              }}
-            >
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
-                {[...activeFeatures].map((id) => {
-                  const f = FEATURES.find((feat) => feat.id === id)!;
-                  const meta = CATEGORY_META[f.category];
-                  return (
-                    <span
-                      key={id}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        fontSize: "0.6875rem",
-                        padding: "0.125rem 0.5rem",
-                        borderRadius: "9999px",
-                        background: meta.lightBg,
-                        color: meta.color,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {f.name}
-                      <button
-                        onClick={() => toggleActive(id)}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: meta.color,
-                          fontSize: "0.75rem",
-                          lineHeight: 1,
-                          padding: "0 0.125rem",
-                        }}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* ---- RIGHT: Explorar Features ---- */}
-        <div className="card-glow animate-fade-in stagger-4" style={{ padding: "1.5rem" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: "0.25rem",
-            }}
-          >
-            <h2 style={{ fontSize: "1rem", fontWeight: 700 }}>Explorar Features</h2>
-            {proposedFeatures.size > 0 && (
+        {/* Radar Chart + Impact Summary */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <div style={sectionTitle}>Radar de Performance</div>
+            <RadarChart data={radar} scenarios={savedScenarios} size={300} />
+            {/* Legend for scenarios */}
+            {savedScenarios.length > 0 && (
               <div
                 style={{
-                  fontSize: "0.75rem",
-                  fontWeight: 600,
-                  color: "#059669",
-                  background: "rgba(5, 150, 105, 0.08)",
-                  padding: "0.125rem 0.5rem",
-                  borderRadius: "9999px",
+                  display: "flex",
+                  gap: "16px",
+                  marginTop: "12px",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
                 }}
               >
-                {proposedFeatures.size} propostas
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div
+                    style={{
+                      width: "12px",
+                      height: "12px",
+                      borderRadius: "2px",
+                      background: "var(--primary)",
+                    }}
+                  />
+                  <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>Atual</span>
+                </div>
+                {savedScenarios.map((sc, i) => (
+                  <div
+                    key={sc.name}
+                    style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                  >
+                    <div
+                      style={{
+                        width: "12px",
+                        height: "12px",
+                        borderRadius: "2px",
+                        background: ["#f59e0b", "#10b981", "#f43f5e"][i % 3],
+                      }}
+                    />
+                    <span style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+                      {sc.name}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-          <p
+
+          {/* Impact Summary */}
+          <div
             style={{
-              fontSize: "0.8125rem",
-              color: "var(--text-muted)",
-              marginBottom: "1.25rem",
+              ...card,
+              background:
+                activeFeatures.size > 0
+                  ? "linear-gradient(135deg, rgba(37,99,235,0.06), rgba(139,92,246,0.06))"
+                  : "var(--surface)",
+              borderColor: activeFeatures.size > 0 ? "var(--primary)" : "var(--border)",
             }}
           >
-            Adicione features para simular o impacto
-          </p>
-
-          {availableFeatures.length === 0 ? (
-            <div
+            <div style={sectionTitle}>Resumo de Impacto</div>
+            <p
               style={{
-                textAlign: "center",
-                padding: "3rem 1rem",
-                color: "var(--text-muted)",
-                fontSize: "0.875rem",
+                fontSize: "14px",
+                color: "var(--foreground)",
+                lineHeight: 1.6,
+                fontWeight: activeFeatures.size > 0 ? 500 : 400,
               }}
             >
-              Todas as features já estão na sua stack!
-            </div>
-          ) : (
-            <div style={{ maxHeight: "400px", overflowY: "auto", paddingRight: "0.25rem" }}>
-              {(Object.keys(availableGrouped) as FeatureCategory[]).map((cat) => {
-                const features = availableGrouped[cat];
-                if (!features || features.length === 0) return null;
-                const meta = CATEGORY_META[cat];
-                const anyMatch = features.some((f) => featureMatchesSearch(f.id));
-                if (searchMatchIds && !anyMatch) return null;
-
-                return (
-                  <div key={cat} style={{ marginBottom: "1rem" }}>
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.375rem",
-                        padding: "0.125rem 0.625rem",
-                        borderRadius: "6px",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        color: meta.color,
-                        background: meta.lightBg,
-                        marginBottom: "0.5rem",
-                      }}
-                    >
-                      <span style={{ fontSize: "0.8125rem" }}>{meta.icon}</span>
-                      {cat}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-                      {features.map((feature) => {
-                        const isProposed = proposedFeatures.has(feature.id);
-                        const isMatch = featureMatchesSearch(feature.id);
-                        return (
-                          <button
-                            key={feature.id}
-                            onClick={() => toggleProposed(feature.id)}
-                            style={{
-                              width: "100%",
-                              textAlign: "left",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              gap: "0.5rem",
-                              padding: "0.5rem 0.75rem",
-                              borderRadius: "8px",
-                              fontSize: "0.8125rem",
-                              border: isProposed
-                                ? `1px solid ${meta.color}`
-                                : "1px solid var(--border)",
-                              background: isProposed ? meta.lightBg : "transparent",
-                              color: isProposed ? meta.color : "var(--foreground)",
-                              fontWeight: isProposed ? 600 : 400,
-                              cursor: "pointer",
-                              transition: "all 0.15s",
-                              opacity: isMatch ? 1 : 0.25,
-                            }}
-                          >
-                            <span>{feature.name}</span>
-                            <span style={{ fontSize: "0.6875rem", opacity: 0.7, fontWeight: 500 }}>
-                              {isProposed ? "✓ Adicionado" : "+ Adicionar"}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Proposed summary */}
-          {proposedFeatures.size > 0 && (
-            <div
-              style={{
-                marginTop: "1rem",
-                paddingTop: "0.75rem",
-                borderTop: "1px solid var(--border)",
-              }}
-            >
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
-                {[...proposedFeatures].map((id) => {
-                  const f = FEATURES.find((feat) => feat.id === id)!;
-                  const meta = CATEGORY_META[f.category];
+              {impactSummary}
+            </p>
+            {activeFeatures.size > 0 && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr 1fr",
+                  gap: "8px",
+                  marginTop: "14px",
+                }}
+              >
+                {RADAR_AXES.map((axis) => {
+                  const delta = radar[axis.key] - BASELINE[axis.key];
+                  const isPositive = delta > 0;
                   return (
-                    <span
-                      key={id}
+                    <div
+                      key={axis.key}
                       style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.25rem",
-                        fontSize: "0.6875rem",
-                        padding: "0.125rem 0.5rem",
-                        borderRadius: "9999px",
-                        border: `1px solid ${meta.color}`,
-                        color: meta.color,
-                        fontWeight: 500,
+                        padding: "8px 10px",
+                        borderRadius: "6px",
+                        background: "var(--background)",
+                        border: "1px solid var(--border)",
+                        textAlign: "center",
                       }}
                     >
-                      {f.name}
+                      <div
+                        style={{
+                          fontSize: "11px",
+                          color: "var(--text-secondary)",
+                          marginBottom: "2px",
+                        }}
+                      >
+                        {axis.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: 700,
+                          color: delta === 0 ? "var(--text-secondary)" : isPositive ? "#10b981" : "#ef4444",
+                        }}
+                      >
+                        {delta > 0 ? "+" : ""}
+                        {delta.toFixed(1)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Save Scenario */}
+      <div style={{ ...card, marginBottom: "20px" }}>
+        <div style={sectionTitle}>Salvar Cenário ({savedScenarios.length}/3)</div>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <input
+            type="text"
+            placeholder="Nome do cenário..."
+            value={scenarioName}
+            onChange={(e) => setScenarioName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveScenario();
+            }}
+            style={{
+              flex: 1,
+              padding: "10px 14px",
+              borderRadius: "8px",
+              border: "1px solid var(--border)",
+              background: "var(--background)",
+              color: "var(--foreground)",
+              fontSize: "14px",
+              outline: "none",
+            }}
+          />
+          <button
+            onClick={saveScenario}
+            disabled={!scenarioName.trim() || savedScenarios.length >= 3 || activeFeatures.size === 0}
+            style={{
+              padding: "10px 20px",
+              borderRadius: "8px",
+              border: "none",
+              background:
+                !scenarioName.trim() || savedScenarios.length >= 3 || activeFeatures.size === 0
+                  ? "var(--border)"
+                  : "var(--primary)",
+              color:
+                !scenarioName.trim() || savedScenarios.length >= 3 || activeFeatures.size === 0
+                  ? "var(--text-secondary)"
+                  : "#fff",
+              fontWeight: 600,
+              fontSize: "13px",
+              cursor:
+                !scenarioName.trim() || savedScenarios.length >= 3 || activeFeatures.size === 0
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            Salvar
+          </button>
+        </div>
+        {savedScenarios.length >= 3 && (
+          <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "8px" }}>
+            Limite de 3 cenários atingido. Remova um para salvar outro.
+          </p>
+        )}
+      </div>
+
+      {/* Scenario Comparison Table */}
+      {savedScenarios.length > 0 && (
+        <div style={{ ...card, marginBottom: "20px", overflowX: "auto" }}>
+          <div style={sectionTitle}>Comparação de Cenários</div>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "13px",
+            }}
+          >
+            <thead>
+              <tr>
+                <th
+                  style={{
+                    textAlign: "left",
+                    padding: "10px 12px",
+                    borderBottom: "2px solid var(--border)",
+                    color: "var(--text-secondary)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Métrica
+                </th>
+                <th
+                  style={{
+                    textAlign: "center",
+                    padding: "10px 12px",
+                    borderBottom: "2px solid var(--border)",
+                    color: "var(--text-secondary)",
+                    fontWeight: 600,
+                  }}
+                >
+                  Baseline
+                </th>
+                {savedScenarios.map((sc, i) => (
+                  <th
+                    key={sc.name}
+                    style={{
+                      textAlign: "center",
+                      padding: "10px 12px",
+                      borderBottom: "2px solid var(--border)",
+                      color: ["#f59e0b", "#10b981", "#f43f5e"][i % 3],
+                      fontWeight: 600,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      <span>{sc.name}</span>
                       <button
-                        onClick={() => toggleProposed(id)}
+                        onClick={() => loadScenario(sc)}
+                        title="Carregar cenário"
                         style={{
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: meta.color,
-                          fontSize: "0.75rem",
+                          fontSize: "14px",
+                          padding: "0",
                           lineHeight: 1,
-                          padding: "0 0.125rem",
                         }}
                       >
-                        ×
+                        {"↗"}
                       </button>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ===== IMPACT DASHBOARD ===== */}
-      <div className="card-glow animate-fade-in stagger-5" style={{ padding: "1.5rem", marginBottom: "2rem" }}>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Análise de Impacto</h2>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              fontSize: "0.8125rem",
-              color: "var(--text-muted)",
-            }}
-          >
-            <span>Ativas:</span>
-            <span style={{ fontWeight: 700, color: "var(--foreground)" }}>
-              {activeFeatures.size}
-            </span>
-            <span style={{ margin: "0 0.125rem" }}>+</span>
-            <span>Propostas:</span>
-            <span style={{ fontWeight: 700, color: "var(--foreground)" }}>
-              {proposedFeatures.size}
-            </span>
-          </div>
-        </div>
-
-        {/* Metric comparison cards */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-          style={{ gap: "1rem", marginBottom: "1.5rem" }}
-        >
-          {METRICS.map((m) => {
-            const current = currentMetrics[m.key];
-            const projected = projectedMetrics[m.key];
-            const delta = parseFloat((projected - current).toFixed(2));
-            const isImprovement = m.lowerIsBetter ? delta < 0 : delta > 0;
-            const isNeutral = delta === 0;
-            const maxVal = m.key === "settlementTime" ? 72 : 100;
-            const currentWidth = Math.min(100, (current / maxVal) * 100);
-            const projectedWidth = Math.min(100, (projected / maxVal) * 100);
-
-            return (
-              <div key={m.key} className="card-flat" style={{ padding: "1.25rem" }}>
-                <div
+                      <button
+                        onClick={() => removeScenario(i)}
+                        title="Remover cenário"
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          fontSize: "14px",
+                          color: "#ef4444",
+                          padding: "0",
+                          lineHeight: 1,
+                        }}
+                      >
+                        {"×"}
+                      </button>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {RADAR_AXES.map((axis) => (
+                <tr key={axis.key}>
+                  <td
+                    style={{
+                      padding: "8px 12px",
+                      borderBottom: "1px solid var(--border)",
+                      fontWeight: 600,
+                      color: "var(--foreground)",
+                    }}
+                  >
+                    {axis.label}
+                  </td>
+                  <td
+                    style={{
+                      textAlign: "center",
+                      padding: "8px 12px",
+                      borderBottom: "1px solid var(--border)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {BASELINE[axis.key]}
+                  </td>
+                  {savedScenarios.map((sc) => {
+                    const val = sc.radar[axis.key];
+                    const delta = val - BASELINE[axis.key];
+                    return (
+                      <td
+                        key={sc.name}
+                        style={{
+                          textAlign: "center",
+                          padding: "8px 12px",
+                          borderBottom: "1px solid var(--border)",
+                          color: delta > 0 ? "#10b981" : delta < 0 ? "#ef4444" : "var(--text-secondary)",
+                          fontWeight: delta !== 0 ? 600 : 400,
+                        }}
+                      >
+                        {val}{" "}
+                        {delta !== 0 && (
+                          <span style={{ fontSize: "11px" }}>
+                            ({delta > 0 ? "+" : ""}
+                            {delta})
+                          </span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              {/* Features row */}
+              <tr>
+                <td
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: "0.75rem",
-                  }}
-                >
-                  <span style={{ fontSize: "0.8125rem", fontWeight: 600 }}>{m.label}</span>
-                  {!isNeutral && (
-                    <span
-                      style={{
-                        fontSize: "0.6875rem",
-                        fontWeight: 600,
-                        padding: "0.125rem 0.5rem",
-                        borderRadius: "9999px",
-                        background: isImprovement
-                          ? "rgba(22, 163, 74, 0.1)"
-                          : "rgba(220, 38, 38, 0.1)",
-                        color: isImprovement ? "var(--success)" : "var(--error)",
-                      }}
-                    >
-                      {delta > 0 ? "+" : ""}
-                      {delta}
-                      {m.unit}
-                    </span>
-                  )}
-                </div>
-
-                {/* Current bar */}
-                <div style={{ marginBottom: "0.5rem" }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      fontSize: "0.6875rem",
-                      color: "var(--text-muted)",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    <span>Atual</span>
-                    <span style={{ fontWeight: 500 }}>
-                      {current}
-                      {m.unit}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: "8px",
-                      background: "var(--surface-hover)",
-                      borderRadius: "9999px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        borderRadius: "9999px",
-                        background: "var(--text-muted)",
-                        width: `${currentWidth}%`,
-                        transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Projected bar */}
-                <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      fontSize: "0.6875rem",
-                      color: "var(--text-muted)",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    <span>Projetado</span>
-                    <span
-                      style={{
-                        fontWeight: 600,
-                        color: isNeutral
-                          ? "var(--text-muted)"
-                          : isImprovement
-                            ? "var(--success)"
-                            : "var(--error)",
-                      }}
-                    >
-                      {projected}
-                      {m.unit}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: "8px",
-                      background: "var(--surface-hover)",
-                      borderRadius: "9999px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        borderRadius: "9999px",
-                        background: isNeutral
-                          ? "var(--text-muted)"
-                          : isImprovement
-                            ? "linear-gradient(90deg, #16a34a, #4ade80)"
-                            : "linear-gradient(90deg, #dc2626, #f87171)",
-                        width: `${projectedWidth}%`,
-                        transition: "width 0.5s cubic-bezier(0.4, 0, 0.2, 1)",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Dependency warnings */}
-        {missingDeps.length > 0 && (
-          <div
-            style={{
-              marginBottom: "1.25rem",
-              padding: "1rem 1.25rem",
-              borderRadius: "10px",
-              background: "rgba(217, 119, 6, 0.06)",
-              border: "1px solid rgba(217, 119, 6, 0.15)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                color: "var(--warning)",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Dependências Ausentes
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-              {missingDeps.map(({ featureId, missing }) => {
-                const feature = FEATURES.find((f) => f.id === featureId)!;
-                return (
-                  <div
-                    key={featureId}
-                    style={{ fontSize: "0.8125rem", color: "var(--foreground)" }}
-                  >
-                    <span style={{ fontWeight: 600 }}>{feature.name}</span>
-                    <span style={{ color: "var(--text-muted)" }}> requer </span>
-                    <span style={{ fontWeight: 500 }}>
-                      {missing
-                        .map((dep) => FEATURES.find((f) => f.id === dep)?.name ?? dep)
-                        .join(", ")}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Recommendations */}
-        <div
-          style={{
-            padding: "1.25rem",
-            borderRadius: "10px",
-            background: "rgba(37, 99, 235, 0.04)",
-            border: "1px solid rgba(37, 99, 235, 0.1)",
-          }}
-        >
-          <h3 style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.75rem" }}>
-            Recomendações
-          </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-            {recommendations.map((rec, i) => (
-              <div
-                key={i}
-                style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}
-              >
-                <span
-                  style={{
-                    flexShrink: 0,
-                    width: "1.5rem",
-                    height: "1.5rem",
-                    borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, var(--primary), var(--primary-light))",
-                    color: "white",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.6875rem",
-                    fontWeight: 700,
-                    marginTop: "0.125rem",
-                  }}
-                >
-                  {i + 1}
-                </span>
-                <span
-                  style={{
-                    fontSize: "0.8125rem",
-                    lineHeight: 1.5,
+                    padding: "8px 12px",
+                    borderBottom: "1px solid var(--border)",
+                    fontWeight: 600,
                     color: "var(--foreground)",
                   }}
                 >
-                  {rec}
-                </span>
-              </div>
-            ))}
-          </div>
+                  Features
+                </td>
+                <td
+                  style={{
+                    textAlign: "center",
+                    padding: "8px 12px",
+                    borderBottom: "1px solid var(--border)",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  0
+                </td>
+                {savedScenarios.map((sc) => (
+                  <td
+                    key={sc.name}
+                    style={{
+                      textAlign: "center",
+                      padding: "8px 12px",
+                      borderBottom: "1px solid var(--border)",
+                      color: "var(--foreground)",
+                      fontSize: "12px",
+                    }}
+                  >
+                    {FEATURES.filter((f) => sc.features.has(f.id))
+                      .map((f) => f.name)
+                      .join(", ")}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </div>
+      )}
 
-      {/* ===== FOOTER ===== */}
-      <div style={{ marginTop: "3rem", marginBottom: "2rem" }}>
-        <div className="divider-text" style={{ marginBottom: "1.25rem" }}>
-          Páginas Relacionadas
-        </div>
-        <div
-          className="grid grid-cols-1 sm:grid-cols-3"
-          style={{ gap: "1rem" }}
+      {/* Back link */}
+      <div style={{ marginBottom: "40px", textAlign: "center" }}>
+        <a
+          href="/simulation"
+          style={{
+            fontSize: "14px",
+            color: "var(--primary)",
+            textDecoration: "none",
+            fontWeight: 500,
+          }}
         >
-          {[
-            {
-              href: "/simulation/architecture-advisor",
-              title: "Architecture Advisor",
-              desc: "Recomendações de arquitetura personalizadas para seu negócio",
-              icon: "🏗️",
-            },
-            {
-              href: "/explore/financial-system",
-              title: "Sistema Financeiro",
-              desc: "Visão geral do ecossistema de pagamentos",
-              icon: "🏦",
-            },
-            {
-              href: "/diagnostics/conta-comigo",
-              title: "Conta Comigo",
-              desc: "Diagnóstico inteligente de problemas de pagamento",
-              icon: "🔍",
-            },
-          ].map((page) => (
-            <Link
-              key={page.href}
-              href={page.href}
-              className="card-flat interactive-hover"
-              style={{
-                padding: "1.25rem",
-                display: "block",
-                textDecoration: "none",
-                color: "inherit",
-              }}
-            >
-              <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>{page.icon}</div>
-              <div style={{ fontSize: "0.875rem", fontWeight: 600, marginBottom: "0.25rem" }}>
-                {page.title}
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>{page.desc}</div>
-            </Link>
-          ))}
-        </div>
+          {"← Voltar para Simulação"}
+        </a>
       </div>
     </div>
   );
