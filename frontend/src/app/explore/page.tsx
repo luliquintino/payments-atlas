@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useGameProgress } from "@/hooks/useGameProgress";
 
 interface PageEntry {
   name: string;
   href: string;
-  tags: string[];
+  description: string;
 }
 
 interface Category {
@@ -23,137 +23,111 @@ const categories: Category[] = [
   {
     id: "pagamentos",
     name: "Pagamentos",
-    icon: "💳",
+    icon: "\u{1F4B3}",
     color: "#6366F1",
-    description: "Mapas, fluxos e trilhos de pagamento",
+    description: "Fluxos, trilhos e mapa de pagamentos",
     pages: [
-      { name: "Mapa de Pagamentos", href: "/explore/payments-map", tags: ["fundamental"] },
-      { name: "Trilhos de Pagamento", href: "/explore/payment-rails", tags: ["fundamental"] },
-      { name: "Fluxos de Transação", href: "/explore/transaction-flows", tags: ["fundamental"] },
-      { name: "Mapa do Ecossistema", href: "/explore/ecosystem-map", tags: ["fundamental"] },
-      { name: "Sistema Financeiro", href: "/explore/financial-system", tags: ["fundamental"] },
+      { name: "Mapa de Pagamentos", href: "/explore/payments-map", description: "Vis\u00e3o interativa das 6 camadas" },
+      { name: "Trilhos de Pagamento", href: "/explore/payment-rails", description: "Pix, cart\u00e3o, boleto, TED" },
+      { name: "Fluxos de Transa\u00e7\u00e3o", href: "/explore/transaction-flows", description: "Autoriza\u00e7\u00e3o, captura, estorno" },
+      { name: "Mapa do Ecossistema", href: "/explore/ecosystem-map", description: "Players e conex\u00f5es" },
+      { name: "Sistema Financeiro", href: "/explore/financial-system", description: "Estrutura do SFN" },
     ],
   },
   {
     id: "infraestrutura",
     name: "Infraestrutura",
-    icon: "🏛️",
+    icon: "\u{1F3DB}\uFE0F",
     color: "#10B981",
-    description: "Sistemas bancários, liquidação e tesouraria",
+    description: "Sistemas banc\u00e1rios, liquida\u00e7\u00e3o e tesouraria",
     pages: [
-      { name: "Sistemas Bancários", href: "/infrastructure/banking-systems", tags: ["avançado"] },
-      { name: "Sistemas de Liquidação", href: "/infrastructure/settlement-systems", tags: ["avançado"] },
-      { name: "Liquidez & Tesouraria", href: "/infrastructure/liquidity-treasury", tags: ["avançado"] },
-      { name: "Settlement & Clearing", href: "/knowledge/settlement-clearing", tags: ["avançado", "novo"] },
+      { name: "Sistemas Banc\u00e1rios", href: "/infrastructure/banking-systems", description: "Core banking, processamento" },
+      { name: "Sistemas de Liquida\u00e7\u00e3o", href: "/infrastructure/settlement-systems", description: "RTGS, DNS, ACH" },
+      { name: "Liquidez & Tesouraria", href: "/infrastructure/liquidity-treasury", description: "Cash management" },
+      { name: "Settlement & Clearing", href: "/knowledge/settlement-clearing", description: "Mec\u00e2nicas de compensa\u00e7\u00e3o" },
     ],
   },
   {
     id: "crypto",
     name: "Crypto & Web3",
-    icon: "🔗",
+    icon: "\u{1F517}",
     color: "#8B5CF6",
-    description: "Blockchain, stablecoins, DeFi e L2",
+    description: "Blockchain, stablecoins, DeFi e CBDC",
     pages: [
-      { name: "Mapa Blockchain", href: "/crypto/blockchain-map", tags: [] },
-      { name: "Sistemas de Stablecoin", href: "/crypto/stablecoin-systems", tags: [] },
-      { name: "Protocolos DeFi", href: "/crypto/defi-protocols", tags: [] },
-      { name: "Crypto Avançado: L2 & Bridges", href: "/crypto/advanced-crypto", tags: ["avançado", "novo"] },
+      { name: "Mapa Blockchain", href: "/crypto/blockchain-map", description: "Ecossistema de blockchains" },
+      { name: "Sistemas de Stablecoin", href: "/crypto/stablecoin-systems", description: "USDC, USDT, DREX" },
+      { name: "Protocolos DeFi", href: "/crypto/defi-protocols", description: "AMM, lending, yield" },
+      { name: "Crypto Avan\u00e7ado: L2 & Bridges", href: "/crypto/advanced-crypto", description: "Rollups, bridges, CBDC" },
     ],
   },
   {
     id: "knowledge",
     name: "Knowledge Base",
-    icon: "📚",
+    icon: "\u{1F4DA}",
     color: "#F59E0B",
-    description: "Features, regras, taxonomia e deep dives",
+    description: "Features, regras, gloss\u00e1rio e taxonomia",
     pages: [
-      { name: "Base de Features", href: "/knowledge/features", tags: [] },
-      { name: "Feature Discovery", href: "/knowledge/feature-discovery", tags: [] },
-      { name: "Regras de Negócio", href: "/knowledge/business-rules", tags: [] },
-      { name: "Regras de Bandeiras", href: "/knowledge/brand-rules", tags: ["novo"] },
-      { name: "Grafo de Dependências", href: "/knowledge/dependency-graph", tags: [] },
-      { name: "Taxonomia", href: "/knowledge/taxonomy", tags: [] },
-      { name: "Glossário", href: "/glossary", tags: [] },
-      { name: "Chargeback Deep Dive", href: "/knowledge/chargeback-deep-dive", tags: ["avançado"] },
-      { name: "Antecipação de Recebíveis", href: "/knowledge/antecipacao-recebiveis", tags: ["avançado"] },
-      { name: "Parcelamento", href: "/knowledge/parcelamento", tags: [] },
-      { name: "Crédito Estruturado", href: "/knowledge/credito-estruturado", tags: ["avançado"] },
-      { name: "PCI Compliance Roadmap", href: "/knowledge/pci-compliance", tags: ["avançado", "novo"] },
-      { name: "Cross-Border Payments", href: "/knowledge/cross-border", tags: ["avançado", "novo"] },
-      { name: "Webhook Patterns", href: "/knowledge/webhook-patterns", tags: ["avançado", "novo"] },
-      { name: "PayFac Architecture", href: "/knowledge/payfac-architecture", tags: ["avançado", "novo"] },
-      { name: "Matriz Regulatória", href: "/knowledge/regulatory-matrix", tags: ["avançado", "novo"] },
-      { name: "Fraud ML Avançado", href: "/knowledge/advanced-fraud-ml", tags: ["avançado", "novo"] },
-      { name: "Operational Excellence", href: "/knowledge/operational-excellence", tags: ["avançado", "novo"] },
-      { name: "Card Present & POS", href: "/knowledge/card-present-pos", tags: ["avançado", "novo"] },
-      { name: "Consórcio & Factoring", href: "/knowledge/consorcio-factoring", tags: ["avançado", "novo"] },
-      { name: "Embedded Finance", href: "/knowledge/embedded-finance", tags: ["avançado", "novo"] },
-      { name: "Emerging Payments", href: "/knowledge/emerging-payments", tags: ["novo"] },
-      { name: "Event Architecture", href: "/knowledge/event-architecture", tags: ["avançado", "novo"] },
-      { name: "Go-to-Market", href: "/knowledge/go-to-market", tags: ["novo"] },
-      { name: "HSM & Criptografia", href: "/knowledge/hsm-cryptography", tags: ["avançado", "novo"] },
-      { name: "Insurtech", href: "/knowledge/insurtech", tags: ["avançado", "novo"] },
-      { name: "ISO 20022 & SWIFT", href: "/knowledge/iso20022-swift", tags: ["avançado", "novo"] },
-      { name: "Legacy Migration", href: "/knowledge/legacy-migration", tags: ["avançado", "novo"] },
-      { name: "LGPD & Payments", href: "/knowledge/lgpd-payments", tags: ["avançado", "novo"] },
-      { name: "Merchant Segmentation", href: "/knowledge/merchant-segmentation", tags: ["novo"] },
-      { name: "Payment Methods BR", href: "/knowledge/payment-methods-br", tags: ["fundamental", "novo"] },
-      { name: "PLD-FT", href: "/knowledge/pld-ft", tags: ["avançado", "novo"] },
-      { name: "Reconciliation Deep Dive", href: "/knowledge/reconciliation-deep", tags: ["avançado", "novo"] },
-      { name: "Team & Career", href: "/knowledge/team-career", tags: ["novo"] },
-      { name: "Treasury & Float", href: "/knowledge/treasury-float", tags: ["avançado", "novo"] },
-      { name: "Unit Economics", href: "/knowledge/unit-economics", tags: ["avançado", "novo"] },
-      { name: "Vendor Selection", href: "/knowledge/vendor-selection", tags: ["novo"] },
+      { name: "Base de Features", href: "/knowledge/features", description: "87 features documentadas" },
+      { name: "Feature Discovery", href: "/knowledge/feature-discovery", description: "Busca avan\u00e7ada de features" },
+      { name: "Regras de Neg\u00f3cio", href: "/knowledge/business-rules", description: "23 regras validadas" },
+      { name: "Regras de Bandeiras", href: "/knowledge/brand-rules", description: "Visa, Master, Elo, Amex" },
+      { name: "Gloss\u00e1rio", href: "/glossary", description: "141 termos explicados" },
+      { name: "Taxonomia", href: "/knowledge/taxonomy", description: "Classifica\u00e7\u00e3o do ecossistema" },
+      { name: "Grafo de Depend\u00eancias", href: "/knowledge/dependency-graph", description: "Rela\u00e7\u00f5es entre features" },
     ],
   },
   {
     id: "fraude",
     name: "Fraude & Risco",
-    icon: "🛡️",
+    icon: "\u{1F6E1}\uFE0F",
     color: "#EF4444",
-    description: "Detecção de fraude, chargebacks e proteção",
+    description: "Detec\u00e7\u00e3o, preven\u00e7\u00e3o e gest\u00e3o de disputas",
     pages: [
-      { name: "Mapa de Fraude", href: "/fraud/fraud-map", tags: [] },
-      { name: "Sinais de Fraude", href: "/fraud/fraud-signals", tags: [] },
-      { name: "Ciclo de Chargeback", href: "/fraud/chargeback-lifecycle", tags: [] },
+      { name: "Mapa de Fraude", href: "/fraud/fraud-map", description: "Panorama de amea\u00e7as" },
+      { name: "Sinais de Fraude", href: "/fraud/fraud-signals", description: "Indicadores e padr\u00f5es" },
+      { name: "Ciclo de Chargeback", href: "/fraud/chargeback-lifecycle", description: "Da disputa \u00e0 resolu\u00e7\u00e3o" },
+      { name: "Chargeback Deep Dive", href: "/knowledge/chargeback-deep-dive", description: "Reason codes, defesa" },
+      { name: "Fraud ML Avan\u00e7ado", href: "/knowledge/advanced-fraud-ml", description: "Graph analysis, biometrics" },
     ],
   },
   {
     id: "diagnostico",
-    name: "Diagnóstico",
-    icon: "🩺",
+    name: "Diagn\u00f3stico",
+    icon: "\u{1FA7A}",
     color: "#EC4899",
-    description: "Conta Comigo, métricas e problemas",
+    description: "Ferramentas de an\u00e1lise e diagn\u00f3stico",
     pages: [
-      { name: "Conta Comigo", href: "/diagnostics/conta-comigo", tags: [] },
-      { name: "Árvore de Métricas", href: "/diagnostics/metrics-tree", tags: [] },
-      { name: "Biblioteca de Problemas", href: "/diagnostics/problem-library", tags: [] },
+      { name: "Conta Comigo", href: "/diagnostics/conta-comigo", description: "Diagn\u00f3stico do seu sistema" },
+      { name: "\u00c1rvore de M\u00e9tricas", href: "/diagnostics/metrics-tree", description: "KPIs decompostos" },
+      { name: "Biblioteca de Problemas", href: "/diagnostics/problem-library", description: "Problemas comuns e solu\u00e7\u00f5es" },
     ],
   },
   {
-    id: "ferramentas",
-    name: "Ferramentas",
-    icon: "🔧",
-    color: "#06B6D4",
-    description: "Simuladores, consultores e ferramentas interativas",
+    id: "regulacao",
+    name: "Regula\u00e7\u00e3o & Compliance",
+    icon: "\u2696\uFE0F",
+    color: "#14B8A6",
+    description: "PCI, LGPD, Open Finance, regula\u00e7\u00e3o banc\u00e1ria",
     pages: [
-      { name: "Simulador de Pagamentos", href: "/simulation/payment-simulator", tags: [] },
-      { name: "Consultor de Arquitetura", href: "/simulation/architecture-advisor", tags: [] },
-      { name: "Explorador de Eventos", href: "/observability/event-explorer", tags: [] },
-      { name: "Consultor AI", href: "/ai/payments-advisor", tags: [] },
-      { name: "Analisador de Documentos", href: "/tools/document-analyzer", tags: ["novo"] },
+      { name: "PCI Compliance Roadmap", href: "/knowledge/pci-compliance", description: "SAQ, auditorias, v4.0" },
+      { name: "Matriz Regulat\u00f3ria", href: "/knowledge/regulatory-matrix", description: "Brasil, Europa, EUA" },
+      { name: "Cross-Border Payments", href: "/knowledge/cross-border", description: "FX, correspondent banking" },
+      { name: "Cr\u00e9dito Estruturado", href: "/knowledge/credito-estruturado", description: "SCD, FIDC, cess\u00e3o" },
+      { name: "Antecipa\u00e7\u00e3o de Receb\u00edveis", href: "/knowledge/antecipacao-recebiveis", description: "Mesa, des\u00e1gio, registradora" },
+      { name: "Parcelamento", href: "/knowledge/parcelamento", description: "Emissor vs lojista, impacto" },
     ],
   },
   {
-    id: "aprendizado",
-    name: "Aprendizado",
-    icon: "🎓",
-    color: "#A855F7",
-    description: "Trilhas, quiz e progresso de aprendizado",
+    id: "operacional",
+    name: "Operacional & Arquitetura",
+    icon: "\u{1F3D7}\uFE0F",
+    color: "#6366F1",
+    description: "Alta disponibilidade, incidentes, patterns",
     pages: [
-      { name: "Trilhas de Aprendizado", href: "/trilhas", tags: [] },
-      { name: "Quiz de Pagamentos", href: "/quiz", tags: [] },
-      { name: "Meu Progresso", href: "/progress", tags: [] },
+      { name: "Operational Excellence", href: "/knowledge/operational-excellence", description: "DR, chaos, incidentes" },
+      { name: "Webhook Patterns", href: "/knowledge/webhook-patterns", description: "Reliability, idempotency" },
+      { name: "PayFac Architecture", href: "/knowledge/payfac-architecture", description: "Construir um PayFac" },
+      { name: "Embedded Finance", href: "/knowledge/embedded-finance", description: "BaaS, Credit as a Service" },
     ],
   },
 ];
@@ -162,8 +136,8 @@ const totalPages = categories.reduce((sum, cat) => sum + cat.pages.length, 0);
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
-  const { isPageVisited } = useGameProgress();
+  const { isPageVisited, pagesVisited } = useGameProgress();
+  const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const allPages = useMemo(
     () => categories.flatMap((cat) => cat.pages),
@@ -172,27 +146,32 @@ export default function ExplorePage() {
 
   const visitedCount = useMemo(
     () => allPages.filter((p) => isPageVisited(p.href)).length,
-    [allPages, isPageVisited]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allPages, pagesVisited]
   );
 
-  const completionPct = totalPages > 0 ? Math.round((visitedCount / totalPages) * 100) : 0;
-
-  // Filter pages by search
+  // Filter categories and pages by search
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return categories;
     const q = searchQuery.toLowerCase();
     return categories
       .map((cat) => ({
         ...cat,
-        pages: cat.pages.filter((p) => p.name.toLowerCase().includes(q)),
+        pages: cat.pages.filter(
+          (p) =>
+            p.name.toLowerCase().includes(q) ||
+            p.description.toLowerCase().includes(q) ||
+            cat.name.toLowerCase().includes(q)
+        ),
       }))
       .filter((cat) => cat.pages.length > 0);
   }, [searchQuery]);
 
-  const isSearching = searchQuery.trim().length > 0;
-
-  const toggleCategory = (id: string) => {
-    setExpandedCategory((prev) => (prev === id ? null : id));
+  const scrollToSection = (id: string) => {
+    const el = sectionRefs.current[id];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   return (
@@ -203,7 +182,7 @@ export default function ExplorePage() {
         padding: "2rem 1.5rem",
       }}
     >
-      <div style={{ maxWidth: "960px", margin: "0 auto" }}>
+      <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
         {/* Header */}
         <div style={{ marginBottom: "2rem" }}>
           <h1
@@ -211,10 +190,10 @@ export default function ExplorePage() {
               fontSize: "1.75rem",
               fontWeight: 700,
               color: "var(--foreground)",
-              marginBottom: "0.5rem",
+              marginBottom: "0.375rem",
             }}
           >
-            Explorar o Atlas
+            Explorar
           </h1>
           <p
             style={{
@@ -223,87 +202,11 @@ export default function ExplorePage() {
               marginBottom: "1.25rem",
             }}
           >
-            Navegue por {totalPages} páginas organizadas em {categories.length} categorias.
+            {totalPages} p\u00e1ginas dispon\u00edveis &middot; {visitedCount} visitadas
           </p>
 
-          {/* Stats row */}
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              flexWrap: "wrap",
-              marginBottom: "1.25rem",
-            }}
-          >
-            <div
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "0.75rem",
-                padding: "0.75rem 1.25rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.625rem",
-              }}
-            >
-              <span style={{ fontSize: "1.25rem" }}>📄</span>
-              <div>
-                <div style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--foreground)" }}>
-                  {totalPages}
-                </div>
-                <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)" }}>
-                  Total de páginas
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "0.75rem",
-                padding: "0.75rem 1.25rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.625rem",
-              }}
-            >
-              <span style={{ fontSize: "1.25rem" }}>✅</span>
-              <div>
-                <div style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--foreground)" }}>
-                  {visitedCount}
-                </div>
-                <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)" }}>
-                  Visitadas
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "0.75rem",
-                padding: "0.75rem 1.25rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.625rem",
-              }}
-            >
-              <span style={{ fontSize: "1.25rem" }}>📊</span>
-              <div>
-                <div style={{ fontSize: "1.125rem", fontWeight: 700, color: "var(--foreground)" }}>
-                  {completionPct}%
-                </div>
-                <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)" }}>
-                  Completado
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Search bar */}
-          <div style={{ position: "relative" }}>
+          <div style={{ position: "relative", maxWidth: "480px" }}>
             <span
               style={{
                 position: "absolute",
@@ -315,13 +218,13 @@ export default function ExplorePage() {
                 pointerEvents: "none",
               }}
             >
-              🔍
+              {"\uD83D\uDD0D"}
             </span>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar páginas por nome..."
+              placeholder="Buscar p\u00e1ginas por nome ou descri\u00e7\u00e3o..."
               style={{
                 width: "100%",
                 padding: "0.75rem 0.875rem 0.75rem 2.5rem",
@@ -336,7 +239,6 @@ export default function ExplorePage() {
           </div>
         </div>
 
-        {/* Category grid / search results */}
         {filteredCategories.length === 0 ? (
           <div
             style={{
@@ -345,226 +247,193 @@ export default function ExplorePage() {
               color: "var(--text-secondary)",
             }}
           >
-            <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.75rem" }}>🔍</span>
+            <span style={{ fontSize: "2rem", display: "block", marginBottom: "0.75rem" }}>{"\uD83D\uDD0D"}</span>
             <p style={{ fontSize: "0.9375rem" }}>
-              Nenhuma página encontrada para &quot;{searchQuery}&quot;
+              Nenhuma p\u00e1gina encontrada para &quot;{searchQuery}&quot;
             </p>
           </div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-              gap: "1rem",
-            }}
-          >
+          <>
+            {/* Category Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                gap: "1rem",
+                marginBottom: "2.5rem",
+              }}
+            >
+              {filteredCategories.map((cat) => {
+                const catVisited = cat.pages.filter((p) => isPageVisited(p.href)).length;
+                const catPct = cat.pages.length > 0 ? Math.round((catVisited / cat.pages.length) * 100) : 0;
+
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => scrollToSection(cat.id)}
+                    style={{
+                      textAlign: "left",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "0.875rem",
+                      borderLeft: `4px solid ${cat.color}`,
+                      padding: "1rem 1.25rem",
+                      cursor: "pointer",
+                      transition: "box-shadow 0.2s, transform 0.2s",
+                      color: "var(--foreground)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow = "none";
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.5rem" }}>
+                      <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>{cat.icon}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: "0.9375rem" }}>{cat.name}</div>
+                        <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>
+                          {cat.pages.length} p\u00e1ginas
+                        </div>
+                      </div>
+                    </div>
+                    <p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginBottom: "0.75rem" }}>
+                      {cat.description}
+                    </p>
+                    {/* Progress bar */}
+                    <div
+                      style={{
+                        height: "4px",
+                        borderRadius: "2px",
+                        background: "var(--border)",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${catPct}%`,
+                          background: cat.color,
+                          borderRadius: "2px",
+                          transition: "width 0.3s ease",
+                        }}
+                      />
+                    </div>
+                    <div style={{ fontSize: "0.6875rem", color: "var(--text-secondary)", marginTop: "0.25rem" }}>
+                      {catVisited}/{cat.pages.length} visitadas
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Expanded Sections */}
             {filteredCategories.map((cat) => {
-              const isExpanded = expandedCategory === cat.id || isSearching;
               const catVisited = cat.pages.filter((p) => isPageVisited(p.href)).length;
-              const catPct = cat.pages.length > 0 ? Math.round((catVisited / cat.pages.length) * 100) : 0;
 
               return (
                 <div
                   key={cat.id}
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "0.875rem",
-                    borderLeft: `4px solid ${cat.color}`,
-                    overflow: "hidden",
-                    gridColumn: isExpanded ? "1 / -1" : undefined,
-                    transition: "box-shadow 0.2s",
-                  }}
+                  ref={(el) => { sectionRefs.current[cat.id] = el; }}
+                  style={{ marginBottom: "2rem" }}
                 >
-                  {/* Card header — clickable */}
-                  <button
-                    onClick={() => toggleCategory(cat.id)}
+                  {/* Section header */}
+                  <div
                     style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "1rem 1.25rem",
-                      background: "transparent",
-                      border: "none",
-                      cursor: "pointer",
                       display: "flex",
-                      alignItems: "flex-start",
-                      gap: "0.875rem",
-                      color: "var(--foreground)",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      padding: "0.75rem 1rem",
+                      borderRadius: "0.75rem 0.75rem 0 0",
+                      background: cat.color,
+                      color: "#FFFFFF",
                     }}
                   >
-                    <span style={{ fontSize: "1.5rem", lineHeight: 1 }}>{cat.icon}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: "0.5rem",
-                          marginBottom: "0.25rem",
-                        }}
-                      >
-                        <span style={{ fontWeight: 600, fontSize: "0.9375rem" }}>{cat.name}</span>
-                        <span
+                    <span style={{ fontSize: "1.25rem" }}>{cat.icon}</span>
+                    <span style={{ fontWeight: 700, fontSize: "1rem", flex: 1 }}>{cat.name}</span>
+                    <span style={{ fontSize: "0.8125rem", opacity: 0.9 }}>
+                      {catVisited}/{cat.pages.length}
+                    </span>
+                  </div>
+
+                  {/* Pages horizontal scroll */}
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "0.75rem",
+                      overflowX: "auto",
+                      padding: "1rem",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderTop: "none",
+                      borderRadius: "0 0 0.75rem 0.75rem",
+                    }}
+                  >
+                    {cat.pages.map((page) => {
+                      const visited = isPageVisited(page.href);
+                      return (
+                        <Link
+                          key={page.href}
+                          href={page.href}
                           style={{
-                            fontSize: "0.75rem",
-                            color: "var(--text-secondary)",
+                            minWidth: "200px",
+                            maxWidth: "240px",
                             flexShrink: 0,
+                            background: visited ? "var(--primary-bg)" : "var(--background)",
+                            border: "1px solid var(--border)",
+                            borderRadius: "0.75rem",
+                            padding: "1rem",
+                            textDecoration: "none",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "0.375rem",
+                            transition: "transform 0.15s, box-shadow 0.15s",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = "translateY(-2px)";
+                            e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = "translateY(0)";
+                            e.currentTarget.style.boxShadow = "none";
                           }}
                         >
-                          {cat.pages.length} páginas
-                        </span>
-                      </div>
-                      <p
-                        style={{
-                          fontSize: "0.8125rem",
-                          color: "var(--text-secondary)",
-                          marginBottom: "0.625rem",
-                        }}
-                      >
-                        {cat.description}
-                      </p>
-                      {/* Progress bar */}
-                      <div
-                        style={{
-                          height: "4px",
-                          borderRadius: "2px",
-                          background: "var(--border)",
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div
-                          style={{
-                            height: "100%",
-                            width: `${catPct}%`,
-                            background: cat.color,
-                            borderRadius: "2px",
-                            transition: "width 0.3s ease",
-                          }}
-                        />
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.6875rem",
-                          color: "var(--text-secondary)",
-                          marginTop: "0.25rem",
-                        }}
-                      >
-                        {catVisited}/{cat.pages.length} visitadas ({catPct}%)
-                      </div>
-                    </div>
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      style={{
-                        flexShrink: 0,
-                        marginTop: "0.25rem",
-                        transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
-                        transition: "transform 0.2s",
-                      }}
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </button>
-
-                  {/* Expanded page list */}
-                  {isExpanded && (
-                    <div
-                      style={{
-                        borderTop: "1px solid var(--border)",
-                        padding: "0.5rem 0",
-                      }}
-                    >
-                      {cat.pages.map((page) => {
-                        const visited = isPageVisited(page.href);
-                        return (
-                          <Link
-                            key={page.href}
-                            href={page.href}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.625rem",
-                              padding: "0.5rem 1.25rem 0.5rem 1.25rem",
-                              fontSize: "0.875rem",
-                              color: visited ? "var(--primary)" : "var(--foreground)",
-                              textDecoration: "none",
-                              transition: "background 0.15s",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "var(--primary-bg)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "transparent";
-                            }}
-                          >
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                             <span
                               style={{
-                                width: "1.25rem",
-                                textAlign: "center",
-                                flexShrink: 0,
-                                fontSize: "0.875rem",
+                                fontSize: "0.9375rem",
+                                fontWeight: 600,
+                                color: visited ? "var(--primary)" : "var(--foreground)",
+                                flex: 1,
+                                minWidth: 0,
                               }}
                             >
-                              {visited ? "✅" : "○"}
+                              {page.name}
                             </span>
-                            <span style={{ flex: 1, minWidth: 0 }}>{page.name}</span>
-                            <span style={{ display: "flex", gap: "0.375rem", flexShrink: 0 }}>
-                              {page.tags.includes("novo") && (
-                                <span
-                                  style={{
-                                    fontSize: "0.6875rem",
-                                    background: "#DCFCE7",
-                                    color: "#166534",
-                                    padding: "0.125rem 0.5rem",
-                                    borderRadius: "9999px",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  Novo
-                                </span>
-                              )}
-                              {page.tags.includes("avançado") && (
-                                <span
-                                  style={{
-                                    fontSize: "0.6875rem",
-                                    background: "#FEF3C7",
-                                    color: "#92400E",
-                                    padding: "0.125rem 0.5rem",
-                                    borderRadius: "9999px",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  Avançado
-                                </span>
-                              )}
-                              {page.tags.includes("fundamental") && (
-                                <span
-                                  style={{
-                                    fontSize: "0.6875rem",
-                                    background: "#EDE9FE",
-                                    color: "#5B21B6",
-                                    padding: "0.125rem 0.5rem",
-                                    borderRadius: "9999px",
-                                    fontWeight: 600,
-                                  }}
-                                >
-                                  Fundamental
-                                </span>
-                              )}
-                            </span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
+                            {visited && (
+                              <span style={{ color: "var(--primary)", fontSize: "1rem", flexShrink: 0 }}>{"\u2713"}</span>
+                            )}
+                          </div>
+                          <p
+                            style={{
+                              fontSize: "0.8125rem",
+                              color: "var(--text-secondary)",
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {page.description}
+                          </p>
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
-          </div>
+          </>
         )}
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useCallback, useEffect, useRef } from "react";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
 // ---------------------------------------------------------------------------
 // Types & Constants
@@ -247,6 +248,13 @@ export default function IncidentSimulator() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [actionHistory, setActionHistory] = useState<{ step: number; action: number; optimal: boolean }[]>([]);
   const [showingResult, setShowingResult] = useState(false);
+  const [showXpToast, setShowXpToast] = useState<string | null>(null);
+  const { recordQuiz, visitPage } = useGameProgress();
+  const xpAwardedRef = useRef(false);
+
+  useEffect(() => {
+    visitPage("/labs/incident-simulator");
+  }, [visitPage]);
   const [lastNarrative, setLastNarrative] = useState("");
   const [animatingLogs, setAnimatingLogs] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -314,6 +322,17 @@ export default function IncidentSimulator() {
     if (currentStep + 1 >= STEPS.length) {
       setFinished(true);
       if (timerRef.current) clearInterval(timerRef.current);
+      // XP rewards
+      if (!xpAwardedRef.current) {
+        xpAwardedRef.current = true;
+        const optCount = [...actionHistory, ...([] as typeof actionHistory)].filter((a) => a.optimal).length;
+        const sc = Math.round((optCount / STEPS.length) * 100);
+        const isExpert = simulatedMinutes <= 10 && sc >= 80;
+        const xp = isExpert ? 40 : 25;
+        recordQuiz("/labs/incident-simulator", optCount, STEPS.length, xp);
+        setShowXpToast(`+${xp} XP${isExpert ? " — Expert!" : ""}`);
+        setTimeout(() => setShowXpToast(null), 4000);
+      }
     } else {
       setCurrentStep((s) => s + 1);
       setShowingResult(false);
@@ -322,7 +341,7 @@ export default function IncidentSimulator() {
         { timestamp: "--:--:--", level: "INFO", message: "---" },
       ]);
     }
-  }, [currentStep]);
+  }, [currentStep, actionHistory, simulatedMinutes, recordQuiz]);
 
   const resetAll = useCallback(() => {
     setStarted(false);
@@ -501,6 +520,25 @@ export default function IncidentSimulator() {
 
     return (
       <div style={{ maxWidth: "700px", margin: "0 auto", padding: "2rem 1rem" }}>
+        {showXpToast && (
+          <div
+            style={{
+              position: "fixed",
+              top: "1.5rem",
+              right: "1.5rem",
+              background: "#10B981",
+              color: "white",
+              padding: "0.75rem 1.25rem",
+              borderRadius: "0.75rem",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              zIndex: 999,
+              boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
+            }}
+          >
+            {showXpToast}
+          </div>
+        )}
         <div
           style={{
             background: "#0D1117",

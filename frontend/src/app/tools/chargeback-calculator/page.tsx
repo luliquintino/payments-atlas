@@ -1,562 +1,440 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function fmt(value: number): string {
-  return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function fmt(v: number) {
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function fmtBRL(v: number) {
+  return `R$ ${fmt(v)}`;
+}
+function fmtK(v: number): string {
+  if (v >= 1_000_000) return `R$ ${fmt(v / 1_000_000)} M`;
+  if (v >= 1_000) return `R$ ${fmt(v / 1_000)} K`;
+  return fmtBRL(v);
+}
+function fmtInt(v: number) {
+  return Math.round(v).toLocaleString("pt-BR");
 }
 
-function fmtInt(value: number): string {
-  return Math.round(value).toLocaleString("pt-BR");
+/* ------------------------------------------------------------------ */
+/*  Brand monitoring program thresholds                                */
+/* ------------------------------------------------------------------ */
+interface ProgramStatus {
+  name: string;
+  status: "ok" | "alert" | "penalty";
+  label: string;
+  detail: string;
+  monthlyFine: number;
 }
 
-function fmtUSD(value: number): string {
-  return value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+function getVisaVDMP(rate: number, count: number): ProgramStatus {
+  if (rate > 1.8 && count > 100) {
+    return { name: "Visa VDMP", status: "penalty", label: "Excessivo", detail: "Rate >1.8% + >100 disputas. Multas de $25K-$50K/mes.", monthlyFine: 50000 };
+  }
+  if (rate > 0.9 && count > 100) {
+    return { name: "Visa VDMP", status: "alert", label: "Alerta (Standard)", detail: "Rate >0.9% + >100 disputas. 4 meses para corrigir.", monthlyFine: 0 };
+  }
+  return { name: "Visa VDMP", status: "ok", label: "Fora do programa", detail: "Rate abaixo dos limites.", monthlyFine: 0 };
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+function getMastercardECM(rate: number, count: number): ProgramStatus {
+  if (rate > 1.5 && count > 100) {
+    return { name: "Mastercard ECP", status: "penalty", label: "Excessive (ECP)", detail: "Rate >1.5% + >100 disputas. Multas de $25K-$100K/mes.", monthlyFine: 75000 };
+  }
+  if (rate > 1.0 && count > 100) {
+    return { name: "Mastercard ECM", status: "alert", label: "Alerta (ECM)", detail: "Rate >1.0% + >100 disputas. Precisa apresentar plano de acao.", monthlyFine: 0 };
+  }
+  return { name: "Mastercard ECM", status: "ok", label: "Fora do programa", detail: "Rate abaixo dos limites.", monthlyFine: 0 };
+}
 
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function ChargebackCalculatorPage() {
-  const [volume, setVolume] = useState(50000);
-  const [ticketMedio, setTicketMedio] = useState(150);
-  const [cbRate, setCbRate] = useState(1.0);
-  const [winRate, setWinRate] = useState(30);
-  const [custoPorDisputa, setCustoPorDisputa] = useState(50);
+  const { visitPage } = useGameProgress();
+  useEffect(() => { visitPage("/tools/chargeback-calculator"); }, [visitPage]);
 
-  // Calculations
+  const [txVolume, setTxVolume] = useState(50_000);
+  const [ticket, setTicket] = useState(200);
+  const [cbRate, setCbRate] = useState(1.2);
+  const [winRate, setWinRate] = useState(35);
+  const [costPerDispute, setCostPerDispute] = useState(150);
+
   const calc = useMemo(() => {
-    const chargebacksMensais = volume * (cbRate / 100);
-    const perdaBruta = chargebacksMensais * ticketMedio;
-    const custoOperacional = chargebacksMensais * custoPorDisputa;
-    const recuperacao = perdaBruta * (winRate / 100);
-    const perdaLiquida = perdaBruta + custoOperacional - recuperacao;
-    const impactoAnual = perdaLiquida * 12;
+    const gmv = txVolume * ticket;
+    const cbCount = Math.round(txVolume * (cbRate / 100));
+    const cbValue = cbCount * ticket;
+    const lostValue = cbValue * ((100 - winRate) / 100);
+    const opCost = cbCount * costPerDispute;
 
-    // Prevention ROI scenarios
-    const cbAt05 = volume * 0.005;
-    const perdaBrutaAt05 = cbAt05 * ticketMedio;
-    const custoOpAt05 = cbAt05 * custoPorDisputa;
-    const recuperacaoAt05 = perdaBrutaAt05 * (winRate / 100);
-    const perdaLiquidaAt05 = perdaBrutaAt05 + custoOpAt05 - recuperacaoAt05;
-    const economiaCbReduzido = perdaLiquida - perdaLiquidaAt05;
+    // Brand program fines
+    const visaStatus = getVisaVDMP(cbRate, cbCount);
+    const mcStatus = getMastercardECM(cbRate, cbCount);
+    const fines = visaStatus.monthlyFine + mcStatus.monthlyFine;
 
-    const recuperacaoAt60 = perdaBruta * 0.6;
-    const perdaLiquidaAt60 = perdaBruta + custoOperacional - recuperacaoAt60;
-    const economiaWinRateAlto = perdaLiquida - perdaLiquidaAt60;
+    // Convert USD fines to BRL (approximate)
+    const usdToBrl = 5.0;
+    const finesBRL = fines * usdToBrl;
 
-    // Monitoring program alerts
-    let alertLevel: "safe" | "vdmp" | "critical" = "safe";
-    if (cbRate > 1.5 && chargebacksMensais > 100) alertLevel = "critical";
-    else if (cbRate > 0.9 && chargebacksMensais > 100) alertLevel = "vdmp";
+    const totalImpact = lostValue + opCost + finesBRL;
+
+    // Prevention ROI: if we reduce to 0.5%
+    const targetRate = 0.5;
+    const targetCbCount = Math.round(txVolume * (targetRate / 100));
+    const targetCbValue = targetCbCount * ticket;
+    const targetLostValue = targetCbValue * ((100 - winRate) / 100);
+    const targetOpCost = targetCbCount * costPerDispute;
+    const targetVisaStatus = getVisaVDMP(targetRate, targetCbCount);
+    const targetMcStatus = getMastercardECM(targetRate, targetCbCount);
+    const targetFines = (targetVisaStatus.monthlyFine + targetMcStatus.monthlyFine) * usdToBrl;
+    const targetTotal = targetLostValue + targetOpCost + targetFines;
+    const monthlySavings = totalImpact - targetTotal;
+    const roiSixMonths = monthlySavings > 0 ? ((monthlySavings * 6) / (totalImpact || 1)) * 100 : 0;
 
     return {
-      chargebacksMensais,
-      perdaBruta,
-      custoOperacional,
-      recuperacao,
-      perdaLiquida,
-      impactoAnual,
-      economiaCbReduzido,
-      economiaWinRateAlto,
-      alertLevel,
+      gmv,
+      cbCount,
+      cbValue,
+      lostValue,
+      opCost,
+      finesBRL,
+      totalImpact,
+      visaStatus,
+      mcStatus,
+      monthlySavings,
+      roiSixMonths,
+      targetRate,
+      targetCbCount,
     };
-  }, [volume, ticketMedio, cbRate, winRate, custoPorDisputa]);
+  }, [txVolume, ticket, cbRate, winRate, costPerDispute]);
 
-  // Styles
-  const cardStyle: React.CSSProperties = {
+  const card = (extra?: React.CSSProperties): React.CSSProperties => ({
     background: "var(--surface)",
+    borderRadius: "14px",
+    padding: "1.5rem",
     border: "1px solid var(--border)",
-    borderRadius: 12,
-    padding: 20,
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "var(--foreground)",
-    marginBottom: 6,
-    display: "block",
-  };
-
-  const sublabelStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-muted)",
-    marginBottom: 8,
-    display: "block",
-  };
-
-  const sliderStyle: React.CSSProperties = {
-    width: "100%",
-    accentColor: "var(--primary)",
-    marginBottom: 4,
-  };
-
-  const valueDisplayStyle: React.CSSProperties = {
-    fontSize: 14,
-    fontWeight: 600,
-    color: "var(--primary)",
-    textAlign: "right" as const,
-    minWidth: 90,
-  };
-
-  const metricCardStyle = (bg: string, borderColor: string): React.CSSProperties => ({
-    background: bg,
-    border: `1px solid ${borderColor}`,
-    borderRadius: 10,
-    padding: 16,
-    flex: "1 1 220px",
-    minWidth: 200,
+    ...extra,
   });
 
+  const labelStyle: React.CSSProperties = {
+    fontSize: "0.8rem",
+    fontWeight: 600,
+    color: "var(--text-muted)",
+    textTransform: "uppercase",
+    letterSpacing: "0.04em",
+    marginBottom: "0.4rem",
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "0.5rem 0.75rem",
+    borderRadius: 8,
+    border: "1px solid var(--border)",
+    background: "var(--background)",
+    color: "var(--foreground)",
+    fontSize: "1rem",
+  };
+
+  const statusBadge = (status: "ok" | "alert" | "penalty") => {
+    const map = {
+      ok: { bg: "rgba(16, 185, 129, 0.12)", color: "var(--success)", icon: "\u2705" },
+      alert: { bg: "rgba(245, 158, 11, 0.12)", color: "var(--warning)", icon: "\u26A0\uFE0F" },
+      penalty: { bg: "rgba(239, 68, 68, 0.12)", color: "var(--error)", icon: "\uD83D\uDD34" },
+    };
+    return map[status];
+  };
+
   return (
-    <div
-      style={{
-        maxWidth: 1100,
-        margin: "0 auto",
-        padding: "24px 16px",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>
-          Inicio
-        </Link>
-        <span style={{ color: "var(--text-muted)", fontSize: 12 }}>/</span>
-        <Link href="/tools" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>
-          Ferramentas
-        </Link>
-        <span style={{ color: "var(--text-muted)", fontSize: 12 }}>/</span>
-        <span style={{ color: "var(--foreground)", fontSize: 14, fontWeight: 500 }}>
-          Calculadora de Chargeback
-        </span>
-      </div>
-
+    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 1rem" }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--foreground)", marginBottom: 8 }}>
-          Calculadora de Chargeback
-        </h1>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, maxWidth: 700 }}>
-          Calcule o impacto financeiro de chargebacks, identifique riscos de programas de monitoramento
-          das bandeiras e projete o ROI de ferramentas de prevencao.
-        </p>
+      <div style={{ marginBottom: "1.5rem" }}>
+        <Link href="/tools" style={{ color: "var(--primary)", textDecoration: "none", fontSize: "0.85rem" }}>
+          &larr; Ferramentas
+        </Link>
       </div>
+      <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--foreground)", marginBottom: "0.25rem" }}>
+        Calculadora de Chargeback
+      </h1>
+      <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", marginBottom: "2rem" }}>
+        Calcule o impacto financeiro de chargebacks e verifique seu status nos programas de monitoramento.
+      </p>
 
-      {/* Inputs */}
-      <div style={{ ...cardStyle, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", marginBottom: 20 }}>
-          Parametros de Entrada
-        </h2>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
-          {/* Volume */}
-          <div>
-            <label style={labelStyle}>Volume mensal de transacoes</label>
-            <span style={sublabelStyle}>Quantidade de transacoes processadas por mes</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+        {/* ---- LEFT: Inputs ---- */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* Tx Volume */}
+          <div style={card()}>
+            <div style={labelStyle}>Volume mensal de transacoes</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <input
                 type="range"
                 min={1000}
-                max={1000000}
+                max={500_000}
                 step={1000}
-                value={volume}
-                onChange={(e) => setVolume(Number(e.target.value))}
-                style={sliderStyle}
+                value={txVolume}
+                onChange={(e) => setTxVolume(+e.target.value)}
+                style={{ flex: 1, accentColor: "var(--primary)" }}
               />
-              <span style={valueDisplayStyle}>{fmtInt(volume)}</span>
+              <input
+                type="number"
+                min={1000}
+                max={500000}
+                value={txVolume}
+                onChange={(e) => setTxVolume(+e.target.value)}
+                style={{ ...inputStyle, width: 110 }}
+              />
             </div>
           </div>
 
-          {/* Ticket medio */}
-          <div>
-            <label style={labelStyle}>Ticket medio (R$)</label>
-            <span style={sublabelStyle}>Valor medio por transacao</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Ticket */}
+          <div style={card()}>
+            <div style={labelStyle}>Ticket medio (R$)</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <input
                 type="range"
-                min={50}
-                max={5000}
+                min={10}
+                max={2000}
                 step={10}
-                value={ticketMedio}
-                onChange={(e) => setTicketMedio(Number(e.target.value))}
-                style={sliderStyle}
+                value={ticket}
+                onChange={(e) => setTicket(+e.target.value)}
+                style={{ flex: 1, accentColor: "var(--primary)" }}
               />
-              <span style={valueDisplayStyle}>R$ {fmt(ticketMedio)}</span>
+              <input
+                type="number"
+                min={10}
+                max={2000}
+                value={ticket}
+                onChange={(e) => setTicket(+e.target.value)}
+                style={{ ...inputStyle, width: 100 }}
+              />
             </div>
           </div>
 
           {/* CB Rate */}
-          <div>
-            <label style={labelStyle}>Chargeback rate atual (%)</label>
-            <span style={sublabelStyle}>Percentual de transacoes disputadas</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <input
-                type="range"
-                min={0.1}
-                max={5.0}
-                step={0.1}
-                value={cbRate}
-                onChange={(e) => setCbRate(Number(e.target.value))}
-                style={sliderStyle}
-              />
-              <span style={valueDisplayStyle}>{cbRate.toFixed(1)}%</span>
+          <div style={card()}>
+            <div style={labelStyle}>Chargeback Rate (%)</div>
+            <input
+              type="range"
+              min={0}
+              max={5}
+              step={0.1}
+              value={cbRate}
+              onChange={(e) => setCbRate(+e.target.value)}
+              style={{ width: "100%", accentColor: cbRate > 1.8 ? "#ef4444" : cbRate > 0.9 ? "#f59e0b" : "var(--primary)" }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.3rem" }}>
+              <span style={{ fontSize: "1.15rem", fontWeight: 700, color: cbRate > 1.8 ? "var(--error)" : cbRate > 0.9 ? "var(--warning)" : "var(--foreground)" }}>
+                {fmt(cbRate)}%
+              </span>
+              <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                {cbRate <= 0.5 ? "Excelente" : cbRate <= 0.9 ? "Bom" : cbRate <= 1.5 ? "Atencao" : "Critico"}
+              </span>
+            </div>
+            {/* Visual threshold markers */}
+            <div style={{ position: "relative", height: 16, marginTop: "0.35rem" }}>
+              <div style={{ position: "absolute", left: `${(0.9 / 5) * 100}%`, top: 0, fontSize: "0.65rem", color: "var(--warning)", transform: "translateX(-50%)" }}>
+                0.9%
+              </div>
+              <div style={{ position: "absolute", left: `${(1.8 / 5) * 100}%`, top: 0, fontSize: "0.65rem", color: "var(--error)", transform: "translateX(-50%)" }}>
+                1.8%
+              </div>
             </div>
           </div>
 
           {/* Win Rate */}
-          <div>
-            <label style={labelStyle}>Win rate atual (%)</label>
-            <span style={sublabelStyle}>Taxa de sucesso em representments</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <input
-                type="range"
-                min={0}
-                max={80}
-                step={1}
-                value={winRate}
-                onChange={(e) => setWinRate(Number(e.target.value))}
-                style={sliderStyle}
-              />
-              <span style={valueDisplayStyle}>{winRate}%</span>
+          <div style={card()}>
+            <div style={labelStyle}>Win Rate atual (%)</div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={winRate}
+              onChange={(e) => setWinRate(+e.target.value)}
+              style={{ width: "100%", accentColor: "var(--primary)" }}
+            />
+            <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--foreground)", marginTop: "0.25rem" }}>
+              {winRate}%
             </div>
           </div>
 
-          {/* Custo por disputa */}
-          <div>
-            <label style={labelStyle}>Custo operacional por disputa (R$)</label>
-            <span style={sublabelStyle}>Custo interno de tratar cada disputa</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <input
-                type="range"
-                min={15}
-                max={200}
-                step={5}
-                value={custoPorDisputa}
-                onChange={(e) => setCustoPorDisputa(Number(e.target.value))}
-                style={sliderStyle}
-              />
-              <span style={valueDisplayStyle}>R$ {fmt(custoPorDisputa)}</span>
-            </div>
+          {/* Cost per dispute */}
+          <div style={card()}>
+            <div style={labelStyle}>Custo operacional por disputa (R$)</div>
+            <input
+              type="number"
+              min={50}
+              max={500}
+              value={costPerDispute}
+              onChange={(e) => setCostPerDispute(+e.target.value)}
+              style={inputStyle}
+            />
           </div>
         </div>
-      </div>
 
-      {/* Alert banner */}
-      {calc.alertLevel !== "safe" && (
-        <div
-          style={{
-            ...cardStyle,
-            marginBottom: 24,
-            borderColor: calc.alertLevel === "critical" ? "var(--error)" : "var(--warning)",
-            background: calc.alertLevel === "critical"
-              ? "rgba(239,68,68,0.08)"
-              : "rgba(245,158,11,0.08)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <span style={{ fontSize: 24 }}>
-              {calc.alertLevel === "critical" ? "\u{1F6A8}\u{1F6A8}" : "\u{1F6A8}"}
-            </span>
-            <div>
-              <h3
-                style={{
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: calc.alertLevel === "critical" ? "var(--error)" : "var(--warning)",
-                  marginBottom: 6,
-                }}
-              >
-                {calc.alertLevel === "critical"
-                  ? "CRITICO: Dentro do ECP (Mastercard)"
-                  : "ALERTA: Dentro do VDMP (Visa) e ECM (Mastercard)"}
-              </h3>
-              <p style={{ fontSize: 13, color: "var(--foreground)", lineHeight: 1.6, marginBottom: 0 }}>
-                {calc.alertLevel === "critical"
-                  ? "Com chargeback rate acima de 1.5% e mais de 100 disputas, sua operacao esta no Excessive Chargeback Program da Mastercard. Multas podem chegar a $200K/mes alem de restricoes operacionais severas."
-                  : "Com chargeback rate acima de 0.9% e mais de 100 disputas, sua operacao esta enquadrada no Visa Dispute Monitoring Program e no Excessive Chargeback Merchant da Mastercard. Acao imediata necessaria."}
-              </p>
+        {/* ---- RIGHT: Output ---- */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* KPI cards */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            {([
+              ["Disputas/mes", fmtInt(calc.cbCount), "var(--warning)"],
+              ["Impacto Total", fmtK(calc.totalImpact), "var(--error)"],
+              ["Valor em disputa", fmtK(calc.cbValue), "var(--primary)"],
+              ["GMV Mensal", fmtK(calc.gmv), "var(--success)"],
+            ] as [string, string, string][]).map(([title, value, color]) => (
+              <div key={title} style={{ ...card(), borderLeft: `4px solid ${color}` }}>
+                <div style={{ fontSize: "0.7rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.15rem" }}>
+                  {title}
+                </div>
+                <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--foreground)" }}>{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Impact breakdown */}
+          <div style={card()}>
+            <div style={{ ...labelStyle, marginBottom: "0.75rem" }}>Impacto Mensal Detalhado</div>
+            {([
+              ["Chargebacks estimados", `${fmtInt(calc.cbCount)} disputas`],
+              ["Valor em disputa", fmtK(calc.cbValue)],
+              ["Perdas (considerando win rate)", fmtK(calc.lostValue)],
+              ["Custo operacional", fmtK(calc.opCost)],
+              ["Multas de bandeira", fmtK(calc.finesBRL)],
+            ] as [string, string][]).map(([label, value]) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "0.4rem 0", borderBottom: "1px solid var(--border)" }}>
+                <span style={{ fontSize: "0.85rem", color: "var(--foreground)" }}>{label}</span>
+                <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)", fontVariantNumeric: "tabular-nums" }}>{value}</span>
+              </div>
+            ))}
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "0.6rem 0",
+              marginTop: "0.25rem",
+            }}>
+              <span style={{ fontSize: "1rem", fontWeight: 700, color: "var(--foreground)" }}>IMPACTO TOTAL</span>
+              <span style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--error)" }}>{fmtK(calc.totalImpact)}</span>
             </div>
+          </div>
+
+          {/* Brand monitoring status */}
+          <div style={card()}>
+            <div style={{ ...labelStyle, marginBottom: "0.75rem" }}>Status nos Programas de Monitoramento</div>
+            {[calc.visaStatus, calc.mcStatus].map((program) => {
+              const badge = statusBadge(program.status);
+              return (
+                <div key={program.name} style={{
+                  padding: "0.75rem 1rem",
+                  borderRadius: 8,
+                  background: badge.bg,
+                  border: `1px solid ${badge.color}`,
+                  marginBottom: "0.75rem",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                    <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "var(--foreground)" }}>
+                      {badge.icon} {program.name}
+                    </span>
+                    <span style={{
+                      padding: "0.15rem 0.5rem",
+                      borderRadius: 6,
+                      background: badge.color,
+                      color: "#fff",
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                    }}>
+                      {program.label}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                    {program.detail}
+                  </div>
+                  {program.monthlyFine > 0 && (
+                    <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--error)", marginTop: "0.3rem" }}>
+                      Multa estimada: ${fmtInt(program.monthlyFine)}/mes (USD)
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Prevention ROI */}
+          <div style={{ ...card(), background: "var(--primary-bg)", borderColor: "var(--primary)" }}>
+            <div style={{ ...labelStyle, marginBottom: "0.75rem" }}>ROI de Prevencao</div>
+            <p style={{ fontSize: "0.88rem", color: "var(--foreground)", lineHeight: 1.6, marginBottom: "0.75rem" }}>
+              Se reduzir o chargeback rate de <strong>{fmt(cbRate)}%</strong> para{" "}
+              <strong>{fmt(calc.targetRate)}%</strong> ({fmtInt(calc.targetCbCount)} disputas):
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.15rem" }}>Economia mensal</div>
+                <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--success)" }}>{fmtK(calc.monthlySavings)}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "0.15rem" }}>ROI em 6 meses</div>
+                <div style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--success)" }}>{fmt(calc.roiSixMonths)}%</div>
+              </div>
+            </div>
+            {/* Bar comparing current vs target */}
+            <div style={{ marginTop: "1rem" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "0.25rem" }}>
+                <span style={{ color: "var(--text-muted)" }}>Impacto atual</span>
+                <span style={{ color: "var(--error)" }}>{fmtK(calc.totalImpact)}</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 4, background: "var(--border)", overflow: "hidden", marginBottom: "0.5rem" }}>
+                <div style={{ height: "100%", borderRadius: 4, width: "100%", background: "var(--error)" }} />
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "0.25rem" }}>
+                <span style={{ color: "var(--text-muted)" }}>Impacto com {fmt(calc.targetRate)}%</span>
+                <span style={{ color: "var(--success)" }}>{fmtK(calc.totalImpact - calc.monthlySavings)}</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 4, background: "var(--border)", overflow: "hidden" }}>
+                <div style={{
+                  height: "100%",
+                  borderRadius: 4,
+                  width: calc.totalImpact > 0 ? `${((calc.totalImpact - calc.monthlySavings) / calc.totalImpact) * 100}%` : "0%",
+                  background: "var(--success)",
+                }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Threshold reference */}
+          <div style={card()}>
+            <div style={{ ...labelStyle, marginBottom: "0.75rem" }}>Limites dos Programas</div>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
+              <thead>
+                <tr>
+                  {["Programa", "Alerta", "Multa"].map((h) => (
+                    <th key={h} style={{ textAlign: "left", padding: "0.4rem 0.5rem", borderBottom: "2px solid var(--border)", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.75rem" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: "0.4rem 0.5rem", color: "var(--foreground)" }}>Visa VDMP</td>
+                  <td style={{ padding: "0.4rem 0.5rem", color: "var(--warning)" }}>&gt;0.9% + 100 disputas</td>
+                  <td style={{ padding: "0.4rem 0.5rem", color: "var(--error)" }}>&gt;1.8% + 100 disputas</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: "0.4rem 0.5rem", color: "var(--foreground)" }}>MC ECM</td>
+                  <td style={{ padding: "0.4rem 0.5rem", color: "var(--warning)" }}>&gt;1.0% + 100 disputas</td>
+                  <td style={{ padding: "0.4rem 0.5rem", color: "var(--error)" }}>&gt;1.5% + 100 disputas</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style={{ padding: "0.75rem 1rem", background: "var(--surface)", borderRadius: 10, border: "1px solid var(--border)", fontSize: "0.8rem", color: "var(--text-muted)", lineHeight: 1.5 }}>
+            Valores de referencia. Multas de bandeira em USD convertidas a R$ 5,00.
+            Programas de monitoramento avaliam janelas de 3-6 meses.
           </div>
         </div>
-      )}
-
-      {/* Results */}
-      <div style={{ ...cardStyle, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", marginBottom: 20 }}>
-          Impacto Financeiro
-        </h2>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
-          {/* Chargebacks mensais */}
-          <div style={metricCardStyle("var(--surface-hover)", "var(--border)")}>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-              Chargebacks mensais
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "var(--foreground)" }}>
-              {fmtInt(calc.chargebacksMensais)}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-              disputas/mes
-            </div>
-          </div>
-
-          {/* Perda bruta */}
-          <div style={metricCardStyle("rgba(239,68,68,0.06)", "rgba(239,68,68,0.2)")}>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-              Perda bruta mensal
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "var(--error)" }}>
-              R$ {fmt(calc.perdaBruta)}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-              chargebacks x ticket medio
-            </div>
-          </div>
-
-          {/* Custo operacional */}
-          <div style={metricCardStyle("rgba(245,158,11,0.06)", "rgba(245,158,11,0.2)")}>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-              Custo operacional mensal
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "var(--warning)" }}>
-              R$ {fmt(calc.custoOperacional)}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-              chargebacks x custo/disputa
-            </div>
-          </div>
-
-          {/* Recuperacao */}
-          <div style={metricCardStyle("rgba(16,185,129,0.06)", "rgba(16,185,129,0.2)")}>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-              Recuperacao via representment
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "var(--success)" }}>
-              R$ {fmt(calc.recuperacao)}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-              perda bruta x win rate
-            </div>
-          </div>
-
-          {/* Perda liquida */}
-          <div style={metricCardStyle("rgba(239,68,68,0.1)", "rgba(239,68,68,0.3)")}>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-              Perda liquida mensal
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: "var(--error)" }}>
-              R$ {fmt(calc.perdaLiquida)}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-              bruta + operacional - recuperacao
-            </div>
-          </div>
-
-          {/* Impacto anual */}
-          <div
-            style={{
-              ...metricCardStyle("rgba(239,68,68,0.14)", "rgba(239,68,68,0.4)"),
-              flex: "1 1 100%",
-            }}
-          >
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-              Impacto anual estimado
-            </div>
-            <div style={{ fontSize: 32, fontWeight: 700, color: "var(--error)" }}>
-              R$ {fmt(calc.impactoAnual)}
-            </div>
-            <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-              perda liquida x 12 meses
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Projecao de multas VDMP */}
-      {calc.alertLevel !== "safe" && (
-        <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", marginBottom: 6 }}>
-            Projecao de Multas — Programa de Monitoramento
-          </h2>
-          <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-            Estimativa de multas progressivas caso a taxa nao seja corrigida
-          </p>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
-            {/* Mes 1-4 */}
-            <div
-              style={{
-                background: "rgba(245,158,11,0.06)",
-                border: "1px solid rgba(245,158,11,0.2)",
-                borderRadius: 10,
-                padding: 16,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--warning)", marginBottom: 8 }}>
-                Meses 1-4 (VDMP Standard)
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "var(--foreground)", marginBottom: 4 }}>
-                {fmtUSD(Math.round(calc.chargebacksMensais) * 50)}/mes
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                $50 por disputa acima do threshold
-              </div>
-            </div>
-
-            {/* Mes 5-9 */}
-            <div
-              style={{
-                background: "rgba(239,68,68,0.06)",
-                border: "1px solid rgba(239,68,68,0.2)",
-                borderRadius: 10,
-                padding: 16,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--error)", marginBottom: 8 }}>
-                Meses 5-9 (Escalacao)
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "var(--foreground)", marginBottom: 4 }}>
-                {fmtUSD(25000)}/mes
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                Multa fixa + obrigatoriedade de plano de acao
-              </div>
-            </div>
-
-            {/* Mes 10-12 */}
-            <div
-              style={{
-                background: "rgba(239,68,68,0.1)",
-                border: "1px solid rgba(239,68,68,0.3)",
-                borderRadius: 10,
-                padding: 16,
-              }}
-            >
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--error)", marginBottom: 8 }}>
-                Meses 10-12 (Critico)
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: "var(--foreground)", marginBottom: 4 }}>
-                {fmtUSD(75000)}/mes + review
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                $75K/mes + review fee + risco de descredenciamento
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ROI de prevencao */}
-      <div style={{ ...cardStyle, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", marginBottom: 6 }}>
-          ROI de Prevencao
-        </h2>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 16 }}>
-          Projecao de economia com investimentos em prevencao de fraude e chargeback
-        </p>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: 16 }}>
-          {/* Cenario 1: Reduzir CB rate */}
-          <div
-            style={{
-              background: "rgba(16,185,129,0.06)",
-              border: "1px solid rgba(16,185,129,0.2)",
-              borderRadius: 10,
-              padding: 20,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 20 }}>{"\u{1F6E1}\u{FE0F}"}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)" }}>
-                Se reduzir chargeback rate para 0.5%
-              </span>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: "var(--success)", marginBottom: 4 }}>
-              R$ {fmt(calc.economiaCbReduzido)}/mes
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-              de economia mensal ({fmt(calc.economiaCbReduzido * 12)}/ano)
-            </div>
-            <div
-              style={{
-                background: "rgba(16,185,129,0.1)",
-                borderRadius: 8,
-                padding: 12,
-                fontSize: 12,
-                color: "var(--foreground)",
-                lineHeight: 1.6,
-              }}
-            >
-              Investir em ferramentas como Ethoca/Verifi (alerts pre-chargeback), 3DS2 dinamico
-              e regras anti-fraude mais refinadas pode reduzir significativamente sua taxa.
-            </div>
-          </div>
-
-          {/* Cenario 2: Aumentar win rate */}
-          <div
-            style={{
-              background: "rgba(99,102,241,0.06)",
-              border: "1px solid rgba(99,102,241,0.2)",
-              borderRadius: 10,
-              padding: 20,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 20 }}>{"\u{2696}\u{FE0F}"}</span>
-              <span style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)" }}>
-                Se aumentar win rate para 60%
-              </span>
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: "var(--primary)", marginBottom: 4 }}>
-              R$ {fmt(calc.economiaWinRateAlto)}/mes
-            </div>
-            <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-              de recuperacao extra ({fmt(calc.economiaWinRateAlto * 12)}/ano)
-            </div>
-            <div
-              style={{
-                background: "var(--primary-bg)",
-                borderRadius: 8,
-                padding: 12,
-                fontSize: 12,
-                color: "var(--foreground)",
-                lineHeight: 1.6,
-              }}
-            >
-              Automatizar representments com plataformas como Chargebacks911 ou Midigator,
-              melhorar coleta de evidencias (logs, tracking, 3DS data) e treinar a equipe
-              em compelling evidence 3.0.
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Methodology note */}
-      <div
-        style={{
-          ...cardStyle,
-          marginBottom: 40,
-          background: "var(--surface-hover)",
-          borderStyle: "dashed",
-        }}
-      >
-        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 8 }}>
-          Metodologia e Fontes
-        </div>
-        <p style={{ fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 0 }}>
-          Calculos baseados em dados publicos dos programas VDMP (Visa), ECM/ECP (Mastercard).
-          Valores de multas sao estimativas e podem variar conforme regiao, adquirente e historico do merchant.
-          Para valores exatos, consulte seu adquirente ou a bandeira diretamente.
-          O custo operacional inclui tempo de equipe, sistemas e taxas de processamento de disputas.
-        </p>
       </div>
     </div>
   );

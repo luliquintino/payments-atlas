@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -426,6 +427,12 @@ export default function CaseStudyLab() {
   const [animating, setAnimating] = useState(false);
   const [finished, setFinished] = useState(false);
   const [displayMetrics, setDisplayMetrics] = useState<ScenarioMetrics>({});
+  const [showXpToast, setShowXpToast] = useState<string | null>(null);
+  const { recordQuiz, visitPage } = useGameProgress();
+
+  useEffect(() => {
+    visitPage("/labs/case-study");
+  }, [visitPage]);
 
   const scenario = selectedScenario !== null ? SCENARIOS[selectedScenario] : null;
 
@@ -483,11 +490,18 @@ export default function CaseStudyLab() {
     if (!scenario) return;
     if (currentRound + 1 >= scenario.rounds.length) {
       setFinished(true);
+      // Calculate score for XP
+      const optCount = choices.filter((c, i) => scenario.rounds[i]?.choices[c]?.optimal).length;
+      const finalScore = Math.round((optCount / scenario.rounds.length) * 100);
+      const xp = finalScore > 80 ? 30 : 20;
+      recordQuiz("/labs/case-study-" + scenario.id, optCount, scenario.rounds.length, xp);
+      setShowXpToast(`+${xp} XP — Caso concluido!${finalScore > 80 ? " (Bonus Expert!)" : ""}`);
+      setTimeout(() => setShowXpToast(null), 4000);
     } else {
       setCurrentRound((r) => r + 1);
       setShowExplanation(false);
     }
-  }, [scenario, currentRound]);
+  }, [scenario, currentRound, choices, recordQuiz]);
 
   const calcScore = useCallback(() => {
     if (!scenario) return 0;
@@ -512,6 +526,26 @@ export default function CaseStudyLab() {
   // -------------------------------------------------------------------------
   // Render: Scenario Selector
   // -------------------------------------------------------------------------
+  const xpToastEl = showXpToast ? (
+    <div
+      style={{
+        position: "fixed",
+        top: "1.5rem",
+        right: "1.5rem",
+        background: "#10B981",
+        color: "white",
+        padding: "0.75rem 1.25rem",
+        borderRadius: "0.75rem",
+        fontWeight: 700,
+        fontSize: "0.85rem",
+        zIndex: 999,
+        boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
+      }}
+    >
+      {showXpToast}
+    </div>
+  ) : null;
+
   if (selectedScenario === null) {
     return (
       <div style={{ maxWidth: "900px", margin: "0 auto", padding: "2rem 1rem" }}>
@@ -639,6 +673,7 @@ export default function CaseStudyLab() {
 
     return (
       <div style={{ maxWidth: "700px", margin: "0 auto", padding: "2rem 1rem" }}>
+        {xpToastEl}
         <div
           style={{
             background: "var(--surface)",

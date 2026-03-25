@@ -253,7 +253,19 @@ export function Sidebar() {
             <span>Ferramentas</span>
           </Link>
 
-          {/* 6. Buscar */}
+          {/* 6. Labs */}
+          <Link
+            href="/labs"
+            style={{ ...linkStyle("/labs"), marginTop: "0.125rem" }}
+            {...hoverProps("/labs")}
+          >
+            <span style={{ fontSize: "1rem", width: "1.25rem", textAlign: "center", flexShrink: 0 }}>
+              {"🧪"}
+            </span>
+            <span>Labs</span>
+          </Link>
+
+          {/* 7. Buscar */}
           <Link
             href="/search"
             style={{ ...linkStyle("/search"), marginTop: "0.125rem" }}

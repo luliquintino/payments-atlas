@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -319,6 +320,13 @@ export default function DisputeRoleplay() {
   const [selectedEvidence, setSelectedEvidence] = useState<Set<string>>(new Set());
   const [submitted, setSubmitted] = useState(false);
   const [showExpert, setShowExpert] = useState(false);
+  const [showXpToast, setShowXpToast] = useState<string | null>(null);
+  const { recordQuiz, visitPage } = useGameProgress();
+  const xpAwardedForDispute = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    visitPage("/labs/dispute-roleplay");
+  }, [visitPage]);
 
   // Random order on mount
   const shuffledIndices = useMemo(() => {
@@ -365,7 +373,21 @@ export default function DisputeRoleplay() {
 
   const handleSubmit = useCallback(() => {
     setSubmitted(true);
-  }, []);
+    // XP rewards
+    if (disputeIndex !== null && !xpAwardedForDispute.current.has(disputeIndex)) {
+      xpAwardedForDispute.current.add(disputeIndex);
+      const d = DISPUTES[shuffledIndices[disputeIndex]];
+      const tw = d.evidences
+        .filter((e) => selectedEvidence.has(e.id))
+        .reduce((sum, e) => sum + e.weight, 0);
+      const hr = d.evidences.filter((e) => e.required).every((e) => selectedEvidence.has(e.id));
+      const won = hr && tw >= d.winThreshold;
+      const xp = won ? 30 : 20;
+      recordQuiz("/labs/dispute-" + d.id, won ? 1 : 0, 1, xp);
+      setShowXpToast(`+${xp} XP${won ? " — Disputa vencida!" : ""}`);
+      setTimeout(() => setShowXpToast(null), 4000);
+    }
+  }, [disputeIndex, shuffledIndices, selectedEvidence, recordQuiz]);
 
   const handleNext = useCallback(() => {
     if (disputeIndex !== null && disputeIndex < 2) {
@@ -503,6 +525,25 @@ export default function DisputeRoleplay() {
 
     return (
       <div style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem 1rem" }}>
+        {showXpToast && (
+          <div
+            style={{
+              position: "fixed",
+              top: "1.5rem",
+              right: "1.5rem",
+              background: "#10B981",
+              color: "white",
+              padding: "0.75rem 1.25rem",
+              borderRadius: "0.75rem",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              zIndex: 999,
+              boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
+            }}
+          >
+            {showXpToast}
+          </div>
+        )}
         <div style={{ marginBottom: "1.5rem" }}>
           <Link
             href="/labs"

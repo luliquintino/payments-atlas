@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
 // ---------------------------------------------------------------------------
 // Types & Constants
@@ -327,6 +328,14 @@ export default function APISandbox() {
   const [showHeaders, setShowHeaders] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { recordQuiz, visitPage } = useGameProgress();
+  const [xpAwarded, setXpAwarded] = useState(false);
+  const [endpointsTested, setEndpointsTested] = useState<Set<string>>(new Set());
+  const [showXpToast, setShowXpToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    visitPage("/labs/api-sandbox");
+  }, [visitPage]);
 
   const opDef = OPERATIONS[operation];
   const methodColor = METHOD_COLORS[opDef.method];
@@ -349,8 +358,23 @@ export default function APISandbox() {
       const result = simulateResponse(operation, requestBody);
       setResponse(result);
       setLoading(false);
+
+      // XP rewards
+      if (result.status >= 200 && result.status < 300) {
+        if (!xpAwarded) {
+          recordQuiz("/labs/api-sandbox", 1, 1, 15);
+          setXpAwarded(true);
+          setShowXpToast("+15 XP — Primeiro request!");
+          setTimeout(() => setShowXpToast(null), 3000);
+        } else if (!endpointsTested.has(operation)) {
+          recordQuiz("/labs/api-sandbox-" + operation, 1, 1, 5);
+          setShowXpToast("+5 XP — Novo endpoint!");
+          setTimeout(() => setShowXpToast(null), 3000);
+        }
+        setEndpointsTested((prev) => new Set(prev).add(operation));
+      }
     }, delay);
-  }, [operation, requestBody]);
+  }, [operation, requestBody, xpAwarded, endpointsTested, recordQuiz]);
 
   const formatJSON = useCallback(() => {
     try {
@@ -367,6 +391,26 @@ export default function APISandbox() {
 
   return (
     <div style={{ maxWidth: "1300px", margin: "0 auto", padding: "2rem 1rem" }}>
+      {/* XP Toast */}
+      {showXpToast && (
+        <div
+          style={{
+            position: "fixed",
+            top: "1.5rem",
+            right: "1.5rem",
+            background: "#10B981",
+            color: "white",
+            padding: "0.75rem 1.25rem",
+            borderRadius: "0.75rem",
+            fontWeight: 700,
+            fontSize: "0.85rem",
+            zIndex: 999,
+            boxShadow: "0 4px 20px rgba(16,185,129,0.4)",
+          }}
+        >
+          {showXpToast}
+        </div>
+      )}
       {/* Header */}
       <div style={{ marginBottom: "1.5rem" }}>
         <Link

@@ -1,534 +1,364 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useGameProgress } from "@/hooks/useGameProgress";
 
-// ---------------------------------------------------------------------------
-// PSP Data
-// ---------------------------------------------------------------------------
+/* ------------------------------------------------------------------ */
+/*  PSP data                                                           */
+/* ------------------------------------------------------------------ */
+type PSPType = "Adquirente" | "Sub-adquirente" | "PSP Global";
 
-interface PSPData {
+interface PSP {
   name: string;
-  logo: string;
-  type: string;
-  pricing: {
-    mdr_credito: string;
-    mdr_debito: string;
-    pix: string;
-    antecipacao: string;
-  };
-  features: {
-    smart_routing: boolean;
-    network_tokens: boolean;
-    three_ds2: boolean;
-    split_payments: boolean;
-    recurring: boolean;
-    pix_qr: boolean;
-    boleto: boolean;
-    link_pagamento: boolean;
-  };
-  api_quality: number;
+  tipo: PSPType;
+  mdrCredito: string;
+  mdrDebito: string;
+  pix: string;
   settlement: string;
-  support: string;
-  best_for: string;
-  integration: string;
-  porte: ("Pequeno" | "Medio" | "Grande")[];
-  necessidade: ("E-commerce" | "Marketplace" | "SaaS" | "Presencial")[];
+  api: string;
+  sdkMobile: boolean;
+  split: boolean;
+  antecipacao: string;
+  idealPara: string;
 }
 
-const PSP_DATA: PSPData[] = [
+const PSPS: PSP[] = [
   {
     name: "Cielo",
-    logo: "\u{1F7E6}",
-    type: "Adquirente",
-    pricing: { mdr_credito: "2.49-3.99%", mdr_debito: "1.39-1.99%", pix: "0.00-0.99%", antecipacao: "1.99-3.49%/mes" },
-    features: { smart_routing: false, network_tokens: true, three_ds2: true, split_payments: true, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 3,
-    settlement: "D+1 a D+30",
-    support: "Telefone, Chat, Email",
-    best_for: "Grandes varejistas, presencial",
-    integration: "API REST, SDKs, Plugins",
-    porte: ["Medio", "Grande"],
-    necessidade: ["E-commerce", "Presencial"],
+    tipo: "Adquirente",
+    mdrCredito: "2,49%",
+    mdrDebito: "1,19%",
+    pix: "Gratis",
+    settlement: "D+1",
+    api: "REST",
+    sdkMobile: true,
+    split: true,
+    antecipacao: "D+1",
+    idealPara: "Grandes varejistas com alto volume e necessidade de presencial + online.",
   },
   {
     name: "Rede",
-    logo: "\u{1F7E5}",
-    type: "Adquirente",
-    pricing: { mdr_credito: "2.39-3.79%", mdr_debito: "1.29-1.89%", pix: "0.00-0.79%", antecipacao: "1.89-3.29%/mes" },
-    features: { smart_routing: false, network_tokens: true, three_ds2: true, split_payments: false, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 3,
-    settlement: "D+1 a D+30",
-    support: "Telefone, Chat",
-    best_for: "Clientes Itau, presencial e e-commerce",
-    integration: "API REST, e.Rede SDK",
-    porte: ["Medio", "Grande"],
-    necessidade: ["E-commerce", "Presencial"],
+    tipo: "Adquirente",
+    mdrCredito: "2,39%",
+    mdrDebito: "1,09%",
+    pix: "Gratis",
+    settlement: "D+1",
+    api: "REST",
+    sdkMobile: true,
+    split: false,
+    antecipacao: "D+1",
+    idealPara: "Clientes Itau que buscam taxas competitivas e integracao bancaria.",
   },
   {
     name: "Stone",
-    logo: "\u{1F7E9}",
-    type: "Adquirente / Sub-adquirente",
-    pricing: { mdr_credito: "2.69-4.49%", mdr_debito: "1.49-2.19%", pix: "0.00-0.89%", antecipacao: "1.49-2.99%/mes" },
-    features: { smart_routing: false, network_tokens: true, three_ds2: true, split_payments: true, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 4,
-    settlement: "D+1 a D+30",
-    support: "Telefone dedicado, Chat, Gerente de conta",
-    best_for: "PMEs com foco em atendimento, presencial",
-    integration: "API REST, SDKs, Plugins WooCommerce/Shopify",
-    porte: ["Pequeno", "Medio"],
-    necessidade: ["E-commerce", "Presencial"],
+    tipo: "Adquirente",
+    mdrCredito: "2,59%",
+    mdrDebito: "1,29%",
+    pix: "0,89%",
+    settlement: "D+1",
+    api: "REST",
+    sdkMobile: true,
+    split: true,
+    antecipacao: "D+0",
+    idealPara: "PMEs que valorizam atendimento e antecipacao automatica D+0.",
   },
   {
     name: "PagSeguro",
-    logo: "\u{1F7E8}",
-    type: "Sub-adquirente",
-    pricing: { mdr_credito: "3.99-4.99%", mdr_debito: "1.99-2.49%", pix: "0.00%", antecipacao: "2.99-3.99%/mes" },
-    features: { smart_routing: false, network_tokens: false, three_ds2: true, split_payments: false, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 3,
-    settlement: "D+14 a D+30",
-    support: "Chat, Email, Telefone",
-    best_for: "Microempreendedores, baixo volume",
-    integration: "API REST, Checkout transparente, Plugins",
-    porte: ["Pequeno"],
-    necessidade: ["E-commerce", "Presencial"],
-  },
-  {
-    name: "Adyen",
-    logo: "\u{1F7E2}",
-    type: "PSP Global / Adquirente",
-    pricing: { mdr_credito: "1.99-3.29%", mdr_debito: "0.99-1.69%", pix: "0.50-0.99%", antecipacao: "N/A (D+1 incluso)" },
-    features: { smart_routing: true, network_tokens: true, three_ds2: true, split_payments: true, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 5,
-    settlement: "D+1 (padrao)",
-    support: "Gerente de conta dedicado, Documentacao premium",
-    best_for: "Grandes empresas, operacoes globais, marketplaces",
-    integration: "API REST, SDKs (iOS/Android/Web), Drop-in, Plugins",
-    porte: ["Grande"],
-    necessidade: ["E-commerce", "Marketplace", "SaaS"],
-  },
-  {
-    name: "Stripe",
-    logo: "\u{1F7EA}",
-    type: "PSP Global",
-    pricing: { mdr_credito: "3.49-4.29%", mdr_debito: "2.49-3.29%", pix: "0.80-1.40%", antecipacao: "N/A" },
-    features: { smart_routing: true, network_tokens: true, three_ds2: true, split_payments: true, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 5,
-    settlement: "D+2 a D+7",
-    support: "Email, Chat, Documentacao excelente",
-    best_for: "Startups, SaaS, developers, subscricoes",
-    integration: "API REST, SDKs (todas plataformas), Hosted checkout, Elements",
-    porte: ["Pequeno", "Medio", "Grande"],
-    necessidade: ["E-commerce", "SaaS", "Marketplace"],
+    tipo: "Sub-adquirente",
+    mdrCredito: "3,99%",
+    mdrDebito: "1,99%",
+    pix: "Gratis",
+    settlement: "D+14",
+    api: "REST",
+    sdkMobile: true,
+    split: false,
+    antecipacao: "D+1",
+    idealPara: "Microempreendedores e vendedores informais, setup rapido sem analise.",
   },
   {
     name: "Mercado Pago",
-    logo: "\u{1F7E6}",
-    type: "Sub-adquirente / Wallet",
-    pricing: { mdr_credito: "3.49-4.99%", mdr_debito: "1.99%", pix: "0.00-0.99%", antecipacao: "2.49-3.79%/mes" },
-    features: { smart_routing: false, network_tokens: false, three_ds2: true, split_payments: true, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 4,
-    settlement: "D+14 (padrao), D+1 (com taxa)",
-    support: "Chat, Email, Central de ajuda",
-    best_for: "Marketplaces, e-commerce, MEI",
-    integration: "API REST, SDKs, Checkout Pro, Plugins",
-    porte: ["Pequeno", "Medio"],
-    necessidade: ["E-commerce", "Marketplace"],
+    tipo: "Sub-adquirente",
+    mdrCredito: "4,49%",
+    mdrDebito: "1,99%",
+    pix: "Gratis",
+    settlement: "D+14",
+    api: "REST",
+    sdkMobile: true,
+    split: true,
+    antecipacao: "D+1",
+    idealPara: "Sellers no Mercado Livre e e-commerces que usam checkout transparente.",
+  },
+  {
+    name: "Adyen",
+    tipo: "PSP Global",
+    mdrCredito: "IC++",
+    mdrDebito: "IC++",
+    pix: "Gratis",
+    settlement: "D+2",
+    api: "REST/GraphQL",
+    sdkMobile: true,
+    split: true,
+    antecipacao: "Custom",
+    idealPara: "Enterprise com operacao global, multi-pais, multi-moeda. Volume >R$ 10M/mes.",
+  },
+  {
+    name: "Stripe",
+    tipo: "PSP Global",
+    mdrCredito: "3,99%",
+    mdrDebito: "3,99%",
+    pix: "1,50%",
+    settlement: "D+2",
+    api: "REST",
+    sdkMobile: true,
+    split: true,
+    antecipacao: "Custom",
+    idealPara: "Startups e SaaS com foco em developer experience e pagamentos internacionais.",
   },
   {
     name: "Pagar.me",
-    logo: "\u{1F7E7}",
-    type: "Sub-adquirente (Stone)",
-    pricing: { mdr_credito: "2.99-4.29%", mdr_debito: "1.49-2.29%", pix: "0.00-0.89%", antecipacao: "1.49-2.69%/mes" },
-    features: { smart_routing: false, network_tokens: true, three_ds2: true, split_payments: true, recurring: true, pix_qr: true, boleto: true, link_pagamento: true },
-    api_quality: 4,
-    settlement: "D+1 a D+30",
-    support: "Chat, Email, Documentacao tecnica",
-    best_for: "Developers, startups, marketplaces",
-    integration: "API REST, SDKs, Checkout transparente, Plugins",
-    porte: ["Pequeno", "Medio"],
-    necessidade: ["E-commerce", "Marketplace", "SaaS"],
+    tipo: "Sub-adquirente",
+    mdrCredito: "2,99%",
+    mdrDebito: "1,39%",
+    pix: "0,69%",
+    settlement: "D+2",
+    api: "REST",
+    sdkMobile: true,
+    split: true,
+    antecipacao: "D+1",
+    idealPara: "Marketplaces e plataformas que precisam de split automatico e boa API.",
   },
 ];
 
-const FEATURE_LABELS: Record<keyof PSPData["features"], string> = {
-  smart_routing: "Smart Routing",
-  network_tokens: "Network Tokens",
-  three_ds2: "3DS 2.0",
-  split_payments: "Split Payments",
-  recurring: "Recorrencia",
-  pix_qr: "Pix QR Code",
-  boleto: "Boleto",
-  link_pagamento: "Link de Pagamento",
-};
+const TIPOS: PSPType[] = ["Adquirente", "Sub-adquirente", "PSP Global"];
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+type SortKey = keyof PSP;
 
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 export default function PSPComparatorPage() {
-  const [filterPorte, setFilterPorte] = useState<string>("Todos");
-  const [filterNecessidade, setFilterNecessidade] = useState<string>("Todos");
-  const [selectedPSPs, setSelectedPSPs] = useState<Set<string>>(new Set());
+  const { visitPage } = useGameProgress();
+  useEffect(() => { visitPage("/tools/psp-comparator"); }, [visitPage]);
 
-  const filteredPSPs = useMemo(() => {
-    return PSP_DATA.filter((psp) => {
-      if (filterPorte !== "Todos" && !psp.porte.includes(filterPorte as PSPData["porte"][number])) return false;
-      if (filterNecessidade !== "Todos" && !psp.necessidade.includes(filterNecessidade as PSPData["necessidade"][number])) return false;
-      return true;
-    });
-  }, [filterPorte, filterNecessidade]);
+  const [filterTipo, setFilterTipo] = useState<PSPType | "Todos">("Todos");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortAsc, setSortAsc] = useState(true);
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
 
-  const togglePSP = (name: string) => {
-    setSelectedPSPs((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) {
-        next.delete(name);
-      } else if (next.size < 3) {
-        next.add(name);
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
+
+  const filtered = useMemo(() => {
+    let list = filterTipo === "Todos" ? [...PSPS] : PSPS.filter((p) => p.tipo === filterTipo);
+    list.sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (typeof av === "string" && typeof bv === "string") {
+        return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
       }
-      return next;
+      if (typeof av === "boolean" && typeof bv === "boolean") {
+        return sortAsc ? (av === bv ? 0 : av ? -1 : 1) : (av === bv ? 0 : av ? 1 : -1);
+      }
+      return 0;
     });
-  };
+    return list;
+  }, [filterTipo, sortKey, sortAsc]);
 
-  const comparedPSPs = PSP_DATA.filter((p) => selectedPSPs.has(p.name));
-
-  const stars = (n: number) => {
-    let s = "";
-    for (let i = 0; i < 5; i++) s += i < n ? "\u2B50" : "\u2606";
-    return s;
-  };
-
-  // Styles
-  const cardStyle: React.CSSProperties = {
+  const card = (extra?: React.CSSProperties): React.CSSProperties => ({
     background: "var(--surface)",
+    borderRadius: "14px",
+    padding: "1.5rem",
     border: "1px solid var(--border)",
-    borderRadius: 12,
-    padding: 20,
-  };
-
-  const filterBtnStyle = (active: boolean): React.CSSProperties => ({
-    padding: "6px 14px",
-    borderRadius: 8,
-    border: active ? "1px solid var(--primary)" : "1px solid var(--border)",
-    background: active ? "var(--primary-bg)" : "var(--surface)",
-    color: active ? "var(--primary)" : "var(--foreground)",
-    fontSize: 13,
-    fontWeight: active ? 600 : 400,
-    cursor: "pointer",
-    transition: "all 0.15s",
+    ...extra,
   });
 
-  return (
-    <div
-      style={{
-        maxWidth: 1200,
-        margin: "0 auto",
-        padding: "24px 16px",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Breadcrumb */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-        <Link href="/" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>
-          Inicio
-        </Link>
-        <span style={{ color: "var(--text-muted)", fontSize: 12 }}>/</span>
-        <Link href="/tools" style={{ color: "var(--text-muted)", textDecoration: "none", fontSize: 14 }}>
-          Ferramentas
-        </Link>
-        <span style={{ color: "var(--text-muted)", fontSize: 12 }}>/</span>
-        <span style={{ color: "var(--foreground)", fontSize: 14, fontWeight: 500 }}>
-          Comparador de PSPs
-        </span>
-      </div>
+  const thStyle = (key: SortKey): React.CSSProperties => ({
+    textAlign: "left",
+    padding: "0.6rem 0.75rem",
+    borderBottom: "2px solid var(--border)",
+    color: sortKey === key ? "var(--primary)" : "var(--text-muted)",
+    fontWeight: 600,
+    fontSize: "0.78rem",
+    textTransform: "uppercase",
+    letterSpacing: "0.03em",
+    cursor: "pointer",
+    userSelect: "none",
+    whiteSpace: "nowrap",
+  });
 
+  const tdStyle: React.CSSProperties = {
+    padding: "0.6rem 0.75rem",
+    color: "var(--foreground)",
+    fontSize: "0.85rem",
+    borderBottom: "1px solid var(--border)",
+    whiteSpace: "nowrap",
+  };
+
+  const tipoColor = (tipo: PSPType) => {
+    switch (tipo) {
+      case "Adquirente": return { bg: "rgba(99, 102, 241, 0.1)", color: "var(--primary)" };
+      case "Sub-adquirente": return { bg: "rgba(245, 158, 11, 0.1)", color: "var(--warning)" };
+      case "PSP Global": return { bg: "rgba(16, 185, 129, 0.1)", color: "var(--success)" };
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1rem" }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: "var(--foreground)", marginBottom: 8 }}>
-          Comparador de PSPs
-        </h1>
-        <p style={{ fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6, maxWidth: 700 }}>
-          Compare os principais PSPs brasileiros lado a lado. Filtre por porte e necessidade,
-          selecione ate 3 para comparacao detalhada.
-        </p>
+      <div style={{ marginBottom: "1.5rem" }}>
+        <Link href="/tools" style={{ color: "var(--primary)", textDecoration: "none", fontSize: "0.85rem" }}>
+          &larr; Ferramentas
+        </Link>
       </div>
+      <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--foreground)", marginBottom: "0.25rem" }}>
+        Comparador de PSPs
+      </h1>
+      <p style={{ color: "var(--text-muted)", fontSize: "0.95rem", marginBottom: "1.5rem" }}>
+        Compare taxas, funcionalidades e prazos dos principais PSPs brasileiros.
+      </p>
 
       {/* Filters */}
-      <div style={{ ...cardStyle, marginBottom: 24 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
-              Porte da Empresa
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {["Todos", "Pequeno", "Medio", "Grande"].map((p) => (
-                <button key={p} onClick={() => setFilterPorte(p)} style={filterBtnStyle(filterPorte === p)}>
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--foreground)", marginBottom: 8 }}>
-              Necessidade
-            </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {["Todos", "E-commerce", "Marketplace", "SaaS", "Presencial"].map((n) => (
-                <button key={n} onClick={() => setFilterNecessidade(n)} style={filterBtnStyle(filterNecessidade === n)}>
-                  {n}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Results count */}
-      <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>
-        {filteredPSPs.length} PSP{filteredPSPs.length !== 1 ? "s" : ""} encontrado{filteredPSPs.length !== 1 ? "s" : ""}
-        {selectedPSPs.size > 0 && ` | ${selectedPSPs.size} selecionado${selectedPSPs.size !== 1 ? "s" : ""} para comparacao`}
-      </div>
-
-      {/* PSP cards grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16, marginBottom: 32 }}>
-        {filteredPSPs.map((psp) => {
-          const isSelected = selectedPSPs.has(psp.name);
-          const isBestFit =
-            filterPorte !== "Todos" &&
-            filterNecessidade !== "Todos" &&
-            psp.porte.includes(filterPorte as PSPData["porte"][number]) &&
-            psp.necessidade.includes(filterNecessidade as PSPData["necessidade"][number]) &&
-            psp.api_quality >= 4;
-
-          return (
-            <div
-              key={psp.name}
-              style={{
-                ...cardStyle,
-                borderColor: isSelected ? "var(--primary)" : "var(--border)",
-                boxShadow: isSelected ? "0 0 0 2px var(--primary-bg)" : "none",
-                position: "relative",
-              }}
-            >
-              {isBestFit && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: -10,
-                    right: 12,
-                    background: "var(--success)",
-                    color: "#fff",
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: "3px 10px",
-                    borderRadius: 6,
-                  }}
-                >
-                  Melhor para seu perfil
-                </div>
-              )}
-
-              {/* Header */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                <span style={{ fontSize: 28 }}>{psp.logo}</span>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)" }}>{psp.name}</div>
-                  <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{psp.type}</div>
-                </div>
-              </div>
-
-              {/* API Quality */}
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
-                API: {stars(psp.api_quality)}
-              </div>
-
-              {/* Pricing */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                  Taxas
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 12 }}>
-                  <span style={{ color: "var(--text-muted)" }}>Credito:</span>
-                  <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{psp.pricing.mdr_credito}</span>
-                  <span style={{ color: "var(--text-muted)" }}>Debito:</span>
-                  <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{psp.pricing.mdr_debito}</span>
-                  <span style={{ color: "var(--text-muted)" }}>Pix:</span>
-                  <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{psp.pricing.pix}</span>
-                  <span style={{ color: "var(--text-muted)" }}>Antecipacao:</span>
-                  <span style={{ color: "var(--foreground)", fontWeight: 500 }}>{psp.pricing.antecipacao}</span>
-                </div>
-              </div>
-
-              {/* Features */}
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                  Features
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                  {(Object.keys(psp.features) as (keyof PSPData["features"])[]).map((feat) => (
-                    <span
-                      key={feat}
-                      style={{
-                        fontSize: 11,
-                        padding: "2px 8px",
-                        borderRadius: 6,
-                        background: psp.features[feat] ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.06)",
-                        color: psp.features[feat] ? "var(--success)" : "var(--text-muted)",
-                        fontWeight: 500,
-                      }}
-                    >
-                      {psp.features[feat] ? "\u2713" : "\u2717"} {FEATURE_LABELS[feat]}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Settlement & best for */}
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
-                <strong>Settlement:</strong> {psp.settlement}
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
-                <strong>Melhor para:</strong> {psp.best_for}
-              </div>
-
-              {/* Select button */}
-              <button
-                onClick={() => togglePSP(psp.name)}
-                style={{
-                  width: "100%",
-                  padding: "8px 0",
-                  borderRadius: 8,
-                  border: isSelected ? "1px solid var(--primary)" : "1px solid var(--border)",
-                  background: isSelected ? "var(--primary)" : "var(--surface)",
-                  color: isSelected ? "#fff" : "var(--foreground)",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-              >
-                {isSelected ? "\u2713 Selecionado" : "Selecionar para comparar"}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Detailed comparison */}
-      {comparedPSPs.length >= 2 && (
-        <div style={{ ...cardStyle, marginBottom: 40, overflowX: "auto" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: "var(--foreground)", marginBottom: 20 }}>
-            Comparacao Detalhada
-          </h2>
-
-          <table
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+        {(["Todos", ...TIPOS] as const).map((tipo) => (
+          <button
+            key={tipo}
+            onClick={() => setFilterTipo(tipo)}
             style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: 13,
+              padding: "0.45rem 1rem",
+              borderRadius: 8,
+              border: filterTipo === tipo ? "2px solid var(--primary)" : "1px solid var(--border)",
+              background: filterTipo === tipo ? "var(--primary-bg)" : "var(--surface)",
+              color: filterTipo === tipo ? "var(--primary)" : "var(--text-muted)",
+              fontWeight: 600,
+              fontSize: "0.82rem",
+              cursor: "pointer",
             }}
           >
-            <thead>
-              <tr>
-                <th style={{ textAlign: "left", padding: "10px 12px", borderBottom: "2px solid var(--border)", color: "var(--text-muted)", fontWeight: 600, fontSize: 12 }}>
-                  Criterio
-                </th>
-                {comparedPSPs.map((psp) => (
-                  <th
-                    key={psp.name}
-                    style={{
-                      textAlign: "center",
-                      padding: "10px 12px",
-                      borderBottom: "2px solid var(--border)",
-                      color: "var(--foreground)",
-                      fontWeight: 700,
-                      fontSize: 14,
-                    }}
-                  >
-                    {psp.logo} {psp.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {/* Row helper */}
+            {tipo}
+          </button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div style={{ ...card({ padding: "0" }), overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+          <thead>
+            <tr>
               {([
-                ["Tipo", (p: PSPData) => p.type],
-                ["MDR Credito", (p: PSPData) => p.pricing.mdr_credito],
-                ["MDR Debito", (p: PSPData) => p.pricing.mdr_debito],
-                ["Taxa Pix", (p: PSPData) => p.pricing.pix],
-                ["Antecipacao", (p: PSPData) => p.pricing.antecipacao],
-                ["Qualidade API", (p: PSPData) => stars(p.api_quality)],
-                ["Settlement", (p: PSPData) => p.settlement],
-                ["Suporte", (p: PSPData) => p.support],
-                ["Integracao", (p: PSPData) => p.integration],
-                ["Melhor para", (p: PSPData) => p.best_for],
-              ] as [string, (p: PSPData) => string][]).map(([label, fn], i) => (
-                <tr key={label} style={{ background: i % 2 === 0 ? "transparent" : "var(--surface-hover)" }}>
-                  <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--foreground)", borderBottom: "1px solid var(--border)" }}>
-                    {label}
-                  </td>
-                  {comparedPSPs.map((psp) => (
-                    <td
-                      key={psp.name}
-                      style={{
-                        padding: "10px 12px",
-                        textAlign: "center",
-                        color: "var(--foreground)",
-                        borderBottom: "1px solid var(--border)",
-                      }}
-                    >
-                      {fn(psp)}
-                    </td>
-                  ))}
-                </tr>
+                ["name", "PSP"],
+                ["tipo", "Tipo"],
+                ["mdrCredito", "MDR Credito"],
+                ["mdrDebito", "MDR Debito"],
+                ["pix", "Pix"],
+                ["settlement", "Settlement"],
+                ["api", "API"],
+                ["sdkMobile", "SDK Mobile"],
+                ["split", "Split"],
+                ["antecipacao", "Antecipacao"],
+              ] as [SortKey, string][]).map(([key, label]) => (
+                <th key={key} style={thStyle(key)} onClick={() => handleSort(key)}>
+                  {label}
+                  {sortKey === key && (
+                    <span style={{ marginLeft: "0.25rem" }}>{sortAsc ? "\u25B2" : "\u25BC"}</span>
+                  )}
+                </th>
               ))}
-
-              {/* Feature rows */}
-              {(Object.keys(FEATURE_LABELS) as (keyof PSPData["features"])[]).map((feat, i) => (
-                <tr key={feat} style={{ background: (i + 10) % 2 === 0 ? "transparent" : "var(--surface-hover)" }}>
-                  <td style={{ padding: "10px 12px", fontWeight: 500, color: "var(--foreground)", borderBottom: "1px solid var(--border)" }}>
-                    {FEATURE_LABELS[feat]}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((psp, idx) => {
+              const tc = tipoColor(psp.tipo);
+              const isHovered = hoveredRow === idx;
+              return (
+                <tr
+                  key={psp.name}
+                  onMouseEnter={() => setHoveredRow(idx)}
+                  onMouseLeave={() => setHoveredRow(null)}
+                  style={{
+                    background: isHovered ? "var(--surface-hover)" : "transparent",
+                    transition: "background 0.15s ease",
+                  }}
+                >
+                  <td style={{ ...tdStyle, fontWeight: 700 }}>
+                    {psp.name}
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 400, marginTop: "0.15rem", whiteSpace: "normal", maxWidth: 180 }}>
+                      {psp.idealPara}
+                    </div>
                   </td>
-                  {comparedPSPs.map((psp) => (
-                    <td
-                      key={psp.name}
-                      style={{
-                        padding: "10px 12px",
-                        textAlign: "center",
-                        fontSize: 16,
-                        borderBottom: "1px solid var(--border)",
-                        color: psp.features[feat] ? "var(--success)" : "var(--error)",
-                      }}
-                    >
-                      {psp.features[feat] ? "\u2705" : "\u274C"}
-                    </td>
-                  ))}
+                  <td style={tdStyle}>
+                    <span style={{
+                      padding: "0.2rem 0.5rem",
+                      borderRadius: 6,
+                      background: tc.bg,
+                      color: tc.color,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                    }}>
+                      {psp.tipo}
+                    </span>
+                  </td>
+                  <td style={tdStyle}>{psp.mdrCredito}</td>
+                  <td style={tdStyle}>{psp.mdrDebito}</td>
+                  <td style={tdStyle}>{psp.pix}</td>
+                  <td style={tdStyle}>{psp.settlement}</td>
+                  <td style={tdStyle}>{psp.api}</td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>{psp.sdkMobile ? "\u2705" : "\u274C"}</td>
+                  <td style={{ ...tdStyle, textAlign: "center" }}>{psp.split ? "\u2705" : "\u274C"}</td>
+                  <td style={tdStyle}>{psp.antecipacao}</td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Empty state for comparison */}
-      {selectedPSPs.size > 0 && selectedPSPs.size < 2 && (
-        <div
-          style={{
-            ...cardStyle,
-            marginBottom: 40,
-            textAlign: "center",
-            padding: 40,
-            borderStyle: "dashed",
-          }}
-        >
-          <div style={{ fontSize: 32, marginBottom: 8 }}>{"\u{1F50D}"}</div>
-          <div style={{ fontSize: 14, color: "var(--text-muted)" }}>
-            Selecione pelo menos 2 PSPs para ver a comparacao detalhada
+      {/* Summary cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem", marginTop: "1.5rem" }}>
+        <div style={card()}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+            Menor MDR Credito
           </div>
+          <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--foreground)" }}>Rede</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--primary)" }}>2,39%</div>
         </div>
-      )}
+        <div style={card()}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+            Melhor Settlement
+          </div>
+          <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--foreground)" }}>Stone</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--success)" }}>D+0 (antecipacao)</div>
+        </div>
+        <div style={card()}>
+          <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", marginBottom: "0.35rem" }}>
+            Mais funcionalidades
+          </div>
+          <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--foreground)" }}>Adyen</div>
+          <div style={{ fontSize: "0.85rem", color: "var(--warning)" }}>IC++ + Global + Split</div>
+        </div>
+      </div>
+
+      {/* Disclaimer */}
+      <div style={{
+        marginTop: "1.5rem",
+        padding: "0.75rem 1rem",
+        background: "var(--surface)",
+        borderRadius: 10,
+        border: "1px solid var(--border)",
+        fontSize: "0.8rem",
+        color: "var(--text-muted)",
+        lineHeight: 1.5,
+      }}>
+        Valores de referencia para o mercado brasileiro em 2024/2025.
+        Taxas reais dependem de negociacao, volume, MCC e perfil de risco.
+        Entre em contato com cada PSP para cotacoes personalizadas.
+      </div>
     </div>
   );
 }
