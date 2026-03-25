@@ -152,6 +152,10 @@ function buildIndex(): SearchResult[] {
     { name: "Parcelamento", description: "Parcelado emissor vs lojista, interchange, chargeback em parcelas", href: "/knowledge/parcelamento" },
     { name: "Crédito Estruturado", description: "SCD, FIDC, cessão de recebíveis e credit as a service", href: "/knowledge/credito-estruturado" },
     { name: "Quiz de Pagamentos", description: "Teste seus conhecimentos com 300+ perguntas em 10 temas de pagamentos", href: "/quiz" },
+    { name: "API Design para Pagamentos", description: "REST patterns, idempotencia, webhooks, error handling e response codes para APIs de pagamento", href: "/knowledge/api-design" },
+    { name: "Adyen Deep Dive", description: "Arquitetura, APIs, checkout, tokenizacao e integracao Adyen", href: "/knowledge/psp/adyen" },
+    { name: "Stripe Deep Dive", description: "Arquitetura, PaymentIntents, Connect, webhooks e integracao Stripe", href: "/knowledge/psp/stripe" },
+    { name: "dLocal Deep Dive", description: "Pagamentos LATAM, metodos locais, FX e integracao dLocal", href: "/knowledge/psp/dlocal" },
   ];
 
   pages.forEach((p, i) => {
