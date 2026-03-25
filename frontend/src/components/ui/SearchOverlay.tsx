@@ -23,7 +23,7 @@ export default function SearchOverlay() {
     return searchAll(query).slice(0, 20);
   }, [query]);
 
-  // Open/close with Cmd+K
+  // Open/close with Cmd+K or custom event
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -31,8 +31,13 @@ export default function SearchOverlay() {
         setIsOpen((prev) => !prev);
       }
     };
+    const handleOpenSearch = () => setIsOpen(true);
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("open-search", handleOpenSearch);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("open-search", handleOpenSearch);
+    };
   }, []);
 
   // Focus input when opened
