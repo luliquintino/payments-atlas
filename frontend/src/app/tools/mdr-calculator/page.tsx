@@ -115,7 +115,7 @@ export default function MDRCalculatorPage() {
     };
   }, [volume, ticket, useCreditoVista, useCreditoParc, useDebito, usePix, parcelas, pixMigration, visa, mastercard, elo, outros]);
 
-  const card = (children: React.ReactNode, extra?: React.CSSProperties): React.CSSProperties => ({
+  const card = (extra?: React.CSSProperties): React.CSSProperties => ({
     background: "var(--surface)",
     borderRadius: "14px",
     padding: "1.5rem",
