@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useGameProgress } from "@/hooks/useGameProgress";
+import FlowDiagram from "@/components/ui/FlowDiagram";
+import type { FlowStep } from "@/components/ui/FlowDiagram";
 
 // ---------------------------------------------------------------------------
 // Styles
@@ -128,6 +130,117 @@ const orangeBoxStyle: React.CSSProperties = {
   marginTop: "0.75rem",
   marginBottom: "0.75rem",
 };
+
+// ---------------------------------------------------------------------------
+// Flow Diagram Data
+// ---------------------------------------------------------------------------
+
+const FLOW_PARCELADO_LOJISTA_ACTORS = ["Cliente", "Merchant", "PSP/Adquirente", "Bandeira", "Emissor"];
+const FLOW_PARCELADO_LOJISTA_STEPS: FlowStep[] = [
+  { from: "Cliente", to: "Merchant", label: "Seleciona 12x sem juros", detail: "Cliente escolhe parcelado lojista 12x de R$1.200 no checkout. O merchant exibe 12x R$100 'sem juros' — na pratica, o custo e absorvido pelo merchant via MDR maior.", type: "request" },
+  { from: "Merchant", to: "PSP/Adquirente", label: "Envia auth c/ flag parcelas", detail: "Merchant envia autorizacao ao PSP/adquirente com installment_type=merchant, installment_count=12. O PSP monta a mensagem ISO 8583 com DE25=28 (installment transaction) e campos privados DE63 indicando 12 parcelas.", type: "request" },
+  { from: "PSP/Adquirente", to: "Bandeira", label: "ISO 8583 DE25=28, DE63=012", detail: "Adquirente transmite MTI 0100 para a bandeira. DE3=003000 (purchase installment), DE25=28, DE48 com dados adicionais de parcelamento, DE63.022='012' (12 parcelas), DE63.023='000000010000' (R$100 por parcela). Valor total DE4=R$1.200.", type: "request" },
+  { from: "Bandeira", to: "Emissor", label: "Roteia auth ao emissor", detail: "Bandeira roteia a autorizacao ao emissor com base no BIN do cartao. O emissor recebe a transacao como compra parcelada lojista — ele autoriza o valor total (R$1.200) e bloqueia o limite completo do portador.", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Aprovacao R$1.200 total", detail: "Emissor aprova o valor total de R$1.200 e reserva o limite do portador. O portador vera 12 lancamentos de R$100 nas faturas mensais. O emissor repassa ao adquirente em liquidacao unica (D+1/D+2), descontando interchange (~2.25% para 12x).", type: "response" },
+  { from: "Bandeira", to: "PSP/Adquirente", label: "Auth approved", detail: "Bandeira retorna MTI 0110 (Authorization Response) com DE39=00 (approved). Codigo de autorizacao gerado. O adquirente registra a transacao na agenda de recebiveis do merchant com 12 parcelas mensais.", type: "response" },
+  { from: "PSP/Adquirente", to: "Merchant", label: "Transacao aprovada", detail: "PSP/adquirente confirma aprovacao ao merchant. A agenda de recebiveis e criada: parcela 1 em D+30 (R$100 - MDR 3.8% = R$96,20), parcela 2 em D+60, ate parcela 12 em D+360. Recebiveis registrados na CERC/CIP.", type: "response" },
+  { from: "PSP/Adquirente", to: "Merchant", label: "Liquidacao R$96,20/mes x12", detail: "Adquirente liquida R$96,20 por mes ao merchant durante 12 meses (R$100 - MDR 3.8%). Total liquido: R$1.154,40. Custo de oportunidade (CDI 13% a.a.): ~R$72. Custo real total: MDR + oportunidade = ~R$117,60 (9.8% do valor bruto).", type: "async" },
+];
+
+const FLOW_PARCELADO_EMISSOR_ACTORS = ["Cliente", "Merchant", "PSP/Adquirente", "Bandeira", "Emissor"];
+const FLOW_PARCELADO_EMISSOR_STEPS: FlowStep[] = [
+  { from: "Cliente", to: "Merchant", label: "Compra normal R$1.200", detail: "Cliente realiza compra de R$1.200 sem selecionar parcelamento no checkout. A transacao e enviada como compra a vista. O parcelamento sera oferecido pelo emissor separadamente, apos a autorizacao.", type: "request" },
+  { from: "Merchant", to: "PSP/Adquirente", label: "Auth padrao (sem parcelas)", detail: "Merchant envia autorizacao SEM flag de parcelamento. installment_type ausente ou 'none'. O PSP monta ISO 8583 com DE25=00 (normal transaction), DE3=000000 (purchase normal). Nenhum campo de parcelamento e incluido.", type: "request" },
+  { from: "PSP/Adquirente", to: "Bandeira", label: "ISO 8583 compra a vista", detail: "Adquirente transmite MTI 0100 como compra a vista padrao. DE25=00, DE3=000000. Valor total R$1.200 em DE4. A bandeira processa como transacao normal sem qualquer indicacao de parcelamento.", type: "request" },
+  { from: "Bandeira", to: "Emissor", label: "Roteia auth normal", detail: "Bandeira roteia ao emissor como compra a vista. Emissor autoriza R$1.200, bloqueia limite completo. Internamente, o emissor pode decidir oferecer parcelamento ao portador via app/fatura, mas isso e pos-autorizacao.", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Aprovacao R$1.200", detail: "Emissor aprova valor total. Repassa ao adquirente em liquidacao normal (D+1/D+2) descontando interchange padrao de venda a vista (~1.20%). O merchant recebe o valor total em D+30.", type: "response" },
+  { from: "PSP/Adquirente", to: "Merchant", label: "Merchant recebe total D+30", detail: "Merchant recebe R$1.164,00 em D+30 (R$1.200 - MDR 3.0% padrao a vista). Fluxo de caixa intacto — valor total em 30 dias. Nenhuma parcela futura na agenda. Risco de chargeback padrao.", type: "async" },
+  { from: "Emissor", to: "Cliente", label: "Oferta parcelamento c/ juros", detail: "Emissor oferece ao portador via app/SMS/fatura: 'Parcele sua compra de R$1.200 em ate 12x'. Juros: ~5% a.m. Portador aceita: 12x R$153,60 = R$1.843,20 total. Receita do emissor: R$643,20 em juros.", type: "async" },
+  { from: "Cliente", to: "Emissor", label: "Paga 12x R$153,60 c/ juros", detail: "Portador paga parcelas mensais COM juros ao emissor. Se inadimplir, o risco e 100% do emissor — o merchant ja recebeu o valor total. Limite do portador e liberado conforme paga cada parcela.", type: "async" },
+];
+
+const FLOW_PARCELADO_HIBRIDO_ACTORS = ["Cliente", "Merchant", "PSP/Adquirente", "Bandeira", "Emissor"];
+const FLOW_PARCELADO_HIBRIDO_STEPS: FlowStep[] = [
+  { from: "Cliente", to: "Merchant", label: "Seleciona 12x hibrido", detail: "Cliente escolhe 12x no checkout. Nos bastidores, a transacao e configurada como hibrida: 3 parcelas financiadas pelo merchant (lojista) + 9 parcelas financiadas pelo emissor. O cliente pode ou nao saber da divisao.", type: "request" },
+  { from: "Merchant", to: "PSP/Adquirente", label: "Auth com split 3+9", detail: "Merchant envia autorizacao com installment_type=hybrid, merchant_installments=3, issuer_installments=9. O PSP monta ISO 8583 com DE48 flag de hibrido, DE63 com total=12, lojista=03, emissor=09. Nao padronizado — depende do adquirente.", type: "request" },
+  { from: "PSP/Adquirente", to: "Bandeira", label: "ISO 8583 hibrido 3L+9E", detail: "Adquirente transmite mensagem com campos privados indicando split. Cada adquirente (Cielo, Rede, Getnet) tem formato diferente. Requer acordo previo entre adquirente, bandeira e emissor para suportar hibrido.", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Aprovacao R$1.200", detail: "Emissor aprova valor total R$1.200. Entende que parcelas 1-3 (R$400) sao lojista e parcelas 4-12 (R$800) sao emissor. Bloqueia limite total. Prepara financiamento das 9 parcelas emissor com juros (~4% a.m.).", type: "response" },
+  { from: "PSP/Adquirente", to: "Merchant", label: "Parcelas 1-3: D+30..D+90", detail: "Merchant recebe R$133,33/mes por 3 meses (parcela lojista). MDR 2.5%. Liquido: ~R$130/mes x 3 = R$390. Essas parcelas seguem regras identicas ao parcelado lojista puro, com agenda na registradora.", type: "async" },
+  { from: "PSP/Adquirente", to: "Merchant", label: "Parte emissor: R$776 em D+30", detail: "Merchant recebe R$800 (parcelas 4-12 emissor) como valor integral em D+30, com MDR de venda a vista (3.0%). Liquido: R$776. Recebido junto com a primeira parcela lojista. Fluxo de caixa muito melhor que 12x lojista puro.", type: "async" },
+  { from: "Emissor", to: "Cliente", label: "Cobra 9x com juros (~4% a.m.)", detail: "Emissor cobra do portador 9 parcelas de ~R$108 = R$972 total (R$800 principal + R$172 juros). O emissor lucra R$172 em juros. O risco de inadimplencia das parcelas 4-12 e 100% do emissor.", type: "async" },
+  { from: "Cliente", to: "Emissor", label: "Paga parcelas mensais", detail: "Total pago pelo portador: parcelas 1-3 sem juros (R$400) + parcelas 4-12 com juros (R$972) = R$1.372. Total liquido merchant: R$390 + R$776 = R$1.166 (vs R$1.154 em 12x lojista puro — ganho de R$12 + fluxo de caixa superior).", type: "async" },
+];
+
+const FLOW_BNPL_ACTORS = ["Cliente", "Merchant", "Provedor BNPL", "Adquirente", "Banco"];
+const FLOW_BNPL_STEPS: FlowStep[] = [
+  { from: "Cliente", to: "Merchant", label: "Seleciona BNPL no checkout", detail: "Cliente escolhe opcao BNPL (ex: Mercado Credito, PicPay) no checkout em vez de cartao de credito. Nao precisa de cartao — usa linha de credito propria do provedor BNPL. Ideal para clientes underbanked ou sem limite disponivel.", type: "request" },
+  { from: "Merchant", to: "Provedor BNPL", label: "Envia pedido ao BNPL", detail: "Merchant redireciona ou envia dados da compra ao provedor BNPL via API proprietaria (nao ISO 8583). Dados incluem: valor, descricao, dados do cliente. O provedor BNPL inicia analise de credito em tempo real (<2 segundos).", type: "request" },
+  { from: "Provedor BNPL", to: "Merchant", label: "Credito aprovado", detail: "Provedor BNPL faz analise de credito usando dados alternativos (historico de compras, dados de celular, score proprio). Se aprovado, confirma ao merchant. Taxa de aprovacao tipica: 60-80% (menor que cartao). Se recusado, cliente deve usar outro metodo.", type: "response" },
+  { from: "Provedor BNPL", to: "Merchant", label: "Paga merchant D+1 (- fee 3-6%)", detail: "Provedor BNPL paga valor integral ao merchant em D+1 ou D+2, descontando fee de 3-6% (vs MDR cartao 2.5-3.8%). Merchant recebe R$1.128-R$1.164 de uma venda de R$1.200. Pagamento via TED/PIX, nao pela rede de cartoes.", type: "async" },
+  { from: "Merchant", to: "Cliente", label: "Confirma pedido", detail: "Merchant confirma o pedido e envia produto/servico. Do ponto de vista do merchant, e como uma venda a vista — recebe rapido e sem risco de chargeback de cartao. Risco de fraude e do provedor BNPL.", type: "response" },
+  { from: "Cliente", to: "Provedor BNPL", label: "Paga parcelas mensais", detail: "Cliente paga ao provedor BNPL em parcelas mensais via boleto, PIX ou debito automatico. Juros variam: 0% (promocional, 4x) ate 5% a.m. (parcelas longas). Se atrasar, provedor cobra juros/multa e pode negativar no SPC/Serasa.", type: "async" },
+  { from: "Provedor BNPL", to: "Banco", label: "Se default: BNPL absorve perda", detail: "Se o cliente nao paga, o provedor BNPL absorve 100% da perda — o merchant ja recebeu. Inadimplencia tipica de BNPLs em mercados emergentes: 5-10%. Provedores precisam de funding robusto e reservas para cobrir perdas. Varios BNPLs globais tiveram prejuizos bilionarios por subestimar inadimplencia.", type: "async" },
+];
+
+const FLOW_CHARGEBACK_PARCELADO_ACTORS = ["Cliente", "Emissor", "Bandeira", "Adquirente", "Merchant"];
+const FLOW_CHARGEBACK_PARCELADO_STEPS: FlowStep[] = [
+  { from: "Cliente", to: "Emissor", label: "Disputa parcela 6 de 12", detail: "Portador contesta a parcela 6 de uma compra de R$1.200 em 12x parcelado lojista. Reason code tipico: 'nao reconheco' (fraud) ou 'produto com defeito'. Ja pagou parcelas 1-5 (R$500). Parcelas 7-12 ainda pendentes.", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Inicia chargeback", detail: "Emissor inicia chargeback junto a bandeira. Para Visa: chargeback sobre valor TOTAL restante (parcelas 6-12 = R$700). Para Mastercard: depende do reason code — RC 4837 (fraud) = valor total, RC 4860 (credit not processed) = parcela individual.", type: "request" },
+  { from: "Bandeira", to: "Adquirente", label: "Encaminha chargeback", detail: "Bandeira encaminha chargeback ao adquirente com documentacao do emissor. Prazo para merchant responder: 30 dias (Visa) ou 45 dias (Mastercard). Bandeira debita valor provisorio do adquirente na liquidacao interbancaria.", type: "request" },
+  { from: "Adquirente", to: "Merchant", label: "Notifica e debita merchant", detail: "Adquirente notifica merchant do chargeback e debita o valor da conta ou retém de liquidacoes futuras. Valor debitado: R$700 (parcelas 6-12) + taxa de chargeback (~R$50). Se merchant nao tem saldo, adquirente pode bloquear recebiveis.", type: "request" },
+  { from: "Merchant", to: "Adquirente", label: "Envia evidencias (representment)", detail: "Merchant prepara representment com evidencias da TRANSACAO ORIGINAL (nao da parcela 6): comprovante de entrega com assinatura, nota fiscal, dados de 3DS authentication, IP/device fingerprint do checkout, historico de compras do cliente.", type: "response" },
+  { from: "Adquirente", to: "Bandeira", label: "Submete representment", detail: "Adquirente submete representment a bandeira com toda documentacao. Se 3DS foi usado na transacao original, liability shift protege o merchant — chargeback e revertido automaticamente. Sem 3DS, depende da forca das evidencias.", type: "response" },
+  { from: "Bandeira", to: "Emissor", label: "Decisao: aceita ou rejeita", detail: "Bandeira/emissor avalia evidencias. Se aceitas: chargeback revertido, merchant recebe de volta R$700 + taxa. Se rejeitadas: merchant perde definitivamente. Pre-arbitracao disponivel como ultimo recurso (custo: R$500-R$1.500).", type: "async" },
+  { from: "Emissor", to: "Cliente", label: "Resultado ao portador", detail: "Se chargeback mantido: portador recebe credito permanente das parcelas 6-12, parcelas futuras canceladas. Se revertido: portador volta a ser cobrado normalmente. Tempo total do processo: 45-120 dias. Impacto no chargeback rate do merchant durante todo o periodo.", type: "async" },
+];
+
+// ---------------------------------------------------------------------------
+// Fluxos Financeiros (como o dinheiro se move)
+// ---------------------------------------------------------------------------
+
+const FLOW_FIN_LOJISTA_ACTORS = ["Cliente", "Emissor", "Bandeira", "Adquirente", "Merchant", "Registradora"];
+const FLOW_FIN_LOJISTA_STEPS: FlowStep[] = [
+  { from: "Cliente", to: "Emissor", label: "Fatura: R$100/mês × 12", detail: "Portador vê R$1.200 parcelados em 12x de R$100 na fatura do cartão. Emissor cobra parcela mensal sem juros (parcelado lojista = sem juros para o portador).", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Clearing D+1 (parcela 1)", detail: "No dia seguinte à compra, emissor envia arquivo de clearing (Visa TC105 ou MC IPM) com valor da primeira parcela R$100. Interchange retido: ~R$2,10 (2,1% para 12x).", type: "request" },
+  { from: "Bandeira", to: "Adquirente", label: "Netting + liquidação", detail: "Bandeira faz netting multilateral entre emissores e adquirentes. Adquirente recebe R$100 - interchange (R$2,10) - scheme fee (~R$0,15) = R$97,75. Ciclo se repete todo mês por 12 meses.", type: "request" },
+  { from: "Adquirente", to: "Merchant", label: "D+30: parcela 1 (R$96,20)", detail: "Adquirente paga merchant em D+30: R$100 - MDR 3,8% = R$96,20. Agenda de recebíveis criada: 12 pagamentos mensais de R$96,20. Total líquido: R$1.154,40 (de R$1.200).", type: "async" },
+  { from: "Adquirente", to: "Registradora", label: "Registra agenda", detail: "Adquirente registra a agenda de recebíveis na CERC/CIP/B3 (registradoras). Cada parcela futura vira uma Unidade de Recebível (UR) identificável. Merchant pode usar essas URs como garantia de crédito ou antecipar.", type: "async" },
+  { from: "Merchant", to: "Adquirente", label: "Solicita antecipação", detail: "Se merchant precisa de caixa, pode antecipar parcelas 2-12 com deságio. Taxa típica: 1,5-3,5% ao mês. R$1.058 de recebíveis futuros podem virar ~R$920 hoje (deságio de ~13%).", type: "request" },
+  { from: "Adquirente", to: "Merchant", label: "Antecipa: R$920 em D+2", detail: "Adquirente (ou FIDC/banco via cessão) paga valor antecipado. Registradora atualiza titularidade das URs. Merchant perde o spread mas ganha liquidez imediata. Custo efetivo anual: ~25-40%.", type: "response" },
+];
+
+const FLOW_FIN_EMISSOR_ACTORS = ["Cliente", "Emissor", "Bandeira", "Adquirente", "Merchant"];
+const FLOW_FIN_EMISSOR_STEPS: FlowStep[] = [
+  { from: "Emissor", to: "Bandeira", label: "Clearing total D+1", detail: "Como a transação é à vista para o merchant, emissor envia clearing do valor TOTAL R$1.200 em D+1. Interchange menor (~1,5% para à vista) = R$18. Emissor financia por conta própria.", type: "request" },
+  { from: "Bandeira", to: "Adquirente", label: "Liquidação integral", detail: "Adquirente recebe R$1.200 - interchange R$18 - scheme fee R$1,80 = R$1.180,20 no ciclo de netting. Tudo em uma única parcela.", type: "request" },
+  { from: "Adquirente", to: "Merchant", label: "D+30: R$1.164 (total)", detail: "Merchant recebe valor integral em D+30: R$1.200 - MDR 3,0% = R$1.164. Fluxo de caixa intacto — sem diluição em 12 meses. MDR menor porque é venda à vista.", type: "response" },
+  { from: "Cliente", to: "Emissor", label: "Parcela 1: R$153,60", detail: "Portador paga primeira parcela ao emissor via fatura do cartão. Valor: R$1.200/12 + juros (~5% a.m.) = ~R$153,60/mês. Total pago pelo portador: R$1.843,20 (R$643,20 de juros).", type: "async" },
+  { from: "Cliente", to: "Emissor", label: "Parcelas 2-12: mensal", detail: "Emissor cobra mensalmente do portador. Se portador atrasa: multa 2% + mora 1% a.m. Se não paga: emissor assume prejuízo (risco de crédito). Emissor lucra: R$643,20 de juros - R$18 de interchange = ~R$625 de receita financeira.", type: "async" },
+];
+
+const FLOW_FIN_ANTECIPACAO_ACTORS = ["Merchant", "Adquirente", "Registradora", "FIDC/Banco", "Cedente"];
+const FLOW_FIN_ANTECIPACAO_STEPS: FlowStep[] = [
+  { from: "Merchant", to: "Registradora", label: "Consulta agenda", detail: "Merchant consulta sua agenda de recebíveis nas registradoras (CERC, CIP, B3). Visualiza todas as Unidades de Recebível (URs) futuras por arranjo, adquirente e data. Circular BCB 3.952: merchant tem liberdade de escolher com quem antecipar.", type: "request" },
+  { from: "Registradora", to: "Merchant", label: "Agenda: R$50K em 12 meses", detail: "Registradora retorna agenda completa: 12 parcelas de ~R$4.167/mês por 12 meses = R$50.000 em recebíveis futuros. Cada UR tem identificador único, data de liquidação e valor.", type: "response" },
+  { from: "Merchant", to: "FIDC/Banco", label: "Solicita antecipação", detail: "Merchant pode antecipar com: (1) o próprio adquirente, (2) um banco, (3) um FIDC. Cada um oferece taxa diferente. Interoperabilidade obrigatória: merchant não é obrigado a antecipar com o adquirente.", type: "request" },
+  { from: "FIDC/Banco", to: "Registradora", label: "Consulta e trava URs", detail: "FIDC/banco consulta registradora para validar que as URs existem e não estão gravadas/comprometidas. Se disponíveis, registra 'efeito de contrato' (trava) sobre as URs. Garante que ninguém mais pode usar como garantia.", type: "request" },
+  { from: "Registradora", to: "FIDC/Banco", label: "URs travadas ✓", detail: "Registradora confirma trava. As URs agora estão comprometidas com o FIDC/banco. Adquirente é notificado para liquidar diretamente ao novo titular. Sistema garante: sem dupla cessão.", type: "response" },
+  { from: "FIDC/Banco", to: "Merchant", label: "Crédito: R$43.500 (deságio 13%)", detail: "FIDC/banco deposita valor antecipado na conta do merchant em D+1 ou D+2. Deságio: ~1,5% a.m. × prazo médio ~8,5 meses = ~13%. Merchant recebe R$43.500 de R$50.000. Custo efetivo anual: ~18-25%.", type: "response" },
+  { from: "Adquirente", to: "FIDC/Banco", label: "Liquidação mensal", detail: "Nos próximos 12 meses, adquirente liquida as parcelas diretamente ao FIDC/banco (não mais ao merchant). R$4.167/mês × 12 = R$50.000. FIDC lucra ~R$6.500 (diferença entre R$50K recebido e R$43.5K pago).", type: "async" },
+  { from: "Cedente", to: "FIDC/Banco", label: "Cessão de crédito", detail: "Em modelo FIDC: merchant (cedente) faz cessão de crédito dos recebíveis. FIDC emite cotas (sênior, mezanino, júnior) lastreadas nos recebíveis. Investidores compram cotas. Spread entre custo de captação e deságio = lucro do FIDC.", type: "async" },
+];
+
+const FLOW_CHARGEBACK_PARCELAS_FUTURAS_ACTORS = ["Cliente", "Emissor", "Bandeira", "Adquirente", "Merchant"];
+const FLOW_CHARGEBACK_PARCELAS_FUTURAS_STEPS: FlowStep[] = [
+  { from: "Cliente", to: "Emissor", label: "Cancela compra (parcela 3/12)", detail: "Portador comprou R$1.200 em 12x parcelado lojista. Na parcela 3, solicita cancelamento/chargeback. Já pagou R$300 (3 parcelas). Merchant já recebeu R$288,60 (3× R$96,20). Restam 9 parcelas futuras na agenda.", type: "request" },
+  { from: "Emissor", to: "Bandeira", label: "Chargeback parcelas 3-12", detail: "Emissor pode iniciar chargeback sobre: (A) apenas parcela 3 disputada (R$100), (B) todas as parcelas restantes 3-12 (R$1.000), ou (C) valor total R$1.200. Depende do reason code: RC 13.1 (merchandise) = parcelas restantes; RC 10.4 (fraud) = valor total.", type: "request" },
+  { from: "Bandeira", to: "Adquirente", label: "CB valor: R$1.000", detail: "Bandeira encaminha chargeback de R$1.000 (parcelas 3-12) ao adquirente. Adquirente precisa: (1) debitar R$100 já pago ao merchant na parcela 3, (2) cancelar agenda de parcelas 4-12 (R$900 em recebíveis futuros).", type: "request" },
+  { from: "Adquirente", to: "Merchant", label: "Debita R$100 + cancela agenda", detail: "Adquirente debita R$100 da conta do merchant + taxa de CB (~R$50). Cancela liquidação das parcelas 4-12 na agenda. Se merchant já antecipou esses recebíveis: PROBLEMA GRAVE — adquirente/FIDC absorve a perda.", type: "request" },
+  { from: "Merchant", to: "Adquirente", label: "Representment com evidências", detail: "Se merchant contesta: envia comprovante de entrega, NF-e, 3DS data, política de cancelamento. Para parcelado: evidência de que produto foi entregue na totalidade antes da parcela 3. Prazo: 30 dias (Visa) / 45 dias (MC).", type: "response" },
+  { from: "Adquirente", to: "Bandeira", label: "Representment R$1.000", detail: "Se representment aceito: agenda é restabelecida, parcelas 4-12 voltam a ser liquidadas. Se rejeitado: merchant perde R$1.000 + R$50 de taxa. Win rate médio em parcelado: ~35% (menor que à vista porque é mais difícil provar entrega parcial).", type: "response" },
+  { from: "Emissor", to: "Cliente", label: "Parcelas canceladas", detail: "Se CB mantido: parcelas 4-12 são canceladas na fatura do portador. Portador pagou R$200 (parcelas 1-2) por um produto de R$1.200. Se CB revertido: parcelas continuam normalmente. Tempo total: 60-120 dias. Impacto: chargeback rate do merchant sobe durante todo o período.", type: "async" },
+  { from: "Adquirente", to: "Merchant", label: "Impacto no programa VDMP", detail: "Se merchant tem muito CB em parcelado: chargeback rate = total CBs / total transações. Parcelado amplifica o impacto: 1 CB de R$1.200 em 12x conta como 1 disputa mas o valor é 12x maior. Pode entrar no VDMP (>0,9%) ou ECM (>1,0%) mais rápido.", type: "async" },
+];
 
 // ---------------------------------------------------------------------------
 // Simulador Component
@@ -297,6 +410,9 @@ export default function InstallmentsDeepDivePage() {
             imediatamente. Em vez de receber R$1.200 em D+30, ele recebe R$100 por mes durante
             12 meses (D+30, D+60, D+90... D+360).
           </p>
+
+          <FlowDiagram title="Parcelado Lojista (Merchant Installments)" actors={FLOW_PARCELADO_LOJISTA_ACTORS} steps={FLOW_PARCELADO_LOJISTA_STEPS} />
+
           <p style={paragraphStyle}>
             Para o emissor, a transacao e tratada como uma compra a vista — o portador usa o limite
             do cartao pelo valor total (R$1.200), e o emissor repassa ao adquirente em uma unica
@@ -315,6 +431,8 @@ Adquirente: Recebe do emissor, retém e libera ao merchant:
            ...
            D+360: R$100 - MDR parcela 12
 Merchant:  Recebe ~R$96.20/mes (MDR 3.8% por parcela)`}</div>
+
+          <FlowDiagram title="Fluxo Financeiro — Parcelado Lojista (Como o Dinheiro se Move)" actors={FLOW_FIN_LOJISTA_ACTORS} steps={FLOW_FIN_LOJISTA_STEPS} />
 
           <p style={subheadingStyle}>Tabela de Custo Efetivo por Parcelas</p>
           <div style={tableWrapperStyle}>
@@ -379,6 +497,9 @@ Merchant:  Recebe ~R$96.20/mes (MDR 3.8% por parcela)`}</div>
             os juros cobrados pelo emissor sao significativos — tipicamente entre 2% e 15% ao mes,
             dependendo do perfil do cliente e do emissor.
           </p>
+
+          <FlowDiagram title="Parcelado Emissor (Issuer Installments)" actors={FLOW_PARCELADO_EMISSOR_ACTORS} steps={FLOW_PARCELADO_EMISSOR_STEPS} />
+
           <p style={subheadingStyle}>Fluxo Financeiro Detalhado</p>
           <div style={codeBlockStyle}>{`Venda: R$1.200 — portador escolhe parcelar com o emissor em 12x
 
@@ -393,6 +514,8 @@ Emissor:    Repassa R$1.200 ao adquirente normalmente
 
 Portador:   Parcelas de ~R$153,60/mes no cartao (com juros)
             Limite bloqueado: R$1.200 (liberado conforme paga)`}</div>
+
+          <FlowDiagram title="Fluxo Financeiro — Parcelado Emissor (Merchant Recebe à Vista)" actors={FLOW_FIN_EMISSOR_ACTORS} steps={FLOW_FIN_EMISSOR_STEPS} />
 
           <div style={highlightBoxStyle}>
             <p style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--primary)", marginBottom: "0.25rem" }}>
@@ -446,6 +569,8 @@ Portador:   Parcelas de ~R$153,60/mes no cartao (com juros)
             o restante. Esse modelo e usado por grandes varejistas que precisam equilibrar
             atratividade comercial (parcelamento longo) com saude financeira (fluxo de caixa).
           </p>
+
+          <FlowDiagram title="Parcelado Hibrido (3x Lojista + 9x Emissor)" actors={FLOW_PARCELADO_HIBRIDO_ACTORS} steps={FLOW_PARCELADO_HIBRIDO_STEPS} />
 
           <p style={subheadingStyle}>Exemplo: 12x sendo 3x Lojista + 9x Emissor</p>
           <div style={codeBlockStyle}>{`Venda: R$1.200 em 12x (hibrido: 3x lojista + 9x emissor)
@@ -517,6 +642,8 @@ vs. a vista: R$1.178,40`}</div>
             dados alternativos) e oferece uma linha especifica para aquela compra. O merchant
             recebe a vista, o provedor BNPL cobra do cliente.
           </p>
+
+          <FlowDiagram title="Fluxo BNPL (Buy Now, Pay Later)" actors={FLOW_BNPL_ACTORS} steps={FLOW_BNPL_STEPS} />
 
           <p style={subheadingStyle}>Fluxo BNPL</p>
           <div style={codeBlockStyle}>{`1. Cliente seleciona BNPL no checkout (ex: Mercado Credito)
@@ -722,6 +849,10 @@ Em blended, o adquirente captura margem adicional no parcelado.`}</div>
             bandeira, do reason code e do timing.
           </p>
 
+          <FlowDiagram title="Chargeback em Parcelado" actors={FLOW_CHARGEBACK_PARCELADO_ACTORS} steps={FLOW_CHARGEBACK_PARCELADO_STEPS} />
+
+          <FlowDiagram title="Chargeback em Parcelado — Impacto nas Parcelas Futuras" actors={FLOW_CHARGEBACK_PARCELAS_FUTURAS_ACTORS} steps={FLOW_CHARGEBACK_PARCELAS_FUTURAS_STEPS} />
+
           <p style={subheadingStyle}>Cenario 1: Chargeback na Parcela 3 de 12</p>
           <div style={codeBlockStyle}>{`Venda: R$1.200 em 12x parcelado lojista
 Parcela 3 (D+90): portador disputa — "nao reconheco"
@@ -817,6 +948,8 @@ ERRO COMUM: Merchant faz refund apenas da parcela 1 (R$100)
             A taxa de desagio tipica varia entre 1.5% e 3.5% ao mes, dependendo do risco do
             merchant e do prazo.
           </p>
+
+          <FlowDiagram title="Fluxo Completo de Antecipação de Recebíveis" actors={FLOW_FIN_ANTECIPACAO_ACTORS} steps={FLOW_FIN_ANTECIPACAO_STEPS} />
 
           <p style={subheadingStyle}>Calculo de Antecipacao</p>
           <div style={tableWrapperStyle}>
