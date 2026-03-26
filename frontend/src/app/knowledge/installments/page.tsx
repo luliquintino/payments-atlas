@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGameProgress } from "@/hooks/useGameProgress";
 
 // ---------------------------------------------------------------------------
@@ -213,9 +213,10 @@ function MDRSimulator() {
 export default function InstallmentsDeepDivePage() {
   const { visitPage } = useGameProgress();
 
-  useState(() => {
+  useEffect(() => {
     visitPage("/knowledge/installments");
-  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const sections: Section[] = [
     // -----------------------------------------------------------------------
