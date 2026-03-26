@@ -119,6 +119,7 @@ const categories: Category[] = [
       { name: "Cr\u00e9dito Estruturado", href: "/knowledge/credito-estruturado", description: "SCD, FIDC, cess\u00e3o" },
       { name: "Antecipa\u00e7\u00e3o de Receb\u00edveis", href: "/knowledge/antecipacao-recebiveis", description: "Mesa, des\u00e1gio, registradora" },
       { name: "Parcelamento", href: "/knowledge/parcelamento", description: "Emissor vs lojista, impacto" },
+      { name: "Installments Deep", href: "/knowledge/installments", description: "4 modelos, interchange, MDR, BNPL" },
     ],
   },
   {

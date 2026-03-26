@@ -156,6 +156,7 @@ function buildIndex(): SearchResult[] {
     { name: "Adyen Deep Dive", description: "Arquitetura, APIs, checkout, tokenizacao e integracao Adyen", href: "/knowledge/psp/adyen" },
     { name: "Stripe Deep Dive", description: "Arquitetura, PaymentIntents, Connect, webhooks e integracao Stripe", href: "/knowledge/psp/stripe" },
     { name: "dLocal Deep Dive", description: "Pagamentos LATAM, metodos locais, FX e integracao dLocal", href: "/knowledge/psp/dlocal" },
+    { name: "Installments Deep Dive", description: "Parcelamento: 4 modelos (lojista, emissor, hibrido, BNPL), interchange, chargeback, MDR, antecipacao e regulacao BCB", href: "/knowledge/installments" },
   ];
 
   pages.forEach((p, i) => {
