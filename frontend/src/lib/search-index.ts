@@ -157,6 +157,8 @@ function buildIndex(): SearchResult[] {
     { name: "Stripe Deep Dive", description: "Arquitetura, PaymentIntents, Connect, webhooks e integracao Stripe", href: "/knowledge/psp/stripe" },
     { name: "dLocal Deep Dive", description: "Pagamentos LATAM, metodos locais, FX e integracao dLocal", href: "/knowledge/psp/dlocal" },
     { name: "Installments Deep Dive", description: "Parcelamento: 4 modelos (lojista, emissor, hibrido, BNPL), interchange, chargeback, MDR, antecipacao e regulacao BCB", href: "/knowledge/installments" },
+    { name: "Operacoes de Credito", description: "Hub central de credito: SCD, FIDC, antecipacao, underwriting, registradoras, regulacao e casos praticos", href: "/knowledge/credit-operations" },
+    { name: "Credit APIs & Payloads", description: "Referencia tecnica de APIs de credito: simulacao, originacao, cessao, registradoras CERC/CIP/TAG, desembolso, FIDC e mensageria", href: "/knowledge/credit-api-payloads" },
   ];
 
   pages.forEach((p, i) => {

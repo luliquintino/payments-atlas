@@ -117,6 +117,7 @@ const categories: Category[] = [
       { name: "Matriz Regulat\u00f3ria", href: "/knowledge/regulatory-matrix", description: "Brasil, Europa, EUA" },
       { name: "Cross-Border Payments", href: "/knowledge/cross-border", description: "FX, correspondent banking" },
       { name: "Cr\u00e9dito Estruturado", href: "/knowledge/credito-estruturado", description: "SCD, FIDC, cess\u00e3o" },
+      { name: "Opera\u00e7\u00f5es de Cr\u00e9dito", href: "/knowledge/credit-operations", description: "Hub completo de cr\u00e9dito e pagamentos" },
       { name: "Antecipa\u00e7\u00e3o de Receb\u00edveis", href: "/knowledge/antecipacao-recebiveis", description: "Mesa, des\u00e1gio, registradora" },
       { name: "Parcelamento", href: "/knowledge/parcelamento", description: "Emissor vs lojista, impacto" },
       { name: "Installments Deep", href: "/knowledge/installments", description: "4 modelos, interchange, MDR, BNPL" },
