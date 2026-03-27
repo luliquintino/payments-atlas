@@ -999,33 +999,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     category: "pix",
     relatedTerms: ["pix", "pix-saque"],
   },
-  {
-    id: "pix-garantido",
-    term: "Pix Garantido",
-    definition:
-      "Modalidade de PIX que permite pagamentos parcelados com garantia de recebimento pelo merchant, mesmo sem saldo na conta do pagador no momento. Funciona como um crédito atrelado ao PIX, com débito automático nas datas acordadas.",
-    aliases: ["Pix Garantido", "pix parcelado"],
-    category: "pix",
-    relatedTerms: ["pix", "pix-automatico"],
-  },
-  {
-    id: "pix-automatico",
-    term: "Pix Automático",
-    definition:
-      "Modalidade de PIX para pagamentos recorrentes com autorização prévia do pagador. Permite débitos automáticos (assinaturas, contas) sem necessidade de autenticação a cada transação. Alternativa ao débito automático tradicional.",
-    aliases: ["Pix Automático", "pix recorrente", "automatic pix"],
-    category: "pix",
-    relatedTerms: ["pix", "pix-garantido"],
-  },
-  {
-    id: "itp",
-    term: "Iniciador de Pagamento (ITP)",
-    definition:
-      "Instituição autorizada pelo BCB a iniciar transações de pagamento a pedido do cliente, sem deter os fundos. Funciona como um intermediário que conecta o pagador à sua instituição financeira. Pilar do Open Finance e do PIX por aproximação.",
-    aliases: ["ITP", "iniciador de pagamento", "PISP", "payment initiation service provider"],
-    category: "pix",
-    relatedTerms: ["pix", "open-banking"],
-  },
+  // pix-garantido, pix-automatico, itp — see 2025 Updates section below
 
   // --- Arranjo de Pagamento ---
   {

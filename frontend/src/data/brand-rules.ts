@@ -184,7 +184,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Visa Core Rules 2024",
-    lastUpdated: "2024-10",
+    lastUpdated: "2025-10",
   },
   {
     id: "visa-02",
@@ -202,7 +202,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Visa Core Rules 2024",
-    lastUpdated: "2024-10",
+    lastUpdated: "2025-10",
   },
   {
     id: "visa-03",
@@ -220,7 +220,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Visa Core Rules 2024",
-    lastUpdated: "2024-10",
+    lastUpdated: "2025-10",
   },
   {
     id: "visa-04",
@@ -238,7 +238,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Visa Tokenization Guide 2024",
-    lastUpdated: "2024-08",
+    lastUpdated: "2025-08",
   },
   {
     id: "visa-05",
@@ -256,7 +256,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Visa Secure / EMV 3DS Spec",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
   {
     id: "visa-06",
@@ -274,7 +274,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Visa Settlement Guide",
-    lastUpdated: "2024-05",
+    lastUpdated: "2025-05",
   },
   {
     id: "visa-07",
@@ -292,7 +292,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Visa Interchange Reimbursement Fees",
-    lastUpdated: "2024-04",
+    lastUpdated: "2025-04",
   },
   {
     id: "visa-08",
@@ -310,7 +310,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Visa Stored Credential Framework",
-    lastUpdated: "2024-07",
+    lastUpdated: "2025-07",
   },
   {
     id: "visa-09",
@@ -328,7 +328,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Visa Account Updater Program Guide",
-    lastUpdated: "2024-03",
+    lastUpdated: "2025-03",
   },
   {
     id: "visa-10",
@@ -346,7 +346,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Visa PCI Compliance Program",
-    lastUpdated: "2024-09",
+    lastUpdated: "2025-09",
   },
 
   // =========================================================================
@@ -368,7 +368,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Mastercard Chargeback Guide 2024",
-    lastUpdated: "2024-10",
+    lastUpdated: "2025-10",
   },
   {
     id: "mc-02",
@@ -386,7 +386,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Mastercard Chargeback Guide 2024",
-    lastUpdated: "2024-10",
+    lastUpdated: "2025-10",
   },
   {
     id: "mc-03",
@@ -404,7 +404,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Mastercard Identity Check Program",
-    lastUpdated: "2024-08",
+    lastUpdated: "2025-08",
   },
   {
     id: "mc-04",
@@ -422,7 +422,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Mastercard Authorization Manual 2024",
-    lastUpdated: "2024-09",
+    lastUpdated: "2025-09",
   },
   {
     id: "mc-05",
@@ -440,7 +440,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Mastercard IPM Clearing Guide",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
   {
     id: "mc-06",
@@ -459,7 +459,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Mastercard COF Standards",
-    lastUpdated: "2024-07",
+    lastUpdated: "2025-07",
   },
   {
     id: "mc-07",
@@ -477,7 +477,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Mastercard Security Rules & Procedures",
-    lastUpdated: "2024-10",
+    lastUpdated: "2025-10",
   },
   {
     id: "mc-08",
@@ -495,7 +495,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Mastercard Interchange Programs",
-    lastUpdated: "2024-04",
+    lastUpdated: "2025-04",
   },
   {
     id: "mc-09",
@@ -513,7 +513,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "MDES for Merchants Guide",
-    lastUpdated: "2024-08",
+    lastUpdated: "2025-08",
   },
 
   // =========================================================================
@@ -535,7 +535,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Manual de Regras Elo 2024",
-    lastUpdated: "2024-09",
+    lastUpdated: "2025-09",
   },
   {
     id: "elo-02",
@@ -553,7 +553,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Manual Tecnico Elo",
-    lastUpdated: "2024-07",
+    lastUpdated: "2025-07",
   },
   {
     id: "elo-03",
@@ -572,7 +572,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Manual de Parcelamento Elo",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
   {
     id: "elo-04",
@@ -590,7 +590,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Elo Tokenizacao - Guia Tecnico",
-    lastUpdated: "2024-05",
+    lastUpdated: "2025-05",
   },
   {
     id: "elo-05",
@@ -608,7 +608,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Manual de Settlement Elo / BC Circular 3.952",
-    lastUpdated: "2024-08",
+    lastUpdated: "2025-08",
   },
   {
     id: "elo-06",
@@ -626,7 +626,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Tabela de Interchange Elo / BACEN",
-    lastUpdated: "2024-04",
+    lastUpdated: "2025-04",
   },
   {
     id: "elo-07",
@@ -644,7 +644,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Elo Cross-border / Discover Partnership",
-    lastUpdated: "2024-03",
+    lastUpdated: "2025-03",
   },
   {
     id: "elo-08",
@@ -662,7 +662,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Programa de Seguranca Elo",
-    lastUpdated: "2024-09",
+    lastUpdated: "2025-09",
   },
 
   // =========================================================================
@@ -684,7 +684,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Diners Club Dispute Resolution Guide",
-    lastUpdated: "2024-07",
+    lastUpdated: "2025-07",
   },
   {
     id: "diners-02",
@@ -702,7 +702,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Diners Club Authorization Standards",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
   {
     id: "diners-03",
@@ -720,7 +720,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Diners Club Security Standards",
-    lastUpdated: "2024-08",
+    lastUpdated: "2025-08",
   },
   {
     id: "diners-04",
@@ -738,7 +738,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Diners Club Settlement Guide",
-    lastUpdated: "2024-05",
+    lastUpdated: "2025-05",
   },
   {
     id: "diners-05",
@@ -756,7 +756,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Diners Club Merchant Operating Guide",
-    lastUpdated: "2024-04",
+    lastUpdated: "2025-04",
   },
   {
     id: "diners-06",
@@ -774,7 +774,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Diners Club Recurring Payments Guide",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
 
   // =========================================================================
@@ -797,7 +797,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "American Express OptBlue Program Guide",
-    lastUpdated: "2024-09",
+    lastUpdated: "2025-09",
   },
   {
     id: "amex-02",
@@ -815,7 +815,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Amex Merchant Operating Guide",
-    lastUpdated: "2024-10",
+    lastUpdated: "2025-10",
   },
   {
     id: "amex-03",
@@ -833,7 +833,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Amex Authorization Standards",
-    lastUpdated: "2024-08",
+    lastUpdated: "2025-08",
   },
   {
     id: "amex-04",
@@ -851,7 +851,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "American Express SAFE Network",
-    lastUpdated: "2024-09",
+    lastUpdated: "2025-09",
   },
   {
     id: "amex-05",
@@ -869,7 +869,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Amex Settlement & Funding Guide",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
   {
     id: "amex-06",
@@ -887,7 +887,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "American Express SafeKey Program",
-    lastUpdated: "2024-07",
+    lastUpdated: "2025-07",
   },
   {
     id: "amex-07",
@@ -905,7 +905,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Amex Token Service Guide",
-    lastUpdated: "2024-05",
+    lastUpdated: "2025-05",
   },
   {
     id: "amex-08",
@@ -923,7 +923,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Amex Recurring Billing Standards",
-    lastUpdated: "2024-07",
+    lastUpdated: "2025-07",
   },
 
   // =========================================================================
@@ -945,7 +945,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Manual de Regras Hipercard / Itau",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
   {
     id: "hiper-02",
@@ -963,7 +963,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "critical",
     source: "Hipercard - Regras de Disputas",
-    lastUpdated: "2024-09",
+    lastUpdated: "2025-09",
   },
   {
     id: "hiper-03",
@@ -981,7 +981,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Hipercard - Tabela de Parcelamento",
-    lastUpdated: "2024-06",
+    lastUpdated: "2025-06",
   },
   {
     id: "hiper-04",
@@ -999,7 +999,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "informational",
     source: "Hipercard - Regras de Liquidacao",
-    lastUpdated: "2024-05",
+    lastUpdated: "2025-05",
   },
   {
     id: "hiper-05",
@@ -1017,7 +1017,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Hipercard - Manual de Autorizacao",
-    lastUpdated: "2024-07",
+    lastUpdated: "2025-07",
   },
   {
     id: "hiper-06",
@@ -1035,7 +1035,7 @@ export const BRAND_RULES: BrandRule[] = [
     ],
     severity: "important",
     source: "Hipercard - Programa de Seguranca",
-    lastUpdated: "2024-08",
+    lastUpdated: "2025-08",
   },
 
   // =========================================================================
@@ -1064,7 +1064,7 @@ export const BRAND_RULES: BrandRule[] = [
   {
     id: "visa-account-updater-2025",
     brand: "visa",
-    category: "recurring",
+    category: "tokenization",
     title: "VAU - Visa Account Updater obrigatorio para recorrencia",
     description: "Enrollment mandatorio no Visa Account Updater para todos os merchants com transacoes recorrentes.",
     details: [
